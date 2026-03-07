@@ -1,0 +1,17 @@
+<view class="page-shell food-page">
+  <view class="search-row panel">
+    <input class="search-input" placeholder="输入食品名称，例如鸡胸肉" value="{{keyword}}" bindinput="handleInput" bindconfirm="handleSearch" confirm-type="search" />
+    <view class="search-button" bindtap="handleSearch">搜索</view>
+  </view>
+
+  <view wx:if="{{foods.length}}" class="food-list">
+    <view wx:for="{{foods}}" wx:key="id" class="food-item panel" data-index="{{index}}" bindtap="handleSelectFood">
+      <view class="food-top">
+        <view class="food-title">{{item.name}}</view>
+        <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
+      </view>
+      <view class="food-bottom">蛋白 {{item.proteinPer100g}}g · 碳水 {{item.carbsPer100g}}g · 脂肪 {{item.fatPer100g}}g</view>
+    </view>
+  </view>
+  <empty-state wx:else title="没有找到食品" description="换个关键词再试，或者先去后端补充食品数据" />
+</view>

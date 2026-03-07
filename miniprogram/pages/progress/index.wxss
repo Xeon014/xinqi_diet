@@ -1,0 +1,64 @@
+.progress-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.range-switch {
+  display: flex;
+  gap: 16rpx;
+  padding: 14rpx;
+}
+
+.range-chip {
+  align-items: center;
+  background: rgba(93, 76, 58, 0.06);
+  border-radius: 999rpx;
+  color: #6d5d50;
+  display: flex;
+  flex: 1;
+  font-size: 26rpx;
+  height: 76rpx;
+  justify-content: center;
+}
+
+.range-chip.active {
+  background: #1f6f5f;
+  color: #fff;
+}
+
+.chart-panel {
+  padding: 28rpx 24rpx;
+}
+
+.trend-canvas {
+  margin-top: 20rpx;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 16rpx;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.stat-box {
+  padding: 24rpx;
+}
+
+.stat-label {
+  color: #8f8373;
+  font-size: 22rpx;
+}
+
+.stat-value {
+  color: #2e241b;
+  font-size: 38rpx;
+  font-weight: 700;
+  margin-top: 12rpx;
+}
+
+.stat-unit {
+  color: #8f8373;
+  font-size: 22rpx;
+  margin-top: 10rpx;
+}

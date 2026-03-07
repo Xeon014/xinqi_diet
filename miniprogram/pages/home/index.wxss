@@ -1,0 +1,65 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.hero {
+  background: radial-gradient(circle at top left, rgba(47, 139, 120, 0.18), transparent 45%), rgba(255, 253, 248, 0.85);
+  border-radius: 30rpx;
+  padding: 32rpx 28rpx;
+  position: relative;
+}
+
+.hero-kicker {
+  color: #1f6f5f;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.hero-title {
+  color: #30241a;
+  font-size: 52rpx;
+  font-weight: 700;
+  margin-top: 10rpx;
+}
+
+.hero-desc {
+  color: #7d7061;
+  font-size: 24rpx;
+  line-height: 1.6;
+  margin-top: 14rpx;
+}
+
+.hero-badge {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 999rpx;
+  color: #8f8373;
+  font-size: 20rpx;
+  padding: 10rpx 18rpx;
+  position: absolute;
+  right: 24rpx;
+  top: 24rpx;
+}
+
+.action-grid {
+  display: grid;
+  gap: 16rpx;
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.section-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10rpx;
+}
+
+.record-count {
+  color: #8f8373;
+  font-size: 24rpx;
+}
+
+.record-panel {
+  padding: 0 24rpx 24rpx;
+}

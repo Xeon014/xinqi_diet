@@ -1,0 +1,68 @@
+.card {
+  padding: 28rpx;
+}
+
+.header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.title {
+  color: #34281e;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #8f8373;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.metrics {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.metric {
+  background: rgba(93, 76, 58, 0.05);
+  border-radius: 22rpx;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 140rpx;
+  padding: 24rpx;
+}
+
+.metric.primary {
+  background: linear-gradient(135deg, rgba(31, 111, 95, 0.12), rgba(47, 139, 120, 0.18));
+  flex: 1.25;
+}
+
+.metric-label {
+  color: #7e7061;
+  font-size: 22rpx;
+}
+
+.metric-value {
+  color: #21483e;
+  font-size: 52rpx;
+  font-weight: 700;
+  margin-top: 14rpx;
+}
+
+.metric-unit,
+.metric-small {
+  color: #4f4438;
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+.danger {
+  color: #bf4d34;
+}
+
+.success {
+  color: #1f6f5f;
+}

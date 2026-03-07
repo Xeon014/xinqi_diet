@@ -1,0 +1,66 @@
+.food-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.search-row {
+  align-items: center;
+  display: flex;
+  gap: 16rpx;
+  padding: 18rpx;
+}
+
+.search-input {
+  background: #fff;
+  border-radius: 999rpx;
+  flex: 1;
+  font-size: 28rpx;
+  height: 82rpx;
+  padding: 0 24rpx;
+}
+
+.search-button {
+  align-items: center;
+  background: #1f6f5f;
+  border-radius: 999rpx;
+  color: #fff;
+  display: flex;
+  height: 82rpx;
+  justify-content: center;
+  padding: 0 28rpx;
+}
+
+.food-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.food-item {
+  padding: 24rpx;
+}
+
+.food-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.food-title {
+  color: #34281e;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.food-calories {
+  color: #1f6f5f;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.food-bottom {
+  color: #8f8373;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}

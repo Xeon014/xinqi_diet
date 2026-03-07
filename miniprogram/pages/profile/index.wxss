@@ -1,0 +1,22 @@
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.profile-panel {
+  padding: 28rpx;
+}
+
+.field-group {
+  margin-top: 28rpx;
+}
+
+.two-column {
+  display: flex;
+  gap: 16rpx;
+}
+
+.field-half {
+  flex: 1;
+}

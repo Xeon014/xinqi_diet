@@ -1,0 +1,34 @@
+<view class="page-shell profile-page">
+  <view class="panel profile-panel">
+    <view class="section-title">我的资料</view>
+    <view class="section-subtitle">调整每日目标、当前体重和减脂目标。</view>
+
+    <view class="field-group">
+      <view class="field-label">姓名</view>
+      <input class="field-input" value="{{profile.name}}" data-field="name" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">邮箱</view>
+      <input class="field-input" value="{{profile.email}}" data-field="email" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">每日热量目标</view>
+      <input class="field-input" type="number" value="{{profile.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">当前体重</view>
+        <input class="field-input" type="digit" value="{{profile.currentWeight}}" data-field="currentWeight" bindinput="handleInput" />
+      </view>
+      <view class="field-half">
+        <view class="field-label">目标体重</view>
+        <input class="field-input" type="digit" value="{{profile.targetWeight}}" data-field="targetWeight" bindinput="handleInput" />
+      </view>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSave">保存资料</view>
+</view>

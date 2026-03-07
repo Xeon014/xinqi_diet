@@ -1,0 +1,85 @@
+page {
+  background: linear-gradient(180deg, #f6f3ee 0%, #efe7dc 100%);
+  color: #2d241b;
+  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+  min-height: 100%;
+}
+
+.page-shell {
+  padding: 28rpx 24rpx 40rpx;
+}
+
+.panel {
+  background: rgba(255, 253, 248, 0.92);
+  border: 1rpx solid rgba(93, 76, 58, 0.08);
+  border-radius: 28rpx;
+  box-shadow: 0 18rpx 48rpx rgba(71, 54, 36, 0.08);
+}
+
+.section-title {
+  color: #3d3025;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.section-subtitle {
+  color: #8f8373;
+  font-size: 24rpx;
+}
+
+.primary-button {
+  align-items: center;
+  background: linear-gradient(135deg, #1f6f5f 0%, #2f8b78 100%);
+  border-radius: 999rpx;
+  color: #fff;
+  display: flex;
+  font-size: 28rpx;
+  font-weight: 600;
+  height: 88rpx;
+  justify-content: center;
+}
+
+.ghost-button {
+  align-items: center;
+  background: rgba(31, 111, 95, 0.08);
+  border-radius: 999rpx;
+  color: #1f6f5f;
+  display: flex;
+  font-size: 26rpx;
+  font-weight: 600;
+  height: 84rpx;
+  justify-content: center;
+}
+
+.pill {
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  padding: 10rpx 20rpx;
+}
+
+.pill-success {
+  background: rgba(31, 111, 95, 0.12);
+  color: #1f6f5f;
+}
+
+.pill-danger {
+  background: rgba(191, 77, 52, 0.12);
+  color: #bf4d34;
+}
+
+.field-label {
+  color: #5e5145;
+  font-size: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.field-input {
+  background: #fff;
+  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  border-radius: 22rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  height: 88rpx;
+  padding: 0 24rpx;
+  width: 100%;
+}

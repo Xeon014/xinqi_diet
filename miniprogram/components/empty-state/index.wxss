@@ -1,0 +1,25 @@
+.empty {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  padding: 52rpx 28rpx;
+}
+
+.empty-icon {
+  color: #c1b5a7;
+  font-size: 52rpx;
+}
+
+.empty-title {
+  color: #45382d;
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-top: 18rpx;
+}
+
+.empty-description {
+  color: #8f8373;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+  text-align: center;
+}

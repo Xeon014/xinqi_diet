@@ -1,0 +1,27 @@
+<view class="card panel">
+  <view class="header">
+    <view>
+      <view class="title">{{title}}</view>
+      <view class="subtitle">{{subtitle}}</view>
+    </view>
+    <view class="pill {{exceededTarget ? 'pill-danger' : 'pill-success'}}">
+      {{exceededTarget ? '已超目标' : '保持良好'}}
+    </view>
+  </view>
+
+  <view class="metrics">
+    <view class="metric primary">
+      <view class="metric-label">已摄入</view>
+      <view class="metric-value">{{consumedCalories}}</view>
+      <view class="metric-unit">kcal</view>
+    </view>
+    <view class="metric">
+      <view class="metric-label">目标</view>
+      <view class="metric-small">{{targetCalories}} kcal</view>
+    </view>
+    <view class="metric">
+      <view class="metric-label">剩余</view>
+      <view class="metric-small {{exceededTarget ? 'danger' : 'success'}}">{{remainingCalories}} kcal</view>
+    </view>
+  </view>
+</view>

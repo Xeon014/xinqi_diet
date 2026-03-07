@@ -1,0 +1,52 @@
+.record-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.form-panel {
+  padding: 28rpx;
+}
+
+.field-group {
+  margin-top: 28rpx;
+}
+
+.meal-grid {
+  display: grid;
+  gap: 16rpx;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.meal-chip {
+  align-items: center;
+  background: rgba(93, 76, 58, 0.06);
+  border-radius: 20rpx;
+  color: #645648;
+  display: flex;
+  font-size: 24rpx;
+  height: 80rpx;
+  justify-content: center;
+}
+
+.meal-chip.active {
+  background: #1f6f5f;
+  color: #fff;
+}
+
+.food-picker {
+  padding: 24rpx;
+}
+
+.food-name {
+  color: #33261c;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.food-meta,
+.food-placeholder,
+.picker-value {
+  color: #8f8373;
+  font-size: 24rpx;
+}

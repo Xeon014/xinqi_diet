@@ -1,0 +1,36 @@
+<view class="page-shell progress-page">
+  <view class="range-switch panel">
+    <view class="range-chip {{rangeDays === 7 ? 'active' : ''}}" data-days="7" bindtap="handleSwitchRange">近 7 天</view>
+    <view class="range-chip {{rangeDays === 30 ? 'active' : ''}}" data-days="30" bindtap="handleSwitchRange">近 30 天</view>
+  </view>
+
+  <view wx:if="{{summary}}" class="panel chart-panel">
+    <view class="section-title">摄入趋势</view>
+    <view class="section-subtitle">按天观察热量是否稳定收敛</view>
+    <canvas class="trend-canvas" canvas-id="trendCanvas" id="trendCanvas" style="width: 690rpx; height: 360rpx;"></canvas>
+  </view>
+
+  <view wx:if="{{summary}}" class="stats-grid">
+    <view class="panel stat-box">
+      <view class="stat-label">平均摄入</view>
+      <view class="stat-value">{{summary.averageCalories}}</view>
+      <view class="stat-unit">kcal</view>
+    </view>
+    <view class="panel stat-box">
+      <view class="stat-label">总摄入</view>
+      <view class="stat-value">{{summary.totalCalories}}</view>
+      <view class="stat-unit">kcal</view>
+    </view>
+    <view class="panel stat-box">
+      <view class="stat-label">平均差值</view>
+      <view class="stat-value">{{summary.averageCalorieGap}}</view>
+      <view class="stat-unit">kcal</view>
+    </view>
+    <view class="panel stat-box">
+      <view class="stat-label">待减体重</view>
+      <view class="stat-value">{{summary.weightToLose}}</view>
+      <view class="stat-unit">kg</view>
+    </view>
+  </view>
+  <empty-state wx:else title="暂无趋势数据" description="先记录几天饮食，再回来查看变化" />
+</view>

@@ -1,0 +1,40 @@
+<view class="page-shell record-page">
+  <view class="panel form-panel">
+    <view class="section-title">记录一餐</view>
+    <view class="section-subtitle">把食物、餐次和克数记下来，热量会自动计算。</view>
+
+    <view class="field-group">
+      <view class="field-label">餐次</view>
+      <view class="meal-grid">
+        <view wx:for="{{mealTypes}}" wx:key="value" class="meal-chip {{selectedMealType === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="handleMealTypeTap">
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">食品</view>
+      <view class="food-picker panel" bindtap="handleChooseFood">
+        <view wx:if="{{selectedFood}}">
+          <view class="food-name">{{selectedFood.name}}</view>
+          <view class="food-meta">{{selectedFood.caloriesPer100g}} kcal / 100g</view>
+        </view>
+        <view wx:else class="food-placeholder">点击搜索并选择食品</view>
+      </view>
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">摄入重量（g）</view>
+      <input class="field-input" type="digit" placeholder="例如 180" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">记录日期</view>
+      <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
+        <view class="field-input picker-value">{{recordDate}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSubmit">提交记录</view>
+</view>

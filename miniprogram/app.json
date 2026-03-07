@@ -1,0 +1,43 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/record-create/index",
+    "pages/profile/index",
+    "pages/food-search/index",
+    "pages/progress/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "轻食记",
+    "navigationBarBackgroundColor": "#f6f3ee",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f6f3ee",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "tabBar": {
+    "color": "#8f8373",
+    "selectedColor": "#1f6f5f",
+    "backgroundColor": "#fffdf8",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/record-create/index",
+        "text": "记录"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {
+    "summary-card": "/components/summary-card/index",
+    "record-item": "/components/record-item/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

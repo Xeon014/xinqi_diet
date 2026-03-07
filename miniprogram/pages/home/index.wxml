@@ -1,0 +1,37 @@
+<view class="page-shell home-page">
+  <view class="hero">
+    <view>
+      <view class="hero-kicker">轻食记 · 今日状态</view>
+      <view class="hero-title">{{today}}</view>
+      <view class="hero-desc">先把今天吃过的每一餐记下来，再看热量趋势。</view>
+    </view>
+    <view class="hero-badge">单用户演示</view>
+  </view>
+
+  <summary-card
+    title="当日热量总览"
+    subtitle="目标、已摄入与剩余热量一屏看清"
+    targetCalories="{{summary.targetCalories}}"
+    consumedCalories="{{summary.consumedCalories}}"
+    remainingCalories="{{summary.remainingCalories}}"
+    exceededTarget="{{summary.exceededTarget}}"
+  />
+
+  <view class="action-grid">
+    <view class="primary-button" bindtap="handleCreate">记录一餐</view>
+    <view class="ghost-button" bindtap="handleOpenProgress">查看趋势</view>
+  </view>
+
+  <view class="section-head">
+    <view>
+      <view class="section-title">今日记录</view>
+      <view class="section-subtitle">按餐次查看今天的所有摄入</view>
+    </view>
+    <view class="record-count">{{summary.records.length}} 条</view>
+  </view>
+
+  <view wx:if="{{summary.records.length}}" class="record-panel panel">
+    <record-item wx:for="{{summary.records}}" wx:key="id" record="{{item}}" />
+  </view>
+  <empty-state wx:else title="今天还没记录" description="点一下“记录一餐”，从早餐开始积累数据" />
+</view>
