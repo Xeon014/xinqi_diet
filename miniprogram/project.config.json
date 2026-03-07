@@ -32,11 +32,11 @@
     }
   },
   "compileType": "miniprogram",
-  "miniprogramRoot": "miniprogram/",
-  "srcMiniprogramRoot": "miniprogram/",
-  "appid": "touristappid",
+  "miniprogramRoot": "./",
+  "srcMiniprogramRoot": "./",
+  "appid": "wx0a7ca5b4f5d09a35",
   "projectname": "diet",
-  "libVersion": "trial",
+  "libVersion": "3.14.3",
   "condition": {},
   "simulatorPluginLibVersion": {},
   "editorSetting": {}

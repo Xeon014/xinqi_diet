@@ -32,10 +32,15 @@
       {
         "id": 1,
         "name": "李四",
-        "email": "lisi@example.com",
+        "gender": "FEMALE",
+        "age": 28,
+        "height": 165.0,
+        "activityLevel": "LIGHT",
         "dailyCalorieTarget": 1600,
-        "currentWeight": 85.0,
-        "targetWeight": 75.0,
+        "currentWeight": 58.5,
+        "targetWeight": 52.0,
+        "bmr": 1325.25,
+        "tdee": 1822.22,
         "createdAt": "2026-03-07T23:40:00"
       }
     ],
@@ -91,32 +96,27 @@
 
 `data` 直接为 `ProgressSummaryResponse`。
 
+### 6. 更新用户资料
+
+`PUT /api/users/1`
+
+```json
+{
+  "name": "李四",
+  "gender": "FEMALE",
+  "age": 28,
+  "height": 165.0,
+  "activityLevel": "LIGHT",
+  "dailyCalorieTarget": 1600,
+  "currentWeight": 58.5,
+  "targetWeight": 52.0
+}
+```
+
 ## 小程序接入建议
 
 - 首页：调用 `/api/users/{id}/daily-summary` 展示当天摄入概览。
+- 资料页：调用 `/api/users/{id}` 展示并编辑用户资料，同时展示 `bmr` 与 `tdee`。
 - 食品搜索页：调用 `/api/foods?keyword=` 做本地输入联想。
 - 记录页：先拉食品列表，再调用 `/api/records` 提交饮食记录。
 - 趋势页：调用 `/api/users/{id}/progress` 直接绘制折线图。
-
-## 小程序请求示例
-
-```javascript
-const request = (url, method = 'GET', data) => {
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: `http://localhost:8080${url}`,
-      method,
-      data,
-      success: (res) => {
-        const body = res.data;
-        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 'SUCCESS') {
-          resolve(body.data);
-          return;
-        }
-        reject(body);
-      },
-      fail: reject,
-    });
-  });
-};
-```

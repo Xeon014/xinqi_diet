@@ -1,42 +1,52 @@
 package com.diet.config;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.diet.food.Food;
-import com.diet.food.FoodRepository;
-import com.diet.record.MealRecord;
-import com.diet.record.MealRecordRepository;
-import com.diet.record.MealType;
-import com.diet.user.UserProfile;
-import com.diet.user.UserProfileRepository;
+import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodRepository;
+import com.diet.domain.record.MealRecord;
+import com.diet.domain.record.MealRecordRepository;
+import com.diet.domain.record.MealType;
+import com.diet.domain.user.ActivityLevel;
+import com.diet.domain.user.Gender;
+import com.diet.domain.user.UserProfile;
+import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner seedData(UserProfileRepository userProfileRepository,
-                               FoodRepository foodRepository,
-                               MealRecordRepository mealRecordRepository) {
+    CommandLineRunner seedData(
+            UserProfileRepository userProfileRepository,
+            FoodRepository foodRepository,
+            MealRecordRepository mealRecordRepository,
+            JdbcTemplate jdbcTemplate
+    ) {
         return args -> {
-            Long userCount = userProfileRepository.selectCount(null);
-            Long foodCount = foodRepository.selectCount(null);
-            Long recordCount = mealRecordRepository.selectCount(null);
+            migrateUserProfileTable(jdbcTemplate);
+
+            long userCount = userProfileRepository.count();
+            long foodCount = foodRepository.count();
+            long recordCount = mealRecordRepository.count();
             if (userCount > 0 || foodCount > 0 || recordCount > 0) {
                 return;
             }
 
             UserProfile user = new UserProfile(
                     "Demo User",
-                    "demo@example.com",
+                    Gender.FEMALE,
+                    28,
+                    new BigDecimal("165.00"),
+                    ActivityLevel.LIGHT,
                     1800,
-                    new BigDecimal("78.50"),
-                    new BigDecimal("70.00")
+                    new BigDecimal("58.50"),
+                    new BigDecimal("52.00")
             );
-            userProfileRepository.insert(user);
+            userProfileRepository.save(user);
 
             Food chickenBreast = new Food(
                     "Chicken Breast",
@@ -46,7 +56,7 @@ public class DataInitializer {
                     new BigDecimal("5.00"),
                     "Protein"
             );
-            foodRepository.insert(chickenBreast);
+            foodRepository.save(chickenBreast);
 
             Food oatmeal = new Food(
                     "Oatmeal",
@@ -56,7 +66,7 @@ public class DataInitializer {
                     new BigDecimal("6.90"),
                     "Carbs"
             );
-            foodRepository.insert(oatmeal);
+            foodRepository.save(oatmeal);
 
             Food broccoli = new Food(
                     "Broccoli",
@@ -66,9 +76,9 @@ public class DataInitializer {
                     new BigDecimal("0.40"),
                     "Vegetable"
             );
-            foodRepository.insert(broccoli);
+            foodRepository.save(broccoli);
 
-            mealRecordRepository.insert(new MealRecord(
+            mealRecordRepository.save(new MealRecord(
                     user.getId(),
                     oatmeal.getId(),
                     MealType.BREAKFAST,
@@ -76,7 +86,7 @@ public class DataInitializer {
                     new BigDecimal("311.20"),
                     LocalDate.now()
             ));
-            mealRecordRepository.insert(new MealRecord(
+            mealRecordRepository.save(new MealRecord(
                     user.getId(),
                     chickenBreast.getId(),
                     MealType.LUNCH,
@@ -84,7 +94,7 @@ public class DataInitializer {
                     new BigDecimal("266.00"),
                     LocalDate.now()
             ));
-            mealRecordRepository.insert(new MealRecord(
+            mealRecordRepository.save(new MealRecord(
                     user.getId(),
                     broccoli.getId(),
                     MealType.DINNER,
@@ -93,5 +103,41 @@ public class DataInitializer {
                     LocalDate.now()
             ));
         };
+    }
+
+    private void migrateUserProfileTable(JdbcTemplate jdbcTemplate) {
+        ensureNullableEmail(jdbcTemplate);
+        ensureColumn(jdbcTemplate, "gender", "ALTER TABLE user_profile ADD COLUMN gender VARCHAR(10) NOT NULL DEFAULT 'FEMALE'");
+        ensureColumn(jdbcTemplate, "age", "ALTER TABLE user_profile ADD COLUMN age INT NOT NULL DEFAULT 25");
+        ensureColumn(jdbcTemplate, "height", "ALTER TABLE user_profile ADD COLUMN height DECIMAL(5, 2) NOT NULL DEFAULT 165.00");
+        ensureColumn(jdbcTemplate, "activity_level", "ALTER TABLE user_profile ADD COLUMN activity_level VARCHAR(20) NOT NULL DEFAULT 'LIGHT'");
+    }
+
+    private void ensureNullableEmail(JdbcTemplate jdbcTemplate) {
+        if (!hasColumn(jdbcTemplate, "email")) {
+            return;
+        }
+        String isNullable = jdbcTemplate.queryForObject(
+                "SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile' AND COLUMN_NAME = 'email'",
+                String.class
+        );
+        if ("NO".equalsIgnoreCase(isNullable)) {
+            jdbcTemplate.execute("ALTER TABLE user_profile MODIFY COLUMN email VARCHAR(100) NULL");
+        }
+    }
+
+    private void ensureColumn(JdbcTemplate jdbcTemplate, String columnName, String sql) {
+        if (!hasColumn(jdbcTemplate, columnName)) {
+            jdbcTemplate.execute(sql);
+        }
+    }
+
+    private boolean hasColumn(JdbcTemplate jdbcTemplate, String columnName) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile' AND COLUMN_NAME = ?",
+                Integer.class,
+                columnName
+        );
+        return count != null && count > 0;
     }
 }

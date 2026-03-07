@@ -32,6 +32,11 @@ public class UserProfile {
     public UserProfile() {
     }
 
+    public UserProfile(String name, Integer dailyCalorieTarget, BigDecimal currentWeight,
+                       BigDecimal targetWeight) {
+        this(name, null, dailyCalorieTarget, currentWeight, targetWeight);
+    }
+
     public UserProfile(String name, String email, Integer dailyCalorieTarget, BigDecimal currentWeight,
                        BigDecimal targetWeight) {
         this.name = name;

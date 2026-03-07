@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.diet.mapper.FoodMapper">
+
+    <select id="findByNameIgnoreCase" resultType="com.diet.domain.food.Food">
+        SELECT
+            id,
+            name,
+            calories_per_100g,
+            protein_per_100g,
+            carbs_per_100g,
+            fat_per_100g,
+            category,
+            created_at
+        FROM food
+        WHERE LOWER(name) = LOWER(#{name})
+        LIMIT 1
+    </select>
+
+</mapper>
