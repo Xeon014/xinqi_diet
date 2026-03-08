@@ -4,7 +4,7 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const GENDER_OPTIONS = [
   { label: "女", value: "FEMALE" },
-  { label: "男", value: "MALE" },
+  { label: "男", value: "MALE" }
 ];
 
 function toInteger(value) {
@@ -23,18 +23,15 @@ Page({
       height: "",
       currentWeight: "",
       targetWeight: "",
-      customBmr: "",
-    },
+      customBmr: ""
+    }
   },
-
   onShow() {
     this.loadProfile();
   },
-
   onPullDownRefresh() {
     this.loadProfile(true);
   },
-
   loadProfile(stopPullDown = false) {
     getCurrentUser()
       .then((profile) => {
@@ -47,15 +44,12 @@ Page({
             height: profile.height == null ? "" : String(profile.height),
             currentWeight: profile.currentWeight == null ? "" : String(profile.currentWeight),
             targetWeight: profile.targetWeight == null ? "" : String(profile.targetWeight),
-            customBmr: String(profile.customBmr || toInteger(profile.bmr)),
-          },
+            customBmr: String(profile.customBmr || toInteger(profile.bmr))
+          }
         });
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
         if (stopPullDown) {
@@ -63,33 +57,24 @@ Page({
         }
       });
   },
-
   findOptionIndex(value) {
     const index = GENDER_OPTIONS.findIndex((item) => item.value === value);
     return index >= 0 ? index : 0;
   },
-
   handleInput(event) {
     const { field } = event.currentTarget.dataset;
-    this.setData({
-      [`form.${field}`]: event.detail.value,
-    });
+    this.setData({ [`form.${field}`]: event.detail.value });
   },
-
   handleGenderChange(event) {
     const genderIndex = Number(event.detail.value);
     this.setData({
       genderIndex,
-      "form.gender": GENDER_OPTIONS[genderIndex].value,
+      "form.gender": GENDER_OPTIONS[genderIndex].value
     });
   },
-
   handleBirthDateChange(event) {
-    this.setData({
-      "form.birthDate": event.detail.value,
-    });
+    this.setData({ "form.birthDate": event.detail.value });
   },
-
   handleSave() {
     const { profile, form } = this.data;
     const height = Number(form.height);
@@ -127,22 +112,16 @@ Page({
       dailyCalorieTarget: profile.dailyCalorieTarget,
       currentWeight,
       targetWeight,
-      customBmr,
+      customBmr
     })
       .then(() => {
-        wx.showToast({
-          title: "保存成功",
-          icon: "success",
-        });
+        wx.showToast({ title: "保存成功", icon: "success" });
         setTimeout(() => {
           wx.navigateBack();
         }, 350);
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       });
-  },
+  }
 });

@@ -4,6 +4,18 @@ const { decorateFood, filterFoodsByCategory, FOOD_CATEGORIES } = require("../../
 const { getRecentFoods } = require("../../utils/recent-foods");
 const { pickErrorMessage } = require("../../utils/request");
 
+function toInteger(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function normalizeFood(food) {
+  return {
+    ...food,
+    caloriesPer100g: toInteger(food.caloriesPer100g),
+  };
+}
+
 Page({
   data: {
     keyword: "",
@@ -13,8 +25,8 @@ Page({
     recentFoods: [],
     recentDisplayFoods: [],
     displayedFoods: [],
-    emptyTitle: "\u6682\u65e0\u98df\u7269",
-    emptyDescription: "\u8bd5\u8bd5\u5207\u6362\u5206\u7c7b\u6216\u6dfb\u52a0\u81ea\u5b9a\u4e49\u98df\u7269\u3002",
+    emptyTitle: "暂无食物",
+    emptyDescription: "试试切换分类或添加自定义食物。",
   },
 
   onLoad() {
@@ -25,8 +37,8 @@ Page({
   loadFoods() {
     searchFoods("")
       .then((data) => {
-        const foods = (data.foods || []).map(decorateFood);
-        const recentFoods = getRecentFoods(DEFAULT_USER_ID).map(decorateFood);
+        const foods = (data.foods || []).map((food) => normalizeFood(decorateFood(food)));
+        const recentFoods = getRecentFoods(DEFAULT_USER_ID).map((food) => normalizeFood(decorateFood(food)));
         this.setData(
           {
             foods,
@@ -73,7 +85,7 @@ Page({
       success: (res) => {
         res.eventChannel.on("foodCreated", (food) => {
           if (this.openerEventChannel) {
-            this.openerEventChannel.emit("foodSelected", decorateFood(food));
+            this.openerEventChannel.emit("foodSelected", normalizeFood(decorateFood(food)));
             wx.navigateBack({
               delta: 2,
             });
@@ -109,10 +121,10 @@ Page({
     this.setData({
       recentDisplayFoods,
       displayedFoods,
-      emptyTitle: keyword ? "\u6ca1\u6709\u627e\u5230\u98df\u7269" : "\u5f53\u524d\u5206\u7c7b\u6682\u65e0\u98df\u7269",
+      emptyTitle: keyword ? "没有找到食物" : "当前分类暂无食物",
       emptyDescription: keyword
-        ? "\u6362\u4e2a\u5173\u952e\u8bcd\u8bd5\u8bd5\uff0c\u6216\u4f7f\u7528\u81ea\u5b9a\u4e49\u98df\u7269\u3002"
-        : "\u8bd5\u8bd5\u5207\u6362\u5206\u7c7b\uff0c\u6216\u6dfb\u52a0\u81ea\u5b9a\u4e49\u98df\u7269\u3002",
+        ? "换个关键词试试，或使用自定义食物。"
+        : "试试切换分类，或添加自定义食物。",
     });
   },
 });

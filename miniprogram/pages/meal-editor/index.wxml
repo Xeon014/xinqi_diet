@@ -2,27 +2,27 @@
   <view class="panel meal-head">
     <view class="meal-badge">{{mealLabel}}</view>
     <view class="meal-date">{{recordDate}}</view>
-    <view class="section-title">&#x8bb0;&#x5f55;{{mealLabel}}</view>
+    <view class="section-title">记录{{mealLabel}}</view>
   </view>
 
   <view class="panel editor-panel">
     <view class="field-group">
-      <view class="field-label">&#x98df;&#x7269;</view>
+      <view class="field-label">食物</view>
       <view class="food-picker" bindtap="handleChooseFood">
         <view wx:if="{{selectedFood}}">
           <view class="food-name">{{selectedFood.name}}</view>
           <view class="food-meta">{{selectedFood.caloriesPer100g}} kcal / 100g</view>
           <view class="food-category">{{selectedFood.categoryLabel || selectedFood.category}}</view>
         </view>
-        <view wx:else class="food-placeholder">&#x70b9;&#x51fb;&#x9009;&#x62e9;&#x98df;&#x7269;</view>
+        <view wx:else class="food-placeholder">点击选择食物</view>
       </view>
     </view>
 
     <view class="field-group">
-      <view class="field-label">&#x6444;&#x5165;&#x91cd;&#x91cf;(g)</view>
-      <input class="field-input" type="digit" placeholder="&#x4f8b;&#x5982; 180" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
+      <view class="field-label">摄入重量(g)</view>
+      <input class="field-input" type="digit" placeholder="例如 180" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
     </view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">&#x4fdd;&#x5b58;&#x8bb0;&#x5f55;</view>
+  <view class="primary-button" bindtap="handleSubmit">保存记录</view>
 </view>

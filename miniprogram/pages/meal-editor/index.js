@@ -7,16 +7,32 @@ const { pickErrorMessage } = require("../../utils/request");
 const app = getApp();
 
 const MEAL_TYPE_LABELS = {
-  BREAKFAST: "\u65e9\u9910",
-  LUNCH: "\u5348\u9910",
-  DINNER: "\u665a\u9910",
-  SNACK: "\u52a0\u9910",
+  BREAKFAST: "早餐",
+  LUNCH: "午餐",
+  DINNER: "晚餐",
+  SNACK: "加餐",
 };
+
+function toInteger(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function normalizeFood(food) {
+  if (!food) {
+    return null;
+  }
+
+  return {
+    ...food,
+    caloriesPer100g: toInteger(food.caloriesPer100g),
+  };
+}
 
 Page({
   data: {
     mealType: "BREAKFAST",
-    mealLabel: "\u65e9\u9910",
+    mealLabel: "早餐",
     recordDate: getToday(),
     selectedFood: null,
     quantityInGram: "",
@@ -27,7 +43,7 @@ Page({
     const recordDate = options.recordDate || getToday();
     this.setData({
       mealType,
-      mealLabel: MEAL_TYPE_LABELS[mealType] || "\u65e9\u9910",
+      mealLabel: MEAL_TYPE_LABELS[mealType] || "早餐",
       recordDate,
     });
   },
@@ -38,7 +54,7 @@ Page({
       success: (res) => {
         res.eventChannel.on("foodSelected", (food) => {
           this.setData({
-            selectedFood: food,
+            selectedFood: normalizeFood(food),
           });
         });
       },
@@ -57,7 +73,7 @@ Page({
 
     if (!selectedFood) {
       wx.showToast({
-        title: "\u8bf7\u5148\u9009\u62e9\u98df\u7269",
+        title: "请先选择食物",
         icon: "none",
       });
       return;
@@ -65,7 +81,7 @@ Page({
 
     if (!quantity || quantity <= 0) {
       wx.showToast({
-        title: "\u8bf7\u8f93\u5165\u6b63\u786e\u514b\u6570",
+        title: "请输入正确克数",
         icon: "none",
       });
       return;
@@ -82,7 +98,7 @@ Page({
         saveRecentFood(DEFAULT_USER_ID, selectedFood);
         app.globalData.refreshHomeOnShow = true;
         wx.showToast({
-          title: "\u8bb0\u5f55\u6210\u529f",
+          title: "记录成功",
           icon: "success",
         });
         setTimeout(() => {

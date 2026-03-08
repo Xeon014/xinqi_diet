@@ -2,16 +2,18 @@ const { getProgress } = require("../../services/user");
 const { getRangeDays } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
+function toInteger(value) {
+  return Math.round(Number(value || 0));
+}
+
 Page({
   data: {
     rangeDays: 7,
-    summary: null,
+    summary: null
   },
-
   onLoad() {
     this.loadProgress(7);
   },
-
   handleSwitchRange(event) {
     const { days } = event.currentTarget.dataset;
     if (Number(days) === this.data.rangeDays) {
@@ -19,25 +21,32 @@ Page({
     }
     this.loadProgress(Number(days));
   },
-
   loadProgress(days) {
     const range = getRangeDays(days);
     getProgress(range)
       .then((summary) => {
+        const normalizedTrend = (summary.trend || []).map((item) => ({
+          ...item,
+          consumedCalories: toInteger(item.consumedCalories),
+          calorieGap: toInteger(item.calorieGap)
+        }));
+
         this.setData({
           rangeDays: days,
-          summary,
+          summary: {
+            ...summary,
+            averageCalories: toInteger(summary.averageCalories),
+            totalCalories: toInteger(summary.totalCalories),
+            averageCalorieGap: toInteger(summary.averageCalorieGap),
+            trend: normalizedTrend
+          }
         });
-        this.drawChart(summary.trend || []);
+        this.drawChart(normalizedTrend);
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       });
   },
-
   drawChart(trend) {
     const ctx = wx.createCanvasContext("trendCanvas", this);
     const width = 690;
@@ -62,7 +71,7 @@ Page({
 
     ctx.setFillStyle("#8f8373");
     ctx.setFontSize(20);
-    ctx.fillText(`${maxValue} kcal`, padding, padding - 12);
+    ctx.fillText(`${toInteger(maxValue)} kcal`, padding, padding - 12);
 
     if (!trend.length) {
       ctx.draw();
@@ -101,5 +110,5 @@ Page({
     });
 
     ctx.draw();
-  },
+  }
 });

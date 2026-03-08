@@ -1,7 +1,7 @@
 <view class="page-shell food-search-page">
   <view class="search-bar panel">
-    <input class="search-input" placeholder="&#x641c;&#x7d22;&#x98df;&#x7269;" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
-    <view class="custom-entry" bindtap="handleOpenCustomFood">&#x81ea;&#x5b9a;&#x4e49;&#x98df;&#x7269;</view>
+    <input class="search-input" placeholder="搜索食物" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
+    <view class="custom-entry" bindtap="handleOpenCustomFood">自定义食物</view>
   </view>
 
   <view class="food-layout">
@@ -13,27 +13,27 @@
 
     <view class="food-content">
       <view wx:if="{{recentDisplayFoods.length}}" class="panel section-panel">
-        <view class="section-title-small">&#x6700;&#x8fd1;&#x8bb0;&#x5f55;</view>
+        <view class="section-title-small">最近记录</view>
         <view class="food-list compact-list">
           <view wx:for="{{recentDisplayFoods}}" wx:key="id" class="food-item" data-source="recent" data-index="{{index}}" bindtap="handleSelectFood">
             <view class="food-top">
               <view class="food-name">{{item.name}}</view>
               <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
             </view>
-            <view class="food-bottom">{{item.categoryLabel}} &#183; &#x86cb;&#x767d; {{item.proteinPer100g}}g &#183; &#x78b3;&#x6c34; {{item.carbsPer100g}}g &#183; &#x8102;&#x80aa; {{item.fatPer100g}}g</view>
+            <view class="food-bottom">{{item.categoryLabel}} · 蛋白 {{item.proteinPer100g}}g · 碳水 {{item.carbsPer100g}}g · 脂肪 {{item.fatPer100g}}g</view>
           </view>
         </view>
       </view>
 
       <view wx:if="{{displayedFoods.length}}" class="panel section-panel">
-        <view class="section-title-small">&#x98df;&#x7269;&#x5217;&#x8868;</view>
+        <view class="section-title-small">食物列表</view>
         <view class="food-list compact-list">
           <view wx:for="{{displayedFoods}}" wx:key="id" class="food-item" data-source="all" data-index="{{index}}" bindtap="handleSelectFood">
             <view class="food-top">
               <view class="food-name">{{item.name}}</view>
               <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
             </view>
-            <view class="food-bottom">{{item.categoryLabel}} &#183; &#x86cb;&#x767d; {{item.proteinPer100g}}g &#183; &#x78b3;&#x6c34; {{item.carbsPer100g}}g &#183; &#x8102;&#x80aa; {{item.fatPer100g}}g</view>
+            <view class="food-bottom">{{item.categoryLabel}} · 蛋白 {{item.proteinPer100g}}g · 碳水 {{item.carbsPer100g}}g · 脂肪 {{item.fatPer100g}}g</view>
           </view>
         </view>
       </view>

@@ -7,7 +7,7 @@ const ACTIVITY_OPTIONS = [
   { label: "轻量活动", value: "LIGHT" },
   { label: "中等活动", value: "MODERATE" },
   { label: "高频训练", value: "ACTIVE" },
-  { label: "高强度体力", value: "VERY_ACTIVE" },
+  { label: "高强度体力", value: "VERY_ACTIVE" }
 ];
 
 function toInteger(value) {
@@ -18,7 +18,16 @@ function normalizeProfile(profile) {
   return {
     ...profile,
     bmr: toInteger(profile.bmr),
-    tdee: toInteger(profile.tdee),
+    tdee: toInteger(profile.tdee)
+  };
+}
+
+function normalizeSummary(summary) {
+  return {
+    ...summary,
+    consumedCalories: toInteger(summary.consumedCalories),
+    remainingCalories: toInteger(summary.remainingCalories),
+    targetCalories: toInteger(summary.targetCalories)
   };
 }
 
@@ -31,38 +40,32 @@ Page({
     activityIndex: 0,
     settings: {
       dailyCalorieTarget: "",
-      activityLevel: "LIGHT",
-    },
+      activityLevel: "LIGHT"
+    }
   },
-
   onShow() {
     this.resetPageScroll();
     this.loadPageData();
   },
-
   onPullDownRefresh() {
     this.loadPageData(true);
   },
-
   loadPageData(stopPullDown = false) {
     Promise.all([getCurrentUser(), getDailySummary(this.data.today)])
       .then(([profile, summary]) => {
         this.setData({
           profile: normalizeProfile(profile),
-          summary,
+          summary: normalizeSummary(summary),
           activityIndex: this.findActivityIndex(profile.activityLevel),
           settings: {
             dailyCalorieTarget: profile.dailyCalorieTarget == null ? "" : String(profile.dailyCalorieTarget),
-            activityLevel: profile.activityLevel,
-          },
+            activityLevel: profile.activityLevel
+          }
         });
         this.resetPageScroll();
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
         if (stopPullDown) {
@@ -70,36 +73,26 @@ Page({
         }
       });
   },
-
   resetPageScroll() {
     wx.nextTick(() => {
-      wx.pageScrollTo({
-        scrollTop: 0,
-        duration: 0,
-      });
+      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
     });
   },
-
   findActivityIndex(value) {
     const index = ACTIVITY_OPTIONS.findIndex((item) => item.value === value);
     return index >= 0 ? index : 0;
   },
-
   handleInput(event) {
     const { field } = event.currentTarget.dataset;
-    this.setData({
-      [`settings.${field}`]: event.detail.value,
-    });
+    this.setData({ [`settings.${field}`]: event.detail.value });
   },
-
   handleActivityChange(event) {
     const activityIndex = Number(event.detail.value);
     this.setData({
       activityIndex,
-      "settings.activityLevel": ACTIVITY_OPTIONS[activityIndex].value,
+      "settings.activityLevel": ACTIVITY_OPTIONS[activityIndex].value
     });
   },
-
   handleSave() {
     const { profile, settings } = this.data;
     const dailyCalorieTarget = Number(settings.dailyCalorieTarget);
@@ -118,22 +111,16 @@ Page({
       dailyCalorieTarget,
       currentWeight: Number(profile.currentWeight),
       targetWeight: Number(profile.targetWeight),
-      customBmr: Number(profile.customBmr || profile.bmr),
+      customBmr: Number(profile.customBmr || profile.bmr)
     })
       .then(() => {
-        wx.showToast({
-          title: "保存成功",
-          icon: "success",
-        });
+        wx.showToast({ title: "保存成功", icon: "success" });
         setTimeout(() => {
           wx.navigateBack();
         }, 350);
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       });
-  },
+  }
 });

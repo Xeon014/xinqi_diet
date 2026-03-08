@@ -37,15 +37,15 @@ Page({
     const fatPer100g = Number(form.fatPer100g);
 
     if (!form.name.trim()) {
-      wx.showToast({ title: "\u8bf7\u8f93\u5165\u98df\u7269\u540d\u79f0", icon: "none" });
+      wx.showToast({ title: "请输入食物名称", icon: "none" });
       return;
     }
     if (!caloriesPer100g || caloriesPer100g <= 0) {
-      wx.showToast({ title: "\u8bf7\u8f93\u5165\u6b63\u786e\u70ed\u91cf", icon: "none" });
+      wx.showToast({ title: "请输入正确热量", icon: "none" });
       return;
     }
     if (proteinPer100g < 0 || carbsPer100g < 0 || fatPer100g < 0) {
-      wx.showToast({ title: "\u8425\u517b\u6570\u636e\u4e0d\u80fd\u4e3a\u8d1f\u6570", icon: "none" });
+      wx.showToast({ title: "营养数据不能为负数", icon: "none" });
       return;
     }
 
@@ -59,7 +59,7 @@ Page({
     })
       .then((food) => {
         wx.showToast({
-          title: "\u521b\u5efa\u6210\u529f",
+          title: "创建成功",
           icon: "success",
         });
         const eventChannel = this.getOpenerEventChannel();

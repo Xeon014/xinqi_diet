@@ -4,7 +4,7 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const GENDER_LABELS = {
   FEMALE: "女",
-  MALE: "男",
+  MALE: "男"
 };
 
 function toInteger(value) {
@@ -13,26 +13,10 @@ function toInteger(value) {
 
 function buildOverview(profile, summary) {
   return [
-    {
-      label: "当前体重",
-      value: `${profile.currentWeight} kg`,
-      tone: "green",
-    },
-    {
-      label: "BMI",
-      value: profile.bmi,
-      tone: "sand",
-    },
-    {
-      label: "今日摄入",
-      value: `${summary.consumedCalories} / ${summary.targetCalories}`,
-      tone: "teal",
-    },
-    {
-      label: "基础代谢(BMR)",
-      value: `${toInteger(profile.bmr)} kcal/天`,
-      tone: "orange",
-    },
+    { label: "当前体重", value: `${profile.currentWeight} kg`, tone: "green" },
+    { label: "BMI", value: profile.bmi, tone: "sand" },
+    { label: "今日摄入", value: `${toInteger(summary.consumedCalories)} / ${toInteger(summary.targetCalories)}`, tone: "teal" },
+    { label: "基础代谢(BMR)", value: `${toInteger(profile.bmr)} kcal/天`, tone: "orange" }
   ];
 }
 
@@ -40,20 +24,18 @@ function buildPersonalTags(profile) {
   return [
     GENDER_LABELS[profile.gender] || "未设置",
     profile.age != null ? `${profile.age} 岁` : "年龄未算出",
-    profile.height != null ? `${profile.height} cm` : "身高未设置",
+    profile.height != null ? `${profile.height} cm` : "身高未设置"
   ];
 }
 
 function buildHealthTags(profile, summary) {
   const remaining = Number(summary.remainingCalories || 0);
-  const remainingLabel = summary.exceededTarget
-    ? `超 ${Math.abs(Math.round(remaining))} kcal`
-    : `剩 ${Math.round(remaining)} kcal`;
+  const remainingLabel = summary.exceededTarget ? `超 ${Math.abs(Math.round(remaining))} kcal` : `剩 ${Math.round(remaining)} kcal`;
 
   return [
-    `今日 ${summary.consumedCalories} kcal`,
+    `今日 ${toInteger(summary.consumedCalories)} kcal`,
     remainingLabel,
-    `基础代谢 ${toInteger(profile.bmr)}`,
+    `基础代谢 ${toInteger(profile.bmr)}`
   ];
 }
 
@@ -74,17 +56,14 @@ Page({
     personalTags: [],
     healthTags: [],
     personalNote: "",
-    healthNote: "",
+    healthNote: ""
   },
-
   onShow() {
     this.loadPageData();
   },
-
   onPullDownRefresh() {
     this.loadPageData(true);
   },
-
   loadPageData(stopPullDown = false) {
     Promise.all([getCurrentUser(), getDailySummary(this.data.today)])
       .then(([profile, summary]) => {
@@ -95,14 +74,11 @@ Page({
           personalTags: buildPersonalTags(profile),
           healthTags: buildHealthTags(profile, summary),
           personalNote: buildPersonalNote(profile),
-          healthNote: buildHealthNote(summary),
+          healthNote: buildHealthNote(summary)
         });
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
         if (stopPullDown) {
@@ -110,16 +86,10 @@ Page({
         }
       });
   },
-
   handleOpenPersonalInfo() {
-    wx.navigateTo({
-      url: "/pages/personal-info/index",
-    });
+    wx.navigateTo({ url: "/pages/personal-info/index" });
   },
-
   handleOpenHealthProfile() {
-    wx.navigateTo({
-      url: "/pages/health-profile/index",
-    });
-  },
+    wx.navigateTo({ url: "/pages/health-profile/index" });
+  }
 });

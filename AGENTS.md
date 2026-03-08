@@ -66,3 +66,4 @@
 
 - 小程序配置集中放在 `miniprogram/utils/constants.js`。
 - 修改接口字段时，同步检查 `miniprogram/services/` 与页面调用。
+- 所有卡路里相关数据在前端展示时一律取整后显示，例如 `kcal`、`BMR`、`TDEE`、每 100g 热量、单条记录热量、统计热量等。

@@ -1,12 +1,12 @@
 <view class="page-shell record-entry-page">
   <view class="panel date-panel">
     <view>
-      <view class="section-title">&#x8bb0;&#x5f55;&#x4e00;&#x9910;</view>
-      <view class="section-subtitle">&#x5148;&#x9009;&#x65e5;&#x671f;&#xff0c;&#x518d;&#x8fdb;&#x5165;&#x5bf9;&#x5e94;&#x9910;&#x6b21;&#x5b8c;&#x6210;&#x8bb0;&#x5f55;</view>
+      <view class="section-title">记录饮食</view>
+      <view class="section-subtitle">先选择日期，再进入对应餐次完成记录</view>
     </view>
 
     <view class="field-group compact-group">
-      <view class="field-label">&#x8bb0;&#x5f55;&#x65e5;&#x671f;</view>
+      <view class="field-label">记录日期</view>
       <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
         <view class="date-picker">{{recordDate}}</view>
       </picker>

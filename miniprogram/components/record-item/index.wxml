@@ -1,10 +1,10 @@
 <view class="item">
   <view class="main">
     <view class="name">{{record.foodName}}</view>
-    <view class="meta">{{record.mealTypeLabel}} · {{record.quantityInGram}}g</view>
+    <view class="meta">{{record.mealTypeLabel}} 路 {{record.quantityInGram}}g</view>
   </view>
   <view class="side">
-    <view class="calories">{{record.totalCalories}}</view>
+    <view class="calories">{{displayCalories}}</view>
     <view class="unit">kcal</view>
   </view>
 </view>

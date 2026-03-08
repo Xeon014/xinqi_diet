@@ -4,23 +4,23 @@
       <view class="title">{{title}}</view>
       <view class="subtitle">{{subtitle}}</view>
     </view>
-    <view wx:if="{{exceededTarget}}" class="pill pill-danger">&#x5df2;&#x8d85;&#x76ee;&#x6807;</view>
-    <view wx:else class="pill pill-success">&#x72b6;&#x6001;&#x826f;&#x597d;</view>
+    <view wx:if="{{exceededTarget}}" class="pill pill-danger">已超目标</view>
+    <view wx:else class="pill pill-success">状态良好</view>
   </view>
 
   <view class="metrics">
     <view class="metric primary">
-      <view class="metric-label">&#x5df2;&#x6444;&#x5165;</view>
-      <view class="metric-value">{{consumedCalories}}</view>
+      <view class="metric-label">已摄入</view>
+      <view class="metric-value">{{displayConsumedCalories}}</view>
       <view class="metric-unit">kcal</view>
     </view>
     <view class="metric">
-      <view class="metric-label">&#x76ee;&#x6807;</view>
-      <view class="metric-small">{{targetCalories}} kcal</view>
+      <view class="metric-label">目标</view>
+      <view class="metric-small">{{displayTargetCalories}} kcal</view>
     </view>
     <view class="metric">
-      <view class="metric-label">&#x5269;&#x4f59;</view>
-      <view class="metric-small {{exceededTarget ? 'danger' : 'success'}}">{{remainingCalories}} kcal</view>
+      <view class="metric-label">剩余</view>
+      <view class="metric-small {{exceededTarget ? 'danger' : 'success'}}">{{displayRemainingCalories}} kcal</view>
     </view>
   </view>
 </view>

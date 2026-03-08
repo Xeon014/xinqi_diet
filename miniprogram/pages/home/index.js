@@ -3,21 +3,28 @@ const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const MEAL_TYPE_LABELS = {
-  BREAKFAST: "\u65e9\u9910",
-  LUNCH: "\u5348\u9910",
-  DINNER: "\u665a\u9910",
-  SNACK: "\u52a0\u9910",
+  BREAKFAST: "早餐",
+  LUNCH: "午餐",
+  DINNER: "晚餐",
+  SNACK: "加餐"
 };
+
+function toInteger(value) {
+  return Math.round(Number(value || 0));
+}
 
 function normalizeSummary(summary) {
   const records = (summary.records || []).map((record) => ({
     ...record,
-    mealTypeLabel: MEAL_TYPE_LABELS[record.mealType] || record.mealType,
+    mealTypeLabel: MEAL_TYPE_LABELS[record.mealType] || record.mealType
   }));
 
   return {
     ...summary,
-    records,
+    targetCalories: toInteger(summary.targetCalories),
+    consumedCalories: toInteger(summary.consumedCalories),
+    remainingCalories: toInteger(summary.remainingCalories),
+    records
   };
 }
 
@@ -29,10 +36,9 @@ Page({
       consumedCalories: 0,
       remainingCalories: 0,
       exceededTarget: false,
-      records: [],
-    },
+      records: []
+    }
   },
-
   onShow() {
     const app = getApp();
     if (app.globalData.refreshHomeOnShow) {
@@ -40,23 +46,16 @@ Page({
     }
     this.loadSummary();
   },
-
   onPullDownRefresh() {
     this.loadSummary(true);
   },
-
   loadSummary(stopPullDown = false) {
     getDailySummary(this.data.today)
       .then((summary) => {
-        this.setData({
-          summary: normalizeSummary(summary),
-        });
+        this.setData({ summary: normalizeSummary(summary) });
       })
       .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
         if (stopPullDown) {
@@ -64,16 +63,10 @@ Page({
         }
       });
   },
-
   handleCreate() {
-    wx.switchTab({
-      url: "/pages/record-create/index",
-    });
+    wx.switchTab({ url: "/pages/record-create/index" });
   },
-
   handleOpenProgress() {
-    wx.navigateTo({
-      url: "/pages/progress/index",
-    });
-  },
+    wx.navigateTo({ url: "/pages/progress/index" });
+  }
 });
