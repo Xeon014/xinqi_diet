@@ -101,4 +101,11 @@ Page({
   handleOpenProgress() {
     wx.navigateTo({ url: "/pages/progress/index" });
   },
+  handleOpenMeal(event) {
+    const mealType = event.currentTarget.dataset.mealType;
+    const recordDate = this.data.today;
+    wx.navigateTo({
+      url: `/pages/meal-editor/index?mode=edit&mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(recordDate)}`,
+    });
+  },
 });

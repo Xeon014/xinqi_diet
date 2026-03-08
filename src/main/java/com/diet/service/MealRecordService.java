@@ -5,6 +5,7 @@ import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
+import com.diet.domain.record.MealType;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.record.CreateMealRecordBatchRequest;
@@ -17,7 +18,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +52,7 @@ public class MealRecordService {
                 request.recordDate()
         );
         mealRecordRepository.save(record);
-        return toResponse(record, food.getName());
+        return toResponse(record, food);
     }
 
     public List<MealRecordResponse> createBatch(Long userId, CreateMealRecordBatchRequest request) {
@@ -71,18 +71,45 @@ public class MealRecordService {
                     request.recordDate()
             );
             mealRecordRepository.save(record);
-            responses.add(toResponse(record, food.getName()));
+            responses.add(toResponse(record, food));
         }
 
         return responses;
     }
 
+    public MealRecordResponse updateQuantity(Long userId, Long recordId, BigDecimal quantityInGram) {
+        getUser(userId);
+        MealRecord record = getOwnedRecord(userId, recordId);
+        Food food = getFood(record.getFoodId());
+        record.setQuantityInGram(quantityInGram);
+        record.setTotalCalories(MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram));
+        mealRecordRepository.save(record);
+        return toResponse(record, food);
+    }
+
+    public boolean deleteById(Long userId, Long recordId) {
+        getUser(userId);
+        MealRecord record = getOwnedRecord(userId, recordId);
+        mealRecordRepository.deleteById(record.getId());
+        return true;
+    }
+
     @Transactional(readOnly = true)
     public List<MealRecordResponse> findByUserAndDate(Long userId, LocalDate date) {
-        List<MealRecord> records = findEntitiesByUserAndDate(userId, date);
-        Map<Long, String> foodNames = loadFoodNames(records);
+        return findByUserAndDate(userId, date, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MealRecordResponse> findByUserAndDate(Long userId, LocalDate date, MealType mealType) {
+        List<MealRecord> records = mealType == null
+                ? mealRecordRepository.findByUserAndDate(userId, date)
+                : mealRecordRepository.findByUserAndDateAndMealType(userId, date, mealType);
+
         return records.stream()
-                .map(record -> toResponse(record, foodNames.get(record.getFoodId())))
+                .map(record -> {
+                    Food food = getFood(record.getFoodId());
+                    return toResponse(record, food);
+                })
                 .toList();
     }
 
@@ -96,21 +123,16 @@ public class MealRecordService {
         return mealRecordRepository.findByUserAndDateRange(userId, startDate, endDate);
     }
 
-    @Transactional(readOnly = true)
-    public Map<Long, String> loadFoodNames(List<MealRecord> records) {
-        return records.stream()
-                .map(MealRecord::getFoodId)
-                .distinct()
-                .map(this::getFood)
-                .collect(Collectors.toMap(Food::getId, Food::getName));
-    }
-
-    public MealRecordResponse toResponse(MealRecord record, String foodName) {
+    public MealRecordResponse toResponse(MealRecord record, Food food) {
         return new MealRecordResponse(
                 record.getId(),
                 record.getUserId(),
                 record.getFoodId(),
-                foodName,
+                food.getName(),
+                food.getCaloriesPer100g(),
+                food.getProteinPer100g(),
+                food.getCarbsPer100g(),
+                food.getFatPer100g(),
                 record.getMealType(),
                 record.getQuantityInGram(),
                 record.getTotalCalories(),
@@ -119,7 +141,7 @@ public class MealRecordService {
         );
     }
 
-    private MealRecord buildRecord(Long userId, Food food, com.diet.domain.record.MealType mealType, BigDecimal quantityInGram, LocalDate recordDate) {
+    private MealRecord buildRecord(Long userId, Food food, MealType mealType, BigDecimal quantityInGram, LocalDate recordDate) {
         BigDecimal totalCalories = MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram);
         return new MealRecord(userId, food.getId(), mealType, quantityInGram, totalCalories, recordDate);
     }
@@ -138,6 +160,15 @@ public class MealRecordService {
             foods.put(foodId, getFood(foodId));
         }
         return foods;
+    }
+
+    private MealRecord getOwnedRecord(Long userId, Long recordId) {
+        MealRecord record = mealRecordRepository.findById(recordId)
+                .orElseThrow(() -> new NotFoundException("record not found, id=" + recordId));
+        if (!record.getUserId().equals(userId)) {
+            throw new NotFoundException("record not found, id=" + recordId);
+        }
+        return record;
     }
 
     private UserProfile getUser(Long id) {

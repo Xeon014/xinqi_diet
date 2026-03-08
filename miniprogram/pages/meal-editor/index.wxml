@@ -3,6 +3,7 @@
     <view class="meal-badge">{{mealLabel}}</view>
     <view class="meal-date">{{recordDate}}</view>
     <view class="section-title">{{mealLabel}}</view>
+    <view class="section-subtitle">{{mode === 'edit' ? '调整已记录食物，保存后同步到首页' : '添加食物后一次性保存到该餐次'}}</view>
   </view>
 
   <view class="panel editor-panel">
@@ -14,7 +15,7 @@
     <view class="add-food" bindtap="handleChooseFood">+ 添加食物</view>
 
     <view wx:if="{{foodItems.length}}" class="food-list">
-      <view wx:for="{{foodItems}}" wx:key="id" class="food-item">
+      <view wx:for="{{foodItems}}" wx:key="index" class="food-item">
         <view class="food-item-head">
           <view class="food-name">{{item.name}}</view>
           <view class="food-remove" data-index="{{index}}" bindtap="handleRemoveFood">删除</view>
@@ -38,7 +39,7 @@
       </view>
     </view>
 
-    <view wx:else class="empty-tip">还没有添加食物，先点“添加食物”。</view>
+    <view wx:else class="empty-tip">{{mode === 'edit' ? '该餐次暂无食物，可点击“添加食物”继续补录。' : '还没有添加食物，先点“添加食物”。'}}</view>
   </view>
 
   <view class="panel summary-panel">
@@ -46,5 +47,5 @@
     <view class="summary-value">{{mealTotalCalories}} kcal</view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">完成</view>
+  <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
 </view>

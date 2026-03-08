@@ -31,7 +31,7 @@
   </view>
 
   <view wx:if="{{summary.mealCards.length}}" class="meal-panel">
-    <view wx:for="{{summary.mealCards}}" wx:key="mealType" class="meal-card panel">
+    <view wx:for="{{summary.mealCards}}" wx:key="mealType" class="meal-card panel" data-meal-type="{{item.mealType}}" bindtap="handleOpenMeal">
       <view class="meal-card-head">
         <view class="meal-card-title">{{item.mealTypeLabel}}</view>
         <view class="meal-card-count">{{item.foodCount}} 种</view>
@@ -42,3 +42,4 @@
 
   <empty-state wx:else title="今天还没记录" description="点一下“去记录”，从第一餐开始。" />
 </view>
+

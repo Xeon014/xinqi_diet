@@ -104,7 +104,7 @@ public class UserProfileService {
         BigDecimal fatIntake = sumNutrient(records, foods, Food::getFatPer100g);
 
         List<MealRecordResponse> responses = records.stream()
-                .map(record -> toMealRecordResponse(record, foods.get(record.getFoodId()).getName()))
+                .map(record -> toMealRecordResponse(record, foods.get(record.getFoodId())))
                 .toList();
 
         return new DailySummaryResponse(
@@ -229,12 +229,16 @@ public class UserProfileService {
         );
     }
 
-    private MealRecordResponse toMealRecordResponse(MealRecord record, String foodName) {
+    private MealRecordResponse toMealRecordResponse(MealRecord record, Food food) {
         return new MealRecordResponse(
                 record.getId(),
                 record.getUserId(),
                 record.getFoodId(),
-                foodName,
+                food.getName(),
+                food.getCaloriesPer100g(),
+                food.getProteinPer100g(),
+                food.getCarbsPer100g(),
+                food.getFatPer100g(),
                 record.getMealType(),
                 record.getQuantityInGram(),
                 record.getTotalCalories(),
@@ -250,3 +254,4 @@ public class UserProfileService {
         return name.trim();
     }
 }
+
