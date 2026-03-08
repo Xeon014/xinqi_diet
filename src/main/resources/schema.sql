@@ -31,8 +31,10 @@ CREATE TABLE IF NOT EXISTS food (
     source_ref VARCHAR(100) NULL COMMENT '来源数据主键',
     aliases VARCHAR(500) NULL COMMENT '同义词，逗号分隔',
     is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置食物',
+    sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类内排序值，越小越靠前',
     created_at DATETIME NOT NULL COMMENT '创建时间',
-    UNIQUE KEY uk_food_name (name)
+    UNIQUE KEY uk_food_name (name),
+    KEY idx_food_category_sort (category, sort_order, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='食物基础信息表';
 
 CREATE TABLE IF NOT EXISTS meal_record (

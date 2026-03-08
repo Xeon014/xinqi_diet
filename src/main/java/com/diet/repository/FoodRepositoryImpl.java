@@ -1,6 +1,5 @@
 package com.diet.repository;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.mapper.FoodMapper;
@@ -43,15 +42,6 @@ public class FoodRepositoryImpl implements FoodRepository {
 
     @Override
     public List<Food> findAll(String keyword) {
-        LambdaQueryWrapper<Food> queryWrapper = new LambdaQueryWrapper<Food>()
-                .orderByAsc(Food::getName);
-        if (keyword != null && !keyword.isBlank()) {
-            String trimmedKeyword = keyword.trim();
-            queryWrapper.and(wrapper -> wrapper
-                    .like(Food::getName, trimmedKeyword)
-                    .or()
-                    .like(Food::getAliases, trimmedKeyword));
-        }
-        return foodMapper.selectList(queryWrapper);
+        return foodMapper.findAll(keyword);
     }
 }

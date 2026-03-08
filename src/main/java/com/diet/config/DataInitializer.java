@@ -11,6 +11,7 @@ import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +38,7 @@ public class DataInitializer {
             migrateUserProfileTable(jdbcTemplate);
             migrateFoodTable(jdbcTemplate);
             seedBuiltinFoodsIfNeeded(foodRepository, jdbcTemplate);
+            backfillFoodSortOrder(jdbcTemplate);
             seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository);
         };
     }
@@ -136,6 +138,43 @@ public class DataInitializer {
         ensureColumn(jdbcTemplate, "food", "source_ref", "ALTER TABLE food ADD COLUMN source_ref VARCHAR(100) NULL COMMENT '来源数据主键' AFTER source");
         ensureColumn(jdbcTemplate, "food", "aliases", "ALTER TABLE food ADD COLUMN aliases VARCHAR(500) NULL COMMENT '同义词，逗号分隔' AFTER source_ref");
         ensureColumn(jdbcTemplate, "food", "is_builtin", "ALTER TABLE food ADD COLUMN is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置食物' AFTER aliases");
+        ensureColumn(jdbcTemplate, "food", "sort_order", "ALTER TABLE food ADD COLUMN sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类内排序值，越小越靠前' AFTER is_builtin");
+        ensureIndex(
+                jdbcTemplate,
+                "food",
+                "idx_food_category_sort",
+                "CREATE INDEX idx_food_category_sort ON food(category, sort_order, id)"
+        );
+    }
+
+    private void backfillFoodSortOrder(JdbcTemplate jdbcTemplate) {
+        if (!hasColumn(jdbcTemplate, "food", "sort_order")) {
+            return;
+        }
+
+        jdbcTemplate.execute("UPDATE food SET sort_order = 9999 WHERE sort_order IS NULL");
+
+        applyCategorySortOrder(jdbcTemplate, "主食", List.of("米饭", "糙米饭", "燕麦片", "全麦面包", "面条", "馒头"));
+        applyCategorySortOrder(jdbcTemplate, "肉蛋奶", List.of("鸡胸肉", "鸡蛋", "牛奶", "酸奶", "虾仁", "三文鱼"));
+        applyCategorySortOrder(jdbcTemplate, "蔬果", List.of("西兰花", "菠菜", "番茄", "黄瓜", "苹果", "香蕉"));
+        applyCategorySortOrder(jdbcTemplate, "豆制品", List.of("豆腐", "豆浆", "豆干", "毛豆"));
+        applyCategorySortOrder(jdbcTemplate, "饮品", List.of("黑咖啡", "无糖绿茶", "无糖豆浆", "柠檬水"));
+        applyCategorySortOrder(jdbcTemplate, "零食", List.of("混合坚果", "杏仁", "海苔", "高蛋白棒"));
+        applyCategorySortOrder(jdbcTemplate, "其他", List.of("番茄炒蛋", "三明治", "寿司", "饭团"));
+    }
+
+    private void applyCategorySortOrder(JdbcTemplate jdbcTemplate, String category, List<String> foodNames) {
+        for (int i = 0; i < foodNames.size(); i++) {
+            int sortOrder = i + 1;
+            String name = foodNames.get(i);
+            jdbcTemplate.update(
+                    "UPDATE food SET sort_order = ? WHERE category = ? AND sort_order = 9999 AND (name = ? OR name LIKE CONCAT(?, '（%'))",
+                    sortOrder,
+                    category,
+                    name,
+                    name
+            );
+        }
     }
 
     private void ensureNullableEmail(JdbcTemplate jdbcTemplate) {
