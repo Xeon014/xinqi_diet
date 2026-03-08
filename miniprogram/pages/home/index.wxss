@@ -1,95 +1,150 @@
 .home-page {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 18rpx;
 }
 
 .hero {
-  background: radial-gradient(circle at top left, rgba(47, 139, 120, 0.18), transparent 45%), rgba(255, 253, 248, 0.85);
-  border-radius: 30rpx;
-  padding: 32rpx 28rpx;
-  position: relative;
+  border: 1rpx solid rgba(30, 90, 79, 0.16);
+  padding: 24rpx;
 }
 
-.hero-kicker {
-  color: #1f6f5f;
-  font-size: 24rpx;
-  font-weight: 600;
+.hero-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
 }
 
 .hero-title {
-  color: #30241a;
-  font-size: 52rpx;
+  color: #1e5a4f;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.hero-date {
+  color: #74685c;
+  font-size: 22rpx;
+}
+
+.hero-main {
+  align-items: baseline;
+  display: flex;
+  gap: 10rpx;
+  margin-top: 12rpx;
+}
+
+.hero-value {
+  color: #2f2a24;
+  font-size: 64rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hero-unit {
+  color: #74685c;
+  font-size: 24rpx;
+}
+
+.hero-status {
+  background: rgba(30, 90, 79, 0.1);
+  border-radius: 999rpx;
+  color: #1e5a4f;
+  display: inline-flex;
+  font-size: 22rpx;
+  font-weight: 600;
+  margin-top: 14rpx;
+  padding: 8rpx 16rpx;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 12rpx;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stat-card {
+  border: 1rpx solid rgba(30, 90, 79, 0.12);
+  min-height: 150rpx;
+  padding: 20rpx;
+}
+
+.stat-label {
+  color: #74685c;
+  font-size: 22rpx;
+}
+
+.stat-value {
+  color: #2f2a24;
+  font-size: 34rpx;
   font-weight: 700;
   margin-top: 10rpx;
+  line-height: 1.2;
 }
 
-.hero-desc {
-  color: #7d7061;
-  font-size: 24rpx;
-  line-height: 1.6;
-  margin-top: 14rpx;
+.stat-unit {
+  color: #74685c;
+  font-size: 22rpx;
+  margin-top: 8rpx;
 }
 
-.hero-badge {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 999rpx;
-  color: #8f8373;
-  font-size: 20rpx;
-  padding: 10rpx 18rpx;
-  position: absolute;
-  right: 24rpx;
-  top: 24rpx;
-}
-
-.action-grid {
+.action-row {
   display: grid;
-  gap: 16rpx;
-  grid-template-columns: 1.1fr 0.9fr;
+  gap: 12rpx;
+  grid-template-columns: 1.25fr 0.75fr;
 }
 
 .section-head {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-top: 10rpx;
+  margin-top: 2rpx;
 }
 
 .record-count {
-  color: #8f8373;
-  font-size: 24rpx;
+  background: rgba(30, 90, 79, 0.09);
+  border-radius: 999rpx;
+  color: #1e5a4f;
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 8rpx 16rpx;
 }
 
-.meal-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
+.meal-list {
+  padding: 4rpx 20rpx;
 }
 
-.meal-card {
-  padding: 22rpx 24rpx;
-}
-
-.meal-card-head {
+.meal-item {
   align-items: center;
+  border-bottom: 1rpx solid rgba(70, 57, 47, 0.12);
   display: flex;
   justify-content: space-between;
+  min-height: 96rpx;
+  padding: 16rpx 0;
 }
 
-.meal-card-title {
-  color: #34281e;
+.meal-item:last-child {
+  border-bottom: 0;
+}
+
+.meal-main {
+  flex: 1;
+}
+
+.meal-name {
+  color: #2f2a24;
   font-size: 30rpx;
   font-weight: 700;
 }
 
-.meal-card-count {
-  color: #8f8373;
-  font-size: 24rpx;
+.meal-meta {
+  color: #74685c;
+  font-size: 22rpx;
+  margin-top: 6rpx;
 }
 
-.meal-card-calories {
-  color: #1f6f5f;
-  font-size: 34rpx;
+.meal-calories {
+  color: #1e5a4f;
+  font-size: 28rpx;
   font-weight: 700;
-  margin-top: 12rpx;
+  margin-left: 16rpx;
 }

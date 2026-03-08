@@ -1,9 +1,7 @@
 <view class="page-shell record-entry-page">
   <view class="panel date-panel">
-    <view>
-      <view class="section-title">选餐次</view>
-      <view class="section-subtitle">先选日期，再点餐次添加食物</view>
-    </view>
+    <view class="section-title">选择餐次</view>
+    <view class="section-subtitle">先选日期，再进入对应餐次</view>
 
     <view class="field-group compact-group">
       <view class="field-label">日期</view>
@@ -13,10 +11,12 @@
     </view>
   </view>
 
-  <view class="meal-grid">
-    <view wx:for="{{mealTypes}}" wx:key="value" class="meal-card panel" data-meal-type="{{item.value}}" bindtap="handleOpenEditor">
-      <view class="meal-title">{{item.label}}</view>
-      <view class="meal-note">{{item.note}}</view>
+  <view class="meal-list panel">
+    <view wx:for="{{mealTypes}}" wx:key="value" class="meal-item" data-meal-type="{{item.value}}" bindtap="handleOpenEditor">
+      <view class="meal-main">
+        <view class="meal-title">{{item.label}}</view>
+        <view class="meal-note">{{item.note}}</view>
+      </view>
       <view class="meal-arrow">></view>
     </view>
   </view>

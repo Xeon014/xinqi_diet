@@ -49,11 +49,14 @@ function normalizeSummary(summary) {
     totalCalories: toInteger(record.totalCalories),
   }));
 
+  const remainingCalories = toInteger(summary.remainingCalories);
+
   return {
     ...summary,
     targetCalories: toInteger(summary.targetCalories),
     consumedCalories: toInteger(summary.consumedCalories),
-    remainingCalories: toInteger(summary.remainingCalories),
+    remainingCalories,
+    remainingAbs: Math.abs(remainingCalories),
     records,
     mealCards: buildMealCards(records),
   };
@@ -66,6 +69,7 @@ Page({
       targetCalories: 0,
       consumedCalories: 0,
       remainingCalories: 0,
+      remainingAbs: 0,
       exceededTarget: false,
       records: [],
       mealCards: [],

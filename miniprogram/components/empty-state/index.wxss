@@ -1,25 +1,35 @@
 .empty {
   align-items: center;
+  border: 1rpx dashed rgba(70, 57, 47, 0.22);
   display: flex;
   flex-direction: column;
   padding: 52rpx 28rpx;
 }
 
 .empty-icon {
-  color: #c1b5a7;
-  font-size: 52rpx;
+  align-items: center;
+  background: rgba(30, 90, 79, 0.1);
+  border-radius: 14rpx;
+  color: #1e5a4f;
+  display: flex;
+  font-size: 44rpx;
+  font-weight: 700;
+  height: 64rpx;
+  justify-content: center;
+  width: 64rpx;
 }
 
 .empty-title {
-  color: #45382d;
+  color: #3b3128;
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 18rpx;
 }
 
 .empty-description {
-  color: #8f8373;
+  color: #7d7062;
   font-size: 24rpx;
+  line-height: 1.6;
   margin-top: 10rpx;
   text-align: center;
 }

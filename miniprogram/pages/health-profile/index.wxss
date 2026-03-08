@@ -10,48 +10,52 @@
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
+  grid-template-columns: 1.15fr 0.85fr;
   margin-top: 24rpx;
 }
 
 .metric-card {
-  padding: 24rpx;
   border-radius: 24rpx;
+  padding: 24rpx;
+}
+
+.metric-card:nth-child(odd) {
+  margin-right: 12rpx;
 }
 
 .metric-card.green {
-  background: linear-gradient(180deg, #f4f8f2 0%, #edf6ea 100%);
+  background: linear-gradient(180deg, #eef7f3 0%, #e5f1eb 100%);
 }
 
 .metric-card.sand {
-  background: linear-gradient(180deg, #fbf5ea 0%, #f8ecdb 100%);
+  background: linear-gradient(180deg, #faf3e8 0%, #f6e8d7 100%);
 }
 
 .metric-card.teal {
-  background: linear-gradient(180deg, #edf8f5 0%, #e0f3ed 100%);
+  background: linear-gradient(180deg, #edf7f5 0%, #e2f1ec 100%);
 }
 
 .metric-card.orange {
-  background: linear-gradient(180deg, #fff6ee 0%, #fee8d6 100%);
+  background: linear-gradient(180deg, #fff4ea 0%, #fbe4d4 100%);
 }
 
 .metric-label {
-  color: #6b5f51;
+  color: #685c50;
   font-size: 24rpx;
 }
 
 .metric-value {
-  margin-top: 12rpx;
-  color: #2f251c;
+  color: #2f2a24;
   font-size: 38rpx;
   font-weight: 700;
+  margin-top: 12rpx;
 }
 
 .metric-unit {
-  margin-top: 8rpx;
-  color: #7d7061;
+  color: #786c60;
   font-size: 22rpx;
+  margin-top: 8rpx;
 }
 
 .sub-module {
@@ -59,40 +63,40 @@
 }
 
 .sub-title {
-  color: #34281e;
+  color: #2f2a24;
   font-size: 28rpx;
   font-weight: 700;
 }
 
 .calorie-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 18rpx;
 }
 
 .calorie-box {
-  padding: 22rpx;
+  background: #fbf7f0;
   border-radius: 22rpx;
-  background: #fbf8f2;
+  padding: 22rpx;
 }
 
 .calorie-label {
-  color: #7d7061;
+  color: #786c60;
   font-size: 22rpx;
 }
 
 .calorie-value {
-  margin-top: 12rpx;
-  color: #2f251c;
+  color: #2f2a24;
   font-size: 36rpx;
   font-weight: 700;
+  margin-top: 12rpx;
 }
 
 .calorie-unit {
-  margin-top: 8rpx;
-  color: #7d7061;
+  color: #786c60;
   font-size: 22rpx;
+  margin-top: 8rpx;
 }
 
 .compact-input {
@@ -100,21 +104,22 @@
 }
 
 .result-pill {
-  margin-top: 18rpx;
-  display: inline-flex;
-  padding: 10rpx 18rpx;
   border-radius: 999rpx;
+  display: inline-flex;
   font-size: 22rpx;
+  font-weight: 600;
+  margin-top: 18rpx;
+  padding: 10rpx 18rpx;
 }
 
 .result-pill.success {
-  background: rgba(31, 111, 95, 0.12);
-  color: #1f6f5f;
+  background: rgba(30, 90, 79, 0.14);
+  color: #1e5a4f;
 }
 
 .result-pill.danger {
-  background: rgba(191, 77, 52, 0.12);
-  color: #bf4d34;
+  background: rgba(185, 94, 58, 0.14);
+  color: #b95e3a;
 }
 
 .nutrient-module {
@@ -123,34 +128,34 @@
 
 .nutrient-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 18rpx;
 }
 
 .nutrient-card {
-  padding: 22rpx 18rpx;
+  background: #fbf7f0;
   border-radius: 22rpx;
-  background: #fbf8f2;
+  padding: 22rpx 18rpx;
   text-align: center;
 }
 
 .nutrient-label {
-  color: #6f6457;
+  color: #6e6256;
   font-size: 22rpx;
 }
 
 .nutrient-value {
-  margin-top: 10rpx;
-  color: #2f251c;
+  color: #2f2a24;
   font-size: 34rpx;
   font-weight: 700;
+  margin-top: 10rpx;
 }
 
 .nutrient-unit {
-  margin-top: 6rpx;
-  color: #8a7f71;
+  color: #84786b;
   font-size: 20rpx;
+  margin-top: 6rpx;
 }
 
 .field-group {
@@ -158,19 +163,18 @@
 }
 
 .field-picker {
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  border-radius: 22rpx;
+  color: #2f2a24;
+  font-size: 28rpx;
   min-height: 88rpx;
   padding: 24rpx;
-  border-radius: 22rpx;
-  background: #fff;
-  border: 2rpx solid rgba(93, 76, 58, 0.08);
-  box-sizing: border-box;
-  color: #2d241b;
-  font-size: 28rpx;
 }
 
 .coming-soon {
-  margin-top: 18rpx;
-  color: #8a7f71;
+  color: #857a6d;
   font-size: 24rpx;
   line-height: 1.7;
+  margin-top: 18rpx;
 }

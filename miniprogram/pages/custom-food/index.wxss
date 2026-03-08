@@ -5,6 +5,7 @@
 }
 
 .custom-panel {
+  border-left: 8rpx solid rgba(30, 90, 79, 0.68);
   padding: 28rpx;
 }
 
@@ -28,15 +29,16 @@
 }
 
 .category-chip {
-  background: rgba(93, 76, 58, 0.06);
+  background: rgba(70, 57, 47, 0.08);
   border-radius: 20rpx;
-  color: #645648;
+  color: #64584c;
   font-size: 24rpx;
+  font-weight: 600;
   padding: 16rpx 20rpx;
 }
 
 .category-chip.active {
-  background: rgba(31, 111, 95, 0.12);
-  color: #1f6f5f;
+  background: rgba(30, 90, 79, 0.14);
+  color: #1e5a4f;
   font-weight: 700;
 }

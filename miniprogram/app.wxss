@@ -1,49 +1,73 @@
 page {
-  background: linear-gradient(180deg, #f6f3ee 0%, #efe7dc 100%);
-  color: #2d241b;
-  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(30, 90, 79, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(185, 94, 58, 0.1), transparent 30%),
+    linear-gradient(180deg, #f3efe7 0%, #ede6da 56%, #e7decf 100%);
+  color: #2f2a24;
+  font-family: "PingFang SC", "Noto Sans SC", sans-serif;
   min-height: 100%;
 }
 
+page,
+view,
+text,
+input,
+picker {
+  box-sizing: border-box;
+}
+
 .page-shell {
-  padding: 28rpx 24rpx 40rpx;
+  padding: 30rpx 26rpx 52rpx;
 }
 
 .panel {
-  background: rgba(255, 253, 248, 0.92);
-  border: 1rpx solid rgba(93, 76, 58, 0.08);
-  border-radius: 28rpx;
-  box-shadow: 0 18rpx 48rpx rgba(71, 54, 36, 0.08);
+  background: rgba(255, 253, 248, 0.94);
+  border: 1rpx solid rgba(70, 57, 47, 0.12);
+  border-radius: 30rpx;
+  box-shadow:
+    0 24rpx 56rpx rgba(55, 41, 31, 0.1),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.68);
 }
 
 .section-title {
-  color: #3d3025;
-  font-size: 34rpx;
+  color: #2f2a24;
+  font-size: 35rpx;
   font-weight: 700;
+  letter-spacing: 1rpx;
 }
 
 .section-subtitle {
-  color: #8f8373;
+  color: #7d7062;
   font-size: 24rpx;
+  line-height: 1.55;
 }
 
 .primary-button {
   align-items: center;
-  background: linear-gradient(135deg, #1f6f5f 0%, #2f8b78 100%);
+  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
+  border: 1rpx solid rgba(19, 62, 54, 0.22);
   border-radius: 999rpx;
-  color: #fff;
+  box-shadow: 0 14rpx 24rpx rgba(30, 90, 79, 0.22);
+  color: #fffef8;
   display: flex;
   font-size: 28rpx;
-  font-weight: 600;
-  height: 88rpx;
+  font-weight: 700;
+  height: 90rpx;
   justify-content: center;
+  letter-spacing: 1rpx;
+}
+
+.primary-button:active {
+  opacity: 0.92;
+  transform: translateY(2rpx);
 }
 
 .ghost-button {
   align-items: center;
-  background: rgba(31, 111, 95, 0.08);
+  background: rgba(30, 90, 79, 0.08);
+  border: 1rpx solid rgba(30, 90, 79, 0.22);
   border-radius: 999rpx;
-  color: #1f6f5f;
+  color: #1e5a4f;
   display: flex;
   font-size: 26rpx;
   font-weight: 600;
@@ -51,33 +75,37 @@ page {
   justify-content: center;
 }
 
+.ghost-button:active {
+  opacity: 0.86;
+}
+
 .pill {
   border-radius: 999rpx;
   font-size: 22rpx;
+  font-weight: 600;
   padding: 10rpx 20rpx;
 }
 
 .pill-success {
-  background: rgba(31, 111, 95, 0.12);
-  color: #1f6f5f;
+  background: rgba(30, 90, 79, 0.14);
+  color: #1e5a4f;
 }
 
 .pill-danger {
-  background: rgba(191, 77, 52, 0.12);
-  color: #bf4d34;
+  background: rgba(185, 94, 58, 0.14);
+  color: #b95e3a;
 }
 
 .field-label {
-  color: #5e5145;
+  color: #5a4f44;
   font-size: 24rpx;
   margin-bottom: 12rpx;
 }
 
 .field-input {
-  background: #fff;
-  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.12);
   border-radius: 22rpx;
-  box-sizing: border-box;
   font-size: 28rpx;
   height: 88rpx;
   padding: 0 24rpx;

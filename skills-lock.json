@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "ui-design": {
+      "source": "tencentcloudbase/skills",
+      "sourceType": "github",
+      "computedHash": "289616bfd46459c9f5fac0a3eabcccc3b1b8039d31adabb49139262361b08aed"
+    }
+  }
+}
