@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -32,7 +34,8 @@ public class UserProfile {
 
     private Gender gender;
 
-    private Integer age;
+    @TableField("birth_date")
+    private LocalDate birthDate;
 
     private BigDecimal height;
 
@@ -48,56 +51,79 @@ public class UserProfile {
     @TableField("target_weight")
     private BigDecimal targetWeight;
 
+    @TableField("custom_bmr")
+    private Integer customBmr;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
     public UserProfile(
             String name,
             Gender gender,
-            Integer age,
+            LocalDate birthDate,
             BigDecimal height,
             ActivityLevel activityLevel,
             Integer dailyCalorieTarget,
             BigDecimal currentWeight,
-            BigDecimal targetWeight
+            BigDecimal targetWeight,
+            Integer customBmr
     ) {
         this.name = name;
         this.gender = gender;
-        this.age = age;
+        this.birthDate = birthDate;
         this.height = height;
         this.activityLevel = activityLevel;
         this.dailyCalorieTarget = dailyCalorieTarget;
         this.currentWeight = currentWeight;
         this.targetWeight = targetWeight;
+        this.customBmr = customBmr;
         this.createdAt = LocalDateTime.now();
     }
 
     public void updateProfile(
             String name,
             Gender gender,
-            Integer age,
+            LocalDate birthDate,
             BigDecimal height,
             ActivityLevel activityLevel,
             Integer dailyCalorieTarget,
             BigDecimal currentWeight,
-            BigDecimal targetWeight
+            BigDecimal targetWeight,
+            Integer customBmr
     ) {
         this.name = name;
         this.gender = gender;
-        this.age = age;
+        this.birthDate = birthDate;
         this.height = height;
         this.activityLevel = activityLevel;
         this.dailyCalorieTarget = dailyCalorieTarget;
         this.currentWeight = currentWeight;
         this.targetWeight = targetWeight;
+        this.customBmr = customBmr;
+    }
+
+    public Integer calculateAge() {
+        return Period.between(birthDate, LocalDate.now()).getYears();
+    }
+
+    public BigDecimal calculateBmi() {
+        BigDecimal heightInMeter = height.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        return currentWeight.divide(heightInMeter.multiply(heightInMeter), 2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calculateFormulaBmr() {
+        BigDecimal base = currentWeight.multiply(TEN)
+                .add(height.multiply(SIX_POINT_TWENTY_FIVE))
+                .subtract(BigDecimal.valueOf(calculateAge()).multiply(FIVE));
+        BigDecimal offset = gender == Gender.MALE ? MALE_OFFSET : FEMALE_OFFSET;
+        return base.add(offset).setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal calculateBmr() {
-        BigDecimal base = currentWeight.multiply(TEN)
-                .add(height.multiply(SIX_POINT_TWENTY_FIVE))
-                .subtract(BigDecimal.valueOf(age).multiply(FIVE));
-        BigDecimal offset = gender == Gender.MALE ? MALE_OFFSET : FEMALE_OFFSET;
-        return base.add(offset).setScale(2, RoundingMode.HALF_UP);
+        if (customBmr != null && customBmr > 0) {
+            return BigDecimal.valueOf(customBmr).setScale(2, RoundingMode.HALF_UP);
+        }
+        return calculateFormulaBmr();
     }
 
     public BigDecimal calculateTdee() {

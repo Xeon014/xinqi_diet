@@ -1,0 +1,86 @@
+<view class="page-shell health-page" wx:if="{{profile && summary}}">
+  <view class="panel module-panel">
+    <view class="section-title">核心指标</view>
+
+    <view class="metrics-grid">
+      <view class="metric-card green">
+        <view class="metric-label">体重</view>
+        <view class="metric-value">{{profile.currentWeight}}</view>
+        <view class="metric-unit">kg</view>
+      </view>
+      <view class="metric-card sand">
+        <view class="metric-label">BMI</view>
+        <view class="metric-value">{{profile.bmi}}</view>
+        <view class="metric-unit">指数</view>
+      </view>
+      <view class="metric-card teal">
+        <view class="metric-label">基础代谢(BMR)</view>
+        <view class="metric-value">{{profile.bmr}}</view>
+        <view class="metric-unit">kcal/天</view>
+      </view>
+      <view class="metric-card orange">
+        <view class="metric-label">每日消耗(TDEE)</view>
+        <view class="metric-value">{{profile.tdee}}</view>
+        <view class="metric-unit">kcal/天</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel module-panel">
+    <view class="section-title">饮食管理</view>
+
+    <view class="sub-module">
+      <view class="sub-title">热量摄入</view>
+      <view class="calorie-row">
+        <view class="calorie-box">
+          <view class="calorie-label">今日摄入</view>
+          <view class="calorie-value">{{summary.consumedCalories}}</view>
+          <view class="calorie-unit">kcal</view>
+        </view>
+        <view class="calorie-box">
+          <view class="calorie-label">目标热量</view>
+          <input class="field-input compact-input" type="number" value="{{settings.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" />
+        </view>
+      </view>
+      <view class="result-pill {{summary.exceededTarget ? 'danger' : 'success'}}">
+        {{summary.exceededTarget ? '今日已超出目标热量' : '今日剩余热量 ' + summary.remainingCalories + ' kcal'}}
+      </view>
+    </view>
+
+    <view class="sub-module nutrient-module">
+      <view class="sub-title">营养均衡度</view>
+      <view class="nutrient-grid">
+        <view class="nutrient-card">
+          <view class="nutrient-label">蛋白质</view>
+          <view class="nutrient-value">{{summary.proteinIntake}}</view>
+          <view class="nutrient-unit">g</view>
+        </view>
+        <view class="nutrient-card">
+          <view class="nutrient-label">碳水</view>
+          <view class="nutrient-value">{{summary.carbsIntake}}</view>
+          <view class="nutrient-unit">g</view>
+        </view>
+        <view class="nutrient-card">
+          <view class="nutrient-label">脂肪</view>
+          <view class="nutrient-value">{{summary.fatIntake}}</view>
+          <view class="nutrient-unit">g</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel module-panel">
+    <view class="section-title">运动燃脂</view>
+
+    <view class="field-group">
+      <view class="field-label">活动量</view>
+      <picker mode="selector" range="{{activityOptions}}" range-key="label" value="{{activityIndex}}" bindchange="handleActivityChange">
+        <view class="field-picker">{{activityOptions[activityIndex].label}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSave">保存</view>
+</view>
+
+<empty-state wx:else title="健康档案加载失败" description="下拉刷新后重试。" />

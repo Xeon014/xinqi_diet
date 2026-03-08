@@ -1,0 +1,93 @@
+.personal-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.personal-panel {
+  padding: 28rpx;
+}
+
+.age-chip {
+  display: inline-flex;
+  margin-top: 22rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(31, 111, 95, 0.1);
+  color: #1f6f5f;
+  font-size: 22rpx;
+}
+
+.field-group {
+  margin-top: 28rpx;
+}
+
+.two-column {
+  display: flex;
+  gap: 16rpx;
+}
+
+.field-half {
+  flex: 1;
+}
+
+.field-picker {
+  min-height: 88rpx;
+  padding: 24rpx;
+  border-radius: 22rpx;
+  background: #fff;
+  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  box-sizing: border-box;
+  color: #2d241b;
+  font-size: 28rpx;
+}
+
+.bmr-panel {
+  padding: 28rpx;
+  background: linear-gradient(180deg, rgba(237, 248, 245, 0.95) 0%, rgba(228, 244, 239, 0.95) 100%);
+}
+
+.bmr-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.bmr-subtitle {
+  margin-top: 10rpx;
+  color: #6f7d77;
+  font-size: 24rpx;
+}
+
+.bmr-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(31, 111, 95, 0.12);
+  color: #1f6f5f;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.bmr-input-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.bmr-input {
+  flex: 1;
+}
+
+.bmr-unit {
+  padding: 0 18rpx;
+  height: 88rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.82);
+  color: #44655d;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}

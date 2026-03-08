@@ -37,44 +37,45 @@ public class DataInitializer {
             }
 
             UserProfile user = new UserProfile(
-                    "Demo User",
+                    "微信用户",
                     Gender.FEMALE,
-                    28,
+                    LocalDate.of(1998, 5, 20),
                     new BigDecimal("165.00"),
                     ActivityLevel.LIGHT,
                     1800,
                     new BigDecimal("58.50"),
-                    new BigDecimal("52.00")
+                    new BigDecimal("52.00"),
+                    1350
             );
             userProfileRepository.save(user);
 
             Food chickenBreast = new Food(
-                    "Chicken Breast",
+                    "鸡胸肉",
                     new BigDecimal("133"),
                     new BigDecimal("24.00"),
                     new BigDecimal("0.00"),
                     new BigDecimal("5.00"),
-                    "Protein"
+                    "高蛋白"
             );
             foodRepository.save(chickenBreast);
 
             Food oatmeal = new Food(
-                    "Oatmeal",
+                    "燕麦片",
                     new BigDecimal("389"),
                     new BigDecimal("16.90"),
                     new BigDecimal("66.30"),
                     new BigDecimal("6.90"),
-                    "Carbs"
+                    "主食"
             );
             foodRepository.save(oatmeal);
 
             Food broccoli = new Food(
-                    "Broccoli",
+                    "西兰花",
                     new BigDecimal("34"),
                     new BigDecimal("2.80"),
                     new BigDecimal("6.60"),
                     new BigDecimal("0.40"),
-                    "Vegetable"
+                    "蔬菜"
             );
             foodRepository.save(broccoli);
 
@@ -108,9 +109,11 @@ public class DataInitializer {
     private void migrateUserProfileTable(JdbcTemplate jdbcTemplate) {
         ensureNullableEmail(jdbcTemplate);
         ensureColumn(jdbcTemplate, "gender", "ALTER TABLE user_profile ADD COLUMN gender VARCHAR(10) NOT NULL DEFAULT 'FEMALE'");
-        ensureColumn(jdbcTemplate, "age", "ALTER TABLE user_profile ADD COLUMN age INT NOT NULL DEFAULT 25");
+        ensureColumn(jdbcTemplate, "birth_date", "ALTER TABLE user_profile ADD COLUMN birth_date DATE NULL");
         ensureColumn(jdbcTemplate, "height", "ALTER TABLE user_profile ADD COLUMN height DECIMAL(5, 2) NOT NULL DEFAULT 165.00");
         ensureColumn(jdbcTemplate, "activity_level", "ALTER TABLE user_profile ADD COLUMN activity_level VARCHAR(20) NOT NULL DEFAULT 'LIGHT'");
+        ensureColumn(jdbcTemplate, "custom_bmr", "ALTER TABLE user_profile ADD COLUMN custom_bmr INT NULL COMMENT '用户自定义基础代谢，单位 kcal'");
+        backfillBirthDate(jdbcTemplate);
     }
 
     private void ensureNullableEmail(JdbcTemplate jdbcTemplate) {
@@ -124,6 +127,18 @@ public class DataInitializer {
         if ("NO".equalsIgnoreCase(isNullable)) {
             jdbcTemplate.execute("ALTER TABLE user_profile MODIFY COLUMN email VARCHAR(100) NULL");
         }
+    }
+
+    private void backfillBirthDate(JdbcTemplate jdbcTemplate) {
+        if (!hasColumn(jdbcTemplate, "birth_date")) {
+            return;
+        }
+        boolean hasAgeColumn = hasColumn(jdbcTemplate, "age");
+        if (hasAgeColumn) {
+            jdbcTemplate.execute("UPDATE user_profile SET birth_date = DATE_SUB(CURDATE(), INTERVAL age YEAR) WHERE birth_date IS NULL AND age IS NOT NULL");
+        }
+        jdbcTemplate.execute("UPDATE user_profile SET birth_date = '2000-01-01' WHERE birth_date IS NULL");
+        jdbcTemplate.execute("ALTER TABLE user_profile MODIFY COLUMN birth_date DATE NOT NULL");
     }
 
     private void ensureColumn(JdbcTemplate jdbcTemplate, String columnName, String sql) {

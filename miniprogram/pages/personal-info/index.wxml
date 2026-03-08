@@ -1,0 +1,55 @@
+<view class="page-shell personal-page" wx:if="{{profile}}">
+  <view class="panel personal-panel">
+    <view class="section-title">个人信息</view>
+    <view class="age-chip">{{profile.age}} 岁</view>
+
+    <view class="field-group">
+      <view class="field-label">性别</view>
+      <picker mode="selector" range="{{genderOptions}}" range-key="label" value="{{genderIndex}}" bindchange="handleGenderChange">
+        <view class="field-picker">{{genderOptions[genderIndex].label}}</view>
+      </picker>
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">生日</view>
+      <picker mode="date" value="{{form.birthDate}}" end="{{maxBirthDate}}" bindchange="handleBirthDateChange">
+        <view class="field-picker">{{form.birthDate || '请选择生日'}}</view>
+      </picker>
+    </view>
+
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">身高(cm)</view>
+        <input class="field-input" type="digit" value="{{form.height}}" data-field="height" bindinput="handleInput" />
+      </view>
+      <view class="field-half">
+        <view class="field-label">当前体重(kg)</view>
+        <input class="field-input" type="digit" value="{{form.currentWeight}}" data-field="currentWeight" bindinput="handleInput" />
+      </view>
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">目标体重(kg)</view>
+      <input class="field-input" type="digit" value="{{form.targetWeight}}" data-field="targetWeight" bindinput="handleInput" />
+    </view>
+  </view>
+
+  <view class="panel bmr-panel">
+    <view class="bmr-head">
+      <view>
+        <view class="section-title">基础代谢</view>
+        <view class="bmr-subtitle">可填写你更认可的日常代谢值</view>
+      </view>
+      <view class="bmr-badge">BMR</view>
+    </view>
+
+    <view class="bmr-input-row">
+      <input class="field-input bmr-input" type="number" value="{{form.customBmr}}" data-field="customBmr" bindinput="handleInput" />
+      <view class="bmr-unit">kcal/天</view>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSave">保存</view>
+</view>
+
+<empty-state wx:else title="资料加载失败" description="下拉刷新后重试。" />

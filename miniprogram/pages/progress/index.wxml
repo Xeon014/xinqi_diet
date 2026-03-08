@@ -32,5 +32,5 @@
       <view class="stat-unit">kg</view>
     </view>
   </view>
-  <empty-state wx:else title="暂无趋势数据" description="先记录几天饮食，再回来查看变化" />
+  <empty-state wx:else title="暂无趋势数据" description="先记录几天饮食，再回来查看变化。" />
 </view>

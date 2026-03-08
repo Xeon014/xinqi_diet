@@ -34,6 +34,10 @@ Page({
   },
 
   onShow() {
+    const app = getApp();
+    if (app.globalData.refreshHomeOnShow) {
+      app.globalData.refreshHomeOnShow = false;
+    }
     this.loadSummary();
   },
 

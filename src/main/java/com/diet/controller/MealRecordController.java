@@ -42,8 +42,8 @@ public class MealRecordController {
     @Operation(summary = "查询饮食记录", description = "按用户和日期查询饮食记录列表")
     @GetMapping
     public ApiResponse<MealRecordListResponse> findByUserAndDate(
-            @Parameter(description = "用户ID") @RequestParam Long userId,
-            @Parameter(description = "记录日期，格式yyyy-MM-dd")
+            @Parameter(description = "用户 ID") @RequestParam Long userId,
+            @Parameter(description = "记录日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         List<MealRecordResponse> records = mealRecordService.findByUserAndDate(userId, date);

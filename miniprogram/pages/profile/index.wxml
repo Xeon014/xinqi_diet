@@ -1,70 +1,40 @@
-<view class="page-shell profile-page">
-  <view class="panel profile-panel">
-    <view class="section-title">我的资料</view>
-    <view class="section-subtitle">完善身体信息后，可自动计算基础代谢和每日消耗。</view>
+<view class="page-shell profile-page" wx:if="{{profile && summary}}">
+  <view class="profile-hero panel">
+    <view class="hero-kicker">我的</view>
+    <view class="hero-title">{{profile.name}}</view>
+    <view class="hero-date">{{today}}</view>
+  </view>
 
-    <view class="metrics-grid">
-      <view class="metric-card">
-        <view class="metric-label">BMR 基础代谢</view>
-        <view class="metric-value">{{profile.bmr}}</view>
-        <view class="metric-unit">kcal/天</view>
-      </view>
-      <view class="metric-card accent">
-        <view class="metric-label">TDEE 每日总消耗</view>
-        <view class="metric-value">{{profile.tdee}}</view>
-        <view class="metric-unit">kcal/天</view>
-      </view>
-    </view>
-
-    <view class="hint-text">TDEE 可作为维持体重热量参考，你的每日目标热量可以在此基础上灵活调整。</view>
-
-    <view class="field-group">
-      <view class="field-label">姓名</view>
-      <input class="field-input" value="{{profile.name}}" data-field="name" bindinput="handleInput" />
-    </view>
-
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">性别</view>
-        <picker mode="selector" range="{{genderOptions}}" range-key="label" value="{{genderIndex}}" bindchange="handleGenderChange">
-          <view class="field-picker">{{genderOptions[genderIndex].label}}</view>
-        </picker>
-      </view>
-      <view class="field-half">
-        <view class="field-label">年龄</view>
-        <input class="field-input" type="number" value="{{profile.age}}" data-field="age" bindinput="handleInput" />
-      </view>
-    </view>
-
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">身高(cm)</view>
-        <input class="field-input" type="digit" value="{{profile.height}}" data-field="height" bindinput="handleInput" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">活动量</view>
-        <picker mode="selector" range="{{activityOptions}}" range-key="label" value="{{activityIndex}}" bindchange="handleActivityChange">
-          <view class="field-picker">{{activityOptions[activityIndex].label}}</view>
-        </picker>
-      </view>
-    </view>
-
-    <view class="field-group">
-      <view class="field-label">每日目标热量</view>
-      <input class="field-input" type="number" value="{{profile.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" />
-    </view>
-
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">当前体重(kg)</view>
-        <input class="field-input" type="digit" value="{{profile.currentWeight}}" data-field="currentWeight" bindinput="handleInput" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">目标体重(kg)</view>
-        <input class="field-input" type="digit" value="{{profile.targetWeight}}" data-field="targetWeight" bindinput="handleInput" />
-      </view>
+  <view class="overview-grid">
+    <view wx:for="{{overviewCards}}" wx:key="label" class="overview-card panel {{'tone-' + item.tone}}">
+      <view class="overview-label">{{item.label}}</view>
+      <view class="overview-value">{{item.value}}</view>
     </view>
   </view>
 
-  <view class="primary-button" bindtap="handleSave">保存资料</view>
+  <view class="entry-list">
+    <view class="entry-card panel" bindtap="handleOpenPersonalInfo">
+      <view class="entry-main">
+        <view class="entry-title">个人信息</view>
+        <view class="entry-tags">
+          <view wx:for="{{personalTags}}" wx:key="*this" class="entry-tag">{{item}}</view>
+        </view>
+        <view class="entry-note">{{personalNote}}</view>
+      </view>
+      <view class="entry-icon">></view>
+    </view>
+
+    <view class="entry-card panel" bindtap="handleOpenHealthProfile">
+      <view class="entry-main">
+        <view class="entry-title">健康档案</view>
+        <view class="entry-tags">
+          <view wx:for="{{healthTags}}" wx:key="*this" class="entry-tag entry-tag-accent">{{item}}</view>
+        </view>
+        <view class="entry-note">{{healthNote}}</view>
+      </view>
+      <view class="entry-icon">></view>
+    </view>
+  </view>
 </view>
+
+<empty-state wx:else title="暂无用户资料" description="请先完成资料初始化。" />

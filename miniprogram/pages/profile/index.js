@@ -1,65 +1,101 @@
-const { getCurrentUser, updateProfile } = require("../../services/user");
+const { getCurrentUser, getDailySummary } = require("../../services/user");
+const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
-const GENDER_OPTIONS = [
-  { label: "女", value: "FEMALE" },
-  { label: "男", value: "MALE" },
-];
+const GENDER_LABELS = {
+  FEMALE: "女",
+  MALE: "男",
+};
 
-const ACTIVITY_OPTIONS = [
-  { label: "久坐办公", value: "SEDENTARY" },
-  { label: "轻量活动", value: "LIGHT" },
-  { label: "中等活动", value: "MODERATE" },
-  { label: "高频训练", value: "ACTIVE" },
-  { label: "高强度体力", value: "VERY_ACTIVE" },
-];
+function toInteger(value) {
+  return Math.round(Number(value || 0));
+}
+
+function buildOverview(profile, summary) {
+  return [
+    {
+      label: "当前体重",
+      value: `${profile.currentWeight} kg`,
+      tone: "green",
+    },
+    {
+      label: "BMI",
+      value: profile.bmi,
+      tone: "sand",
+    },
+    {
+      label: "今日摄入",
+      value: `${summary.consumedCalories} / ${summary.targetCalories}`,
+      tone: "teal",
+    },
+    {
+      label: "基础代谢(BMR)",
+      value: `${toInteger(profile.bmr)} kcal/天`,
+      tone: "orange",
+    },
+  ];
+}
+
+function buildPersonalTags(profile) {
+  return [
+    GENDER_LABELS[profile.gender] || "未设置",
+    profile.age != null ? `${profile.age} 岁` : "年龄未算出",
+    profile.height != null ? `${profile.height} cm` : "身高未设置",
+  ];
+}
+
+function buildHealthTags(profile, summary) {
+  const remaining = Number(summary.remainingCalories || 0);
+  const remainingLabel = summary.exceededTarget
+    ? `超 ${Math.abs(Math.round(remaining))} kcal`
+    : `剩 ${Math.round(remaining)} kcal`;
+
+  return [
+    `今日 ${summary.consumedCalories} kcal`,
+    remainingLabel,
+    `基础代谢 ${toInteger(profile.bmr)}`,
+  ];
+}
+
+function buildPersonalNote(profile) {
+  return `当前 ${profile.currentWeight} kg / 目标 ${profile.targetWeight} kg`;
+}
+
+function buildHealthNote(summary) {
+  return `蛋白 ${summary.proteinIntake}g / 碳水 ${summary.carbsIntake}g / 脂肪 ${summary.fatIntake}g`;
+}
 
 Page({
   data: {
-    genderOptions: GENDER_OPTIONS,
-    activityOptions: ACTIVITY_OPTIONS,
-    genderIndex: 0,
-    activityIndex: 1,
-    profile: {
-      name: "",
-      gender: "FEMALE",
-      age: "",
-      height: "",
-      activityLevel: "LIGHT",
-      dailyCalorieTarget: "",
-      currentWeight: "",
-      targetWeight: "",
-      bmr: 0,
-      tdee: 0,
-    },
+    today: getToday(),
+    profile: null,
+    summary: null,
+    overviewCards: [],
+    personalTags: [],
+    healthTags: [],
+    personalNote: "",
+    healthNote: "",
   },
 
   onShow() {
-    this.loadProfile();
+    this.loadPageData();
   },
 
   onPullDownRefresh() {
-    this.loadProfile(true);
+    this.loadPageData(true);
   },
 
-  loadProfile(stopPullDown = false) {
-    getCurrentUser()
-      .then((profile) => {
+  loadPageData(stopPullDown = false) {
+    Promise.all([getCurrentUser(), getDailySummary(this.data.today)])
+      .then(([profile, summary]) => {
         this.setData({
-          genderIndex: this.findOptionIndex(GENDER_OPTIONS, profile.gender),
-          activityIndex: this.findOptionIndex(ACTIVITY_OPTIONS, profile.activityLevel),
-          profile: {
-            name: profile.name,
-            gender: profile.gender,
-            age: String(profile.age),
-            height: String(profile.height),
-            activityLevel: profile.activityLevel,
-            dailyCalorieTarget: String(profile.dailyCalorieTarget),
-            currentWeight: String(profile.currentWeight),
-            targetWeight: String(profile.targetWeight),
-            bmr: profile.bmr,
-            tdee: profile.tdee,
-          },
+          profile,
+          summary,
+          overviewCards: buildOverview(profile, summary),
+          personalTags: buildPersonalTags(profile),
+          healthTags: buildHealthTags(profile, summary),
+          personalNote: buildPersonalNote(profile),
+          healthNote: buildHealthNote(summary),
         });
       })
       .catch((error) => {
@@ -75,79 +111,15 @@ Page({
       });
   },
 
-  findOptionIndex(options, value) {
-    const index = options.findIndex((item) => item.value === value);
-    return index >= 0 ? index : 0;
-  },
-
-  handleInput(event) {
-    const { field } = event.currentTarget.dataset;
-    this.setData({
-      [`profile.${field}`]: event.detail.value,
+  handleOpenPersonalInfo() {
+    wx.navigateTo({
+      url: "/pages/personal-info/index",
     });
   },
 
-  handleGenderChange(event) {
-    const genderIndex = Number(event.detail.value);
-    this.setData({
-      genderIndex,
-      "profile.gender": GENDER_OPTIONS[genderIndex].value,
+  handleOpenHealthProfile() {
+    wx.navigateTo({
+      url: "/pages/health-profile/index",
     });
-  },
-
-  handleActivityChange(event) {
-    const activityIndex = Number(event.detail.value);
-    this.setData({
-      activityIndex,
-      "profile.activityLevel": ACTIVITY_OPTIONS[activityIndex].value,
-    });
-  },
-
-  handleSave() {
-    const { name, gender, age, height, activityLevel, dailyCalorieTarget, currentWeight, targetWeight } = this.data.profile;
-    if (!name.trim()) {
-      wx.showToast({ title: "姓名不能为空", icon: "none" });
-      return;
-    }
-
-    if (!age || Number(age) <= 0) {
-      wx.showToast({ title: "请输入正确年龄", icon: "none" });
-      return;
-    }
-
-    if (!height || Number(height) < 50) {
-      wx.showToast({ title: "请输入正确身高", icon: "none" });
-      return;
-    }
-
-    updateProfile({
-      name: name.trim(),
-      gender,
-      age: Number(age),
-      height: Number(height),
-      activityLevel,
-      dailyCalorieTarget: Number(dailyCalorieTarget),
-      currentWeight: Number(currentWeight),
-      targetWeight: Number(targetWeight),
-    })
-      .then((profile) => {
-        wx.showToast({
-          title: "保存成功",
-          icon: "success",
-        });
-        this.setData({
-          profile: {
-            ...this.data.profile,
-            bmr: profile.bmr,
-            tdee: profile.tdee,
-          },
-        });
-      })
-      .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
-      });
   },
 });

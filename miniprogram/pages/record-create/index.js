@@ -55,7 +55,7 @@ Page({
     const quantity = Number(this.data.quantityInGram);
     if (!this.data.selectedFood) {
       wx.showToast({
-        title: "请先选择食品",
+        title: "请先选择食物",
         icon: "none",
       });
       return;

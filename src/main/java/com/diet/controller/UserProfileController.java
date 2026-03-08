@@ -51,26 +51,26 @@ public class UserProfileController {
         return ApiResponse.success(new UserListResponse(users, users.size()));
     }
 
-    @Operation(summary = "查询用户详情", description = "根据用户ID查询资料详情")
+    @Operation(summary = "查询用户详情", description = "根据用户 ID 查询资料详情")
     @GetMapping("/{id}")
-    public ApiResponse<UserResponse> findById(@Parameter(description = "用户ID") @PathVariable Long id) {
+    public ApiResponse<UserResponse> findById(@Parameter(description = "用户 ID") @PathVariable Long id) {
         return ApiResponse.success(userProfileService.findById(id));
     }
 
     @Operation(summary = "更新用户资料", description = "更新用户基础资料和目标信息")
     @PutMapping("/{id}")
     public ApiResponse<UserResponse> update(
-            @Parameter(description = "用户ID") @PathVariable Long id,
+            @Parameter(description = "用户 ID") @PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request
     ) {
         return ApiResponse.success(userProfileService.update(id, request));
     }
 
-    @Operation(summary = "查询每日汇总", description = "查询指定用户在某一天的热量摄入汇总")
+    @Operation(summary = "查询每日汇总", description = "查询指定用户在某一天的热量摄入与营养汇总")
     @GetMapping("/{id}/daily-summary")
     public ApiResponse<DailySummaryResponse> getDailySummary(
-            @Parameter(description = "用户ID") @PathVariable Long id,
-            @Parameter(description = "查询日期，格式yyyy-MM-dd")
+            @Parameter(description = "用户 ID") @PathVariable Long id,
+            @Parameter(description = "查询日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return ApiResponse.success(userProfileService.getDailySummary(id, date));
@@ -79,10 +79,10 @@ public class UserProfileController {
     @Operation(summary = "查询进度趋势", description = "查询指定时间范围内的热量趋势和减重进度")
     @GetMapping("/{id}/progress")
     public ApiResponse<ProgressSummaryResponse> getProgress(
-            @Parameter(description = "用户ID") @PathVariable Long id,
-            @Parameter(description = "开始日期，格式yyyy-MM-dd")
+            @Parameter(description = "用户 ID") @PathVariable Long id,
+            @Parameter(description = "开始日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "结束日期，格式yyyy-MM-dd")
+            @Parameter(description = "结束日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         return ApiResponse.success(userProfileService.getProgress(id, startDate, endDate));

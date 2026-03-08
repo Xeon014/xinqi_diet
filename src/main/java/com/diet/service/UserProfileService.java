@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserProfileService {
 
+    private static final String DEFAULT_NAME = "微信用户";
+
     private final UserProfileRepository userProfileRepository;
 
     private final MealRecordRepository mealRecordRepository;
@@ -45,14 +47,15 @@ public class UserProfileService {
 
     public UserResponse create(CreateUserRequest request) {
         UserProfile user = new UserProfile(
-                request.name(),
+                normalizeName(request.name()),
                 request.gender(),
-                request.age(),
+                request.birthDate(),
                 request.height(),
                 request.activityLevel(),
                 request.dailyCalorieTarget(),
                 request.currentWeight(),
-                request.targetWeight()
+                request.targetWeight(),
+                request.customBmr()
         );
         userProfileRepository.save(user);
         return toResponse(user);
@@ -74,14 +77,15 @@ public class UserProfileService {
     public UserResponse update(Long id, UpdateUserRequest request) {
         UserProfile user = getUser(id);
         user.updateProfile(
-                request.name(),
+                normalizeName(request.name() == null ? user.getName() : request.name()),
                 request.gender(),
-                request.age(),
+                request.birthDate(),
                 request.height(),
                 request.activityLevel(),
                 request.dailyCalorieTarget(),
                 request.currentWeight(),
-                request.targetWeight()
+                request.targetWeight(),
+                request.customBmr()
         );
         userProfileRepository.update(user);
         return toResponse(user);
@@ -91,12 +95,16 @@ public class UserProfileService {
     public DailySummaryResponse getDailySummary(Long userId, LocalDate date) {
         UserProfile user = getUser(userId);
         List<MealRecord> records = mealRecordRepository.findByUserAndDate(userId, date);
-        Map<Long, String> foodNames = loadFoodNames(records);
+        Map<Long, Food> foods = loadFoods(records);
         BigDecimal consumed = sumCalories(records);
         BigDecimal remaining = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(consumed);
 
+        BigDecimal proteinIntake = sumNutrient(records, foods, Food::getProteinPer100g);
+        BigDecimal carbsIntake = sumNutrient(records, foods, Food::getCarbsPer100g);
+        BigDecimal fatIntake = sumNutrient(records, foods, Food::getFatPer100g);
+
         List<MealRecordResponse> responses = records.stream()
-                .map(record -> toMealRecordResponse(record, foodNames.get(record.getFoodId())))
+                .map(record -> toMealRecordResponse(record, foods.get(record.getFoodId()).getName()))
                 .toList();
 
         return new DailySummaryResponse(
@@ -106,6 +114,9 @@ public class UserProfileService {
                 consumed,
                 remaining,
                 remaining.compareTo(BigDecimal.ZERO) < 0,
+                proteinIntake,
+                carbsIntake,
+                fatIntake,
                 responses
         );
     }
@@ -160,15 +171,32 @@ public class UserProfileService {
     private BigDecimal sumCalories(List<MealRecord> records) {
         return records.stream()
                 .map(MealRecord::getTotalCalories)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private Map<Long, String> loadFoodNames(List<MealRecord> records) {
+    private BigDecimal sumNutrient(
+            List<MealRecord> records,
+            Map<Long, Food> foods,
+            java.util.function.Function<Food, BigDecimal> nutrientGetter
+    ) {
+        return records.stream()
+                .map(record -> {
+                    Food food = foods.get(record.getFoodId());
+                    return nutrientGetter.apply(food)
+                            .multiply(record.getQuantityInGram())
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private Map<Long, Food> loadFoods(List<MealRecord> records) {
         return records.stream()
                 .map(MealRecord::getFoodId)
                 .distinct()
                 .map(this::getFood)
-                .collect(Collectors.toMap(Food::getId, Food::getName));
+                .collect(Collectors.toMap(Food::getId, food -> food));
     }
 
     private UserProfile getUser(Long id) {
@@ -186,12 +214,15 @@ public class UserProfileService {
                 user.getId(),
                 user.getName(),
                 user.getGender(),
-                user.getAge(),
+                user.getBirthDate(),
+                user.calculateAge(),
                 user.getHeight(),
                 user.getActivityLevel(),
                 user.getDailyCalorieTarget(),
                 user.getCurrentWeight(),
                 user.getTargetWeight(),
+                user.getCustomBmr(),
+                user.calculateBmi(),
                 user.calculateBmr(),
                 user.calculateTdee(),
                 user.getCreatedAt()
@@ -210,5 +241,12 @@ public class UserProfileService {
                 record.getRecordDate(),
                 record.getCreatedAt()
         );
+    }
+
+    private String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            return DEFAULT_NAME;
+        }
+        return name.trim();
     }
 }

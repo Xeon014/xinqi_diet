@@ -1,0 +1,176 @@
+.health-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.module-panel {
+  padding: 28rpx;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.metric-card {
+  padding: 24rpx;
+  border-radius: 24rpx;
+}
+
+.metric-card.green {
+  background: linear-gradient(180deg, #f4f8f2 0%, #edf6ea 100%);
+}
+
+.metric-card.sand {
+  background: linear-gradient(180deg, #fbf5ea 0%, #f8ecdb 100%);
+}
+
+.metric-card.teal {
+  background: linear-gradient(180deg, #edf8f5 0%, #e0f3ed 100%);
+}
+
+.metric-card.orange {
+  background: linear-gradient(180deg, #fff6ee 0%, #fee8d6 100%);
+}
+
+.metric-label {
+  color: #6b5f51;
+  font-size: 24rpx;
+}
+
+.metric-value {
+  margin-top: 12rpx;
+  color: #2f251c;
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.metric-unit {
+  margin-top: 8rpx;
+  color: #7d7061;
+  font-size: 22rpx;
+}
+
+.sub-module {
+  margin-top: 28rpx;
+}
+
+.sub-title {
+  color: #34281e;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.calorie-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.calorie-box {
+  padding: 22rpx;
+  border-radius: 22rpx;
+  background: #fbf8f2;
+}
+
+.calorie-label {
+  color: #7d7061;
+  font-size: 22rpx;
+}
+
+.calorie-value {
+  margin-top: 12rpx;
+  color: #2f251c;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.calorie-unit {
+  margin-top: 8rpx;
+  color: #7d7061;
+  font-size: 22rpx;
+}
+
+.compact-input {
+  margin-top: 12rpx;
+}
+
+.result-pill {
+  margin-top: 18rpx;
+  display: inline-flex;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.result-pill.success {
+  background: rgba(31, 111, 95, 0.12);
+  color: #1f6f5f;
+}
+
+.result-pill.danger {
+  background: rgba(191, 77, 52, 0.12);
+  color: #bf4d34;
+}
+
+.nutrient-module {
+  margin-top: 28rpx;
+}
+
+.nutrient-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.nutrient-card {
+  padding: 22rpx 18rpx;
+  border-radius: 22rpx;
+  background: #fbf8f2;
+  text-align: center;
+}
+
+.nutrient-label {
+  color: #6f6457;
+  font-size: 22rpx;
+}
+
+.nutrient-value {
+  margin-top: 10rpx;
+  color: #2f251c;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.nutrient-unit {
+  margin-top: 6rpx;
+  color: #8a7f71;
+  font-size: 20rpx;
+}
+
+.field-group {
+  margin-top: 24rpx;
+}
+
+.field-picker {
+  min-height: 88rpx;
+  padding: 24rpx;
+  border-radius: 22rpx;
+  background: #fff;
+  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  box-sizing: border-box;
+  color: #2d241b;
+  font-size: 28rpx;
+}
+
+.coming-soon {
+  margin-top: 18rpx;
+  color: #8a7f71;
+  font-size: 24rpx;
+  line-height: 1.7;
+}

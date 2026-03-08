@@ -5,7 +5,7 @@
       <view class="subtitle">{{subtitle}}</view>
     </view>
     <view class="pill {{exceededTarget ? 'pill-danger' : 'pill-success'}}">
-      {{exceededTarget ? '已超目标' : '保持良好'}}
+      {{exceededTarget ? '已超目标' : '状态良好'}}
     </view>
   </view>
 

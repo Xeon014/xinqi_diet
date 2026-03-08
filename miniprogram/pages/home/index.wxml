@@ -1,9 +1,9 @@
 <view class="page-shell home-page">
   <view class="hero">
     <view>
-      <view class="hero-kicker">轻食记 · 今日状态</view>
+      <view class="hero-kicker">心栖轻食 · 今日状态</view>
       <view class="hero-title">{{today}}</view>
-      <view class="hero-desc">先把今天吃过的每一餐记下来，再看热量趋势。</view>
+      <view class="hero-desc">先把今天吃过的每一餐记录下来，再观察热量变化和营养结构。</view>
     </view>
     <view class="hero-badge">单用户演示</view>
   </view>
@@ -33,5 +33,5 @@
   <view wx:if="{{summary.records.length}}" class="record-panel panel">
     <record-item wx:for="{{summary.records}}" wx:key="id" record="{{item}}" />
   </view>
-  <empty-state wx:else title="今天还没记录" description="点一下“记录一餐”，从早餐开始积累数据" />
+  <empty-state wx:else title="今天还没记录" description="点一下“记录一餐”，从早餐开始积累数据。" />
 </view>

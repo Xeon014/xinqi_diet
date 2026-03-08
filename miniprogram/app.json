@@ -3,11 +3,13 @@
     "pages/home/index",
     "pages/record-create/index",
     "pages/profile/index",
+    "pages/personal-info/index",
+    "pages/health-profile/index",
     "pages/food-search/index",
     "pages/progress/index"
   ],
   "window": {
-    "navigationBarTitleText": "轻食记",
+    "navigationBarTitleText": "心栖轻食",
     "navigationBarBackgroundColor": "#f6f3ee",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f6f3ee",
