@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$OutputPath = "src/main/resources/builtin_food_seed.sql"
 )
 

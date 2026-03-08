@@ -7,10 +7,14 @@ import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.record.CreateMealRecordBatchRequest;
+import com.diet.dto.record.CreateMealRecordItemRequest;
 import com.diet.dto.record.CreateMealRecordRequest;
 import com.diet.dto.record.MealRecordResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,18 +44,37 @@ public class MealRecordService {
     public MealRecordResponse create(Long userId, CreateMealRecordRequest request) {
         UserProfile user = getUser(userId);
         Food food = getFood(request.foodId());
-        BigDecimal totalCalories = MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), request.quantityInGram());
-
-        MealRecord record = new MealRecord(
+        MealRecord record = buildRecord(
                 user.getId(),
-                food.getId(),
+                food,
                 request.mealType(),
                 request.quantityInGram(),
-                totalCalories,
                 request.recordDate()
         );
         mealRecordRepository.save(record);
         return toResponse(record, food.getName());
+    }
+
+    public List<MealRecordResponse> createBatch(Long userId, CreateMealRecordBatchRequest request) {
+        UserProfile user = getUser(userId);
+        Map<Long, BigDecimal> mergedItems = mergeItems(request.items());
+        Map<Long, Food> foods = loadFoodsByIds(mergedItems.keySet());
+        List<MealRecordResponse> responses = new ArrayList<>();
+
+        for (Map.Entry<Long, BigDecimal> entry : mergedItems.entrySet()) {
+            Food food = foods.get(entry.getKey());
+            MealRecord record = buildRecord(
+                    user.getId(),
+                    food,
+                    request.mealType(),
+                    entry.getValue(),
+                    request.recordDate()
+            );
+            mealRecordRepository.save(record);
+            responses.add(toResponse(record, food.getName()));
+        }
+
+        return responses;
     }
 
     @Transactional(readOnly = true)
@@ -94,6 +117,27 @@ public class MealRecordService {
                 record.getRecordDate(),
                 record.getCreatedAt()
         );
+    }
+
+    private MealRecord buildRecord(Long userId, Food food, com.diet.domain.record.MealType mealType, BigDecimal quantityInGram, LocalDate recordDate) {
+        BigDecimal totalCalories = MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram);
+        return new MealRecord(userId, food.getId(), mealType, quantityInGram, totalCalories, recordDate);
+    }
+
+    private Map<Long, BigDecimal> mergeItems(List<CreateMealRecordItemRequest> items) {
+        LinkedHashMap<Long, BigDecimal> merged = new LinkedHashMap<>();
+        for (CreateMealRecordItemRequest item : items) {
+            merged.merge(item.foodId(), item.quantityInGram(), BigDecimal::add);
+        }
+        return merged;
+    }
+
+    private Map<Long, Food> loadFoodsByIds(Iterable<Long> foodIds) {
+        LinkedHashMap<Long, Food> foods = new LinkedHashMap<>();
+        for (Long foodId : foodIds) {
+            foods.put(foodId, getFood(foodId));
+        }
+        return foods;
     }
 
     private UserProfile getUser(Long id) {

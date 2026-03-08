@@ -60,6 +60,36 @@
   font-size: 24rpx;
 }
 
-.record-panel {
-  padding: 0 24rpx 24rpx;
+.meal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.meal-card {
+  padding: 22rpx 24rpx;
+}
+
+.meal-card-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.meal-card-title {
+  color: #34281e;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.meal-card-count {
+  color: #8f8373;
+  font-size: 24rpx;
+}
+
+.meal-card-calories {
+  color: #1f6f5f;
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-top: 12rpx;
 }

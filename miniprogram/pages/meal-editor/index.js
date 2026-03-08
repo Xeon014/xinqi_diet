@@ -1,4 +1,4 @@
-const { createRecord } = require("../../services/record");
+const { createRecordBatch } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { getToday } = require("../../utils/date");
 const { saveRecentFood } = require("../../utils/recent-foods");
@@ -13,19 +13,37 @@ const MEAL_TYPE_LABELS = {
   SNACK: "加餐",
 };
 
-function toInteger(value) {
+const DEFAULT_QUANTITY = 100;
+
+function toNumber(value) {
   const number = Number(value);
-  return Number.isFinite(number) ? Math.round(number) : 0;
+  return Number.isFinite(number) ? number : 0;
+}
+
+function toInteger(value) {
+  return Math.round(toNumber(value));
 }
 
 function normalizeFood(food) {
-  if (!food) {
-    return null;
-  }
-
   return {
-    ...food,
+    id: food.id,
+    name: food.name,
+    category: food.category,
+    categoryLabel: food.categoryLabel || food.category,
     caloriesPer100g: toInteger(food.caloriesPer100g),
+    proteinPer100g: toInteger(food.proteinPer100g),
+    carbsPer100g: toInteger(food.carbsPer100g),
+    fatPer100g: toInteger(food.fatPer100g),
+  };
+}
+
+function decorateItem(item) {
+  const quantity = toNumber(item.quantityInGram);
+  const totalCalories = quantity > 0 ? toInteger((toNumber(item.caloriesPer100g) * quantity) / 100) : 0;
+  return {
+    ...item,
+    quantityInGram: item.quantityInGram,
+    totalCalories,
   };
 }
 
@@ -34,8 +52,8 @@ Page({
     mealType: "BREAKFAST",
     mealLabel: "早餐",
     recordDate: getToday(),
-    selectedFood: null,
-    quantityInGram: "",
+    foodItems: [],
+    mealTotalCalories: 0,
   },
 
   onLoad(options) {
@@ -53,54 +71,112 @@ Page({
       url: "/pages/food-search/index",
       success: (res) => {
         res.eventChannel.on("foodSelected", (food) => {
-          this.setData({
-            selectedFood: normalizeFood(food),
-          });
+          this.addFoodToList(normalizeFood(food));
         });
       },
     });
   },
 
+  addFoodToList(food) {
+    const foodItems = [...this.data.foodItems];
+    const targetIndex = foodItems.findIndex((item) => item.id === food.id);
+
+    if (targetIndex >= 0) {
+      const quantity = toNumber(foodItems[targetIndex].quantityInGram) + DEFAULT_QUANTITY;
+      foodItems[targetIndex] = {
+        ...foodItems[targetIndex],
+        quantityInGram: String(quantity),
+      };
+      this.applyFoodItems(foodItems);
+      wx.showToast({
+        title: "已合并到清单",
+        icon: "none",
+      });
+      return;
+    }
+
+    foodItems.push({
+      ...food,
+      quantityInGram: String(DEFAULT_QUANTITY),
+      totalCalories: toInteger(food.caloriesPer100g),
+    });
+    this.applyFoodItems(foodItems);
+  },
+
   handleQuantityInput(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const value = event.detail.value;
+    const foodItems = [...this.data.foodItems];
+    foodItems[index] = {
+      ...foodItems[index],
+      quantityInGram: value,
+    };
+    this.applyFoodItems(foodItems);
+  },
+
+  handleRemoveFood(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const foodItems = this.data.foodItems.filter((_, itemIndex) => itemIndex !== index);
+    this.applyFoodItems(foodItems);
+  },
+
+  applyFoodItems(foodItems) {
+    const normalized = foodItems.map(decorateItem);
+    const mealTotalCalories = normalized.reduce((sum, item) => sum + item.totalCalories, 0);
     this.setData({
-      quantityInGram: event.detail.value,
+      foodItems: normalized,
+      mealTotalCalories,
     });
   },
 
+  validateItems() {
+    if (!this.data.foodItems.length) {
+      wx.showToast({
+        title: "请先添加食物",
+        icon: "none",
+      });
+      return false;
+    }
+
+    const invalidItem = this.data.foodItems.find((item) => toNumber(item.quantityInGram) <= 0);
+    if (invalidItem) {
+      wx.showToast({
+        title: `请检查${invalidItem.name}的克数`,
+        icon: "none",
+      });
+      return false;
+    }
+
+    return true;
+  },
+
   handleSubmit() {
-    const { selectedFood, quantityInGram, mealType, recordDate } = this.data;
-    const quantity = Number(quantityInGram);
+    if (!this.validateItems()) {
+      return;
+    }
+
+    const { mealType, recordDate, foodItems } = this.data;
     const userId = getCurrentUserId();
-
-    if (!selectedFood) {
-      wx.showToast({
-        title: "请先选择食物",
-        icon: "none",
-      });
-      return;
-    }
-
-    if (!quantity || quantity <= 0) {
-      wx.showToast({
-        title: "请输入正确克数",
-        icon: "none",
-      });
-      return;
-    }
-
-    createRecord({
-      foodId: selectedFood.id,
+    const payload = {
       mealType,
-      quantityInGram: quantity,
       recordDate,
-    })
+      items: foodItems.map((item) => ({
+        foodId: item.id,
+        quantityInGram: toNumber(item.quantityInGram),
+      })),
+    };
+
+    createRecordBatch(payload)
       .then(() => {
         if (userId) {
-          saveRecentFood(userId, selectedFood);
+          foodItems.forEach((item) => {
+            saveRecentFood(userId, item);
+          });
         }
+
         app.globalData.refreshHomeOnShow = true;
         wx.showToast({
-          title: "记录成功",
+          title: "已完成",
           icon: "success",
         });
         setTimeout(() => {
@@ -117,3 +193,4 @@ Page({
       });
   },
 });
+

@@ -3,14 +3,14 @@
     <view>
       <view class="hero-kicker">心栖轻食 · 今日状态</view>
       <view class="hero-title">{{today}}</view>
-      <view class="hero-desc">记录今天吃过的每一餐，随时查看热量和饮食变化。</view>
+      <view class="hero-desc">记录今天每一餐，热量变化一眼看清。</view>
     </view>
     <view class="hero-badge">单用户演示</view>
   </view>
 
   <summary-card
     title="当日热量总览"
-    subtitle="目标、已摄入与剩余热量一屏看清"
+    subtitle="目标、已摄入和剩余热量"
     targetCalories="{{summary.targetCalories}}"
     consumedCalories="{{summary.consumedCalories}}"
     remainingCalories="{{summary.remainingCalories}}"
@@ -18,20 +18,27 @@
   />
 
   <view class="action-grid">
-    <view class="primary-button" bindtap="handleCreate">记录一餐</view>
+    <view class="primary-button" bindtap="handleCreate">去记录</view>
     <view class="ghost-button" bindtap="handleOpenProgress">查看趋势</view>
   </view>
 
   <view class="section-head">
     <view>
-      <view class="section-title">今日记录</view>
-      <view class="section-subtitle">按餐次查看今天的所有摄入</view>
+      <view class="section-title">今日餐次</view>
+      <view class="section-subtitle">按餐次查看已记录数据</view>
     </view>
-    <view class="record-count">{{summary.records.length}} 条</view>
+    <view class="record-count">{{summary.mealCards.length}} 餐</view>
   </view>
 
-  <view wx:if="{{summary.records.length}}" class="record-panel panel">
-    <record-item wx:for="{{summary.records}}" wx:key="id" record="{{item}}" />
+  <view wx:if="{{summary.mealCards.length}}" class="meal-panel">
+    <view wx:for="{{summary.mealCards}}" wx:key="mealType" class="meal-card panel">
+      <view class="meal-card-head">
+        <view class="meal-card-title">{{item.mealTypeLabel}}</view>
+        <view class="meal-card-count">{{item.foodCount}} 种</view>
+      </view>
+      <view class="meal-card-calories">{{item.totalCalories}} kcal</view>
+    </view>
   </view>
-  <empty-state wx:else title="今天还没记录" description="点一下“记录一餐”，从早餐开始积累数据。" />
+
+  <empty-state wx:else title="今天还没记录" description="点一下“去记录”，从第一餐开始。" />
 </view>
