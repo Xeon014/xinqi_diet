@@ -1,10 +1,10 @@
 const { getToday } = require("../../utils/date");
 
 const MEAL_TYPES = [
-  { label: "\u65e9\u9910", value: "BREAKFAST", note: "\u5f00\u542f\u4eca\u5929\u7684\u7b2c\u4e00\u9910" },
-  { label: "\u5348\u9910", value: "LUNCH", note: "\u8865\u5145\u5348\u95f4\u80fd\u91cf" },
-  { label: "\u665a\u9910", value: "DINNER", note: "\u8bb0\u5f55\u665a\u95f4\u6444\u5165" },
-  { label: "\u52a0\u9910", value: "SNACK", note: "\u96f6\u98df\u3001\u6c34\u679c\u6216\u996e\u54c1" },
+  { label: "早餐", value: "BREAKFAST", note: "开始记录早餐" },
+  { label: "午餐", value: "LUNCH", note: "开始记录午餐" },
+  { label: "晚餐", value: "DINNER", note: "开始记录晚餐" },
+  { label: "加餐", value: "SNACK", note: "零食和饮品" },
 ];
 
 Page({

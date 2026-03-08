@@ -5,7 +5,16 @@ function createRecord(payload) {
     url: "/api/records",
     method: "POST",
     data: payload,
-    loadingTitle: "\u63d0\u4ea4\u4e2d",
+    loadingTitle: "提交中",
+  });
+}
+
+function createRecordBatch(payload) {
+  return request({
+    url: "/api/records/batch",
+    method: "POST",
+    data: payload,
+    loadingTitle: "提交中",
   });
 }
 
@@ -18,5 +27,6 @@ function getRecords(userId, date) {
 
 module.exports = {
   createRecord,
+  createRecordBatch,
   getRecords,
 };

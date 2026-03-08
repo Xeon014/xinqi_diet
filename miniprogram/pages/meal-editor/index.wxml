@@ -2,27 +2,49 @@
   <view class="panel meal-head">
     <view class="meal-badge">{{mealLabel}}</view>
     <view class="meal-date">{{recordDate}}</view>
-    <view class="section-title">&#x8bb0;&#x5f55;{{mealLabel}}</view>
+    <view class="section-title">{{mealLabel}}</view>
   </view>
 
   <view class="panel editor-panel">
-    <view class="field-group">
-      <view class="field-label">&#x98df;&#x7269;</view>
-      <view class="food-picker" bindtap="handleChooseFood">
-        <view wx:if="{{selectedFood}}">
-          <view class="food-name">{{selectedFood.name}}</view>
-          <view class="food-meta">{{selectedFood.caloriesPer100g}} kcal / 100g</view>
-          <view class="food-category">{{selectedFood.categoryLabel || selectedFood.category}}</view>
+    <view class="list-head">
+      <view class="field-label">食物清单</view>
+      <view class="list-count">{{foodItems.length}} 种</view>
+    </view>
+
+    <view class="add-food" bindtap="handleChooseFood">+ 添加食物</view>
+
+    <view wx:if="{{foodItems.length}}" class="food-list">
+      <view wx:for="{{foodItems}}" wx:key="id" class="food-item">
+        <view class="food-item-head">
+          <view class="food-name">{{item.name}}</view>
+          <view class="food-remove" data-index="{{index}}" bindtap="handleRemoveFood">删除</view>
         </view>
-        <view wx:else class="food-placeholder">&#x70b9;&#x51fb;&#x9009;&#x62e9;&#x98df;&#x7269;</view>
+
+        <view class="food-meta">{{item.caloriesPer100g}} kcal / 100g</view>
+
+        <view class="food-edit-row">
+          <view class="quantity-box">
+            <input
+              class="quantity-input"
+              type="digit"
+              value="{{item.quantityInGram}}"
+              data-index="{{index}}"
+              bindinput="handleQuantityInput"
+            />
+            <view class="quantity-unit">g</view>
+          </view>
+          <view class="item-calories">{{item.totalCalories}} kcal</view>
+        </view>
       </view>
     </view>
 
-    <view class="field-group">
-      <view class="field-label">&#x6444;&#x5165;&#x91cd;&#x91cf;(g)</view>
-      <input class="field-input" type="digit" placeholder="&#x4f8b;&#x5982; 180" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
-    </view>
+    <view wx:else class="empty-tip">还没有添加食物，先点“添加食物”。</view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">&#x4fdd;&#x5b58;&#x8bb0;&#x5f55;</view>
+  <view class="panel summary-panel">
+    <view class="summary-label">本餐热量</view>
+    <view class="summary-value">{{mealTotalCalories}} kcal</view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSubmit">完成</view>
 </view>

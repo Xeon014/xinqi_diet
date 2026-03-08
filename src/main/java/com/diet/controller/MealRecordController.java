@@ -1,6 +1,7 @@
 package com.diet.controller;
 
 import com.diet.common.ApiResponse;
+import com.diet.dto.record.CreateMealRecordBatchRequest;
 import com.diet.dto.record.CreateMealRecordRequest;
 import com.diet.dto.record.MealRecordListResponse;
 import com.diet.dto.record.MealRecordResponse;
@@ -37,6 +38,21 @@ public class MealRecordController {
     public ResponseEntity<ApiResponse<MealRecordResponse>> create(@Valid @RequestBody CreateMealRecordRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(mealRecordService.create(request)));
+    }
+
+    @Operation(summary = "批量新增饮食记录", description = "同一餐次一次提交多种食物并保存")
+    @PostMapping("/batch")
+    public ResponseEntity<ApiResponse<MealRecordListResponse>> createBatch(
+            @Valid @RequestBody CreateMealRecordBatchRequest request
+    ) {
+        List<MealRecordResponse> records = mealRecordService.createBatch(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(new MealRecordListResponse(
+                        request.userId(),
+                        request.recordDate(),
+                        records,
+                        records.size()
+                )));
     }
 
     @Operation(summary = "查询饮食记录", description = "按用户和日期查询饮食记录列表")
