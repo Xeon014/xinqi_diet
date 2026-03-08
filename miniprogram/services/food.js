@@ -8,6 +8,16 @@ function searchFoods(keyword = "") {
   });
 }
 
+function createFood(payload) {
+  return request({
+    url: "/api/foods",
+    method: "POST",
+    data: payload,
+    loadingTitle: "\u4fdd\u5b58\u4e2d",
+  });
+}
+
 module.exports = {
+  createFood,
   searchFoods,
 };

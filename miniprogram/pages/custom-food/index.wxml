@@ -1,0 +1,44 @@
+<view class="page-shell custom-food-page">
+  <view class="panel custom-panel">
+    <view class="section-title">&#x81ea;&#x5b9a;&#x4e49;&#x98df;&#x7269;</view>
+    <view class="section-subtitle">&#x8865;&#x5145;&#x98df;&#x7269;&#x540e;&#x4f1a;&#x7acb;&#x5373;&#x56de;&#x5230;&#x672c;&#x6b21;&#x8bb0;&#x5f55;</view>
+
+    <view class="field-group">
+      <view class="field-label">&#x98df;&#x7269;&#x540d;&#x79f0;</view>
+      <input class="field-input" value="{{form.name}}" data-field="name" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">&#x5206;&#x7c7b;</view>
+      <view class="category-grid">
+        <view wx:for="{{categories}}" wx:key="key" class="category-chip {{selectedCategoryKey === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="handleCategoryTap">
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">&#x70ed;&#x91cf;(kcal/100g)</view>
+        <input class="field-input" type="digit" value="{{form.caloriesPer100g}}" data-field="caloriesPer100g" bindinput="handleInput" />
+      </view>
+      <view class="field-half">
+        <view class="field-label">&#x86cb;&#x767d;&#x8d28;(g)</view>
+        <input class="field-input" type="digit" value="{{form.proteinPer100g}}" data-field="proteinPer100g" bindinput="handleInput" />
+      </view>
+    </view>
+
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">&#x78b3;&#x6c34;(g)</view>
+        <input class="field-input" type="digit" value="{{form.carbsPer100g}}" data-field="carbsPer100g" bindinput="handleInput" />
+      </view>
+      <view class="field-half">
+        <view class="field-label">&#x8102;&#x80aa;(g)</view>
+        <input class="field-input" type="digit" value="{{form.fatPer100g}}" data-field="fatPer100g" bindinput="handleInput" />
+      </view>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSubmit">&#x4fdd;&#x5b58;&#x5e76;&#x4f7f;&#x7528;</view>
+</view>

@@ -1,48 +1,16 @@
-const { createRecord } = require("../../services/record");
-const { DEFAULT_USER_ID } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
-const { pickErrorMessage } = require("../../utils/request");
 
-const app = getApp();
+const MEAL_TYPES = [
+  { label: "\u65e9\u9910", value: "BREAKFAST", note: "\u5f00\u542f\u4eca\u5929\u7684\u7b2c\u4e00\u9910" },
+  { label: "\u5348\u9910", value: "LUNCH", note: "\u8865\u5145\u5348\u95f4\u80fd\u91cf" },
+  { label: "\u665a\u9910", value: "DINNER", note: "\u8bb0\u5f55\u665a\u95f4\u6444\u5165" },
+  { label: "\u52a0\u9910", value: "SNACK", note: "\u96f6\u98df\u3001\u6c34\u679c\u6216\u996e\u54c1" },
+];
 
 Page({
   data: {
-    mealTypes: [
-      { label: "早餐", value: "BREAKFAST" },
-      { label: "午餐", value: "LUNCH" },
-      { label: "晚餐", value: "DINNER" },
-      { label: "加餐", value: "SNACK" },
-    ],
-    selectedMealType: "LUNCH",
-    selectedFood: null,
-    quantityInGram: "",
     recordDate: getToday(),
-  },
-
-  handleMealTypeTap(event) {
-    const { value } = event.currentTarget.dataset;
-    this.setData({
-      selectedMealType: value,
-    });
-  },
-
-  handleChooseFood() {
-    wx.navigateTo({
-      url: "/pages/food-search/index",
-      success: (res) => {
-        res.eventChannel.on("foodSelected", (food) => {
-          this.setData({
-            selectedFood: food,
-          });
-        });
-      },
-    });
-  },
-
-  handleQuantityInput(event) {
-    this.setData({
-      quantityInGram: event.detail.value,
-    });
+    mealTypes: MEAL_TYPES,
   },
 
   handleDateChange(event) {
@@ -51,48 +19,10 @@ Page({
     });
   },
 
-  handleSubmit() {
-    const quantity = Number(this.data.quantityInGram);
-    if (!this.data.selectedFood) {
-      wx.showToast({
-        title: "请先选择食物",
-        icon: "none",
-      });
-      return;
-    }
-
-    if (!quantity || quantity <= 0) {
-      wx.showToast({
-        title: "克数必须大于 0",
-        icon: "none",
-      });
-      return;
-    }
-
-    createRecord({
-      userId: DEFAULT_USER_ID,
-      foodId: this.data.selectedFood.id,
-      mealType: this.data.selectedMealType,
-      quantityInGram: quantity,
-      recordDate: this.data.recordDate,
-    })
-      .then(() => {
-        app.globalData.refreshHomeOnShow = true;
-        wx.showToast({
-          title: "记录成功",
-          icon: "success",
-        });
-        setTimeout(() => {
-          wx.switchTab({
-            url: "/pages/home/index",
-          });
-        }, 350);
-      })
-      .catch((error) => {
-        wx.showToast({
-          title: pickErrorMessage(error),
-          icon: "none",
-        });
-      });
+  handleOpenEditor(event) {
+    const { mealType } = event.currentTarget.dataset;
+    wx.navigateTo({
+      url: `/pages/meal-editor/index?mealType=${mealType}&recordDate=${this.data.recordDate}`,
+    });
   },
 });

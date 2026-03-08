@@ -3,10 +3,10 @@ const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const MEAL_TYPE_LABELS = {
-  BREAKFAST: "早餐",
-  LUNCH: "午餐",
-  DINNER: "晚餐",
-  SNACK: "加餐",
+  BREAKFAST: "\u65e9\u9910",
+  LUNCH: "\u5348\u9910",
+  DINNER: "\u665a\u9910",
+  SNACK: "\u52a0\u9910",
 };
 
 function normalizeSummary(summary) {

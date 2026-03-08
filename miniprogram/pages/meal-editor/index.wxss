@@ -1,0 +1,75 @@
+.meal-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.meal-head {
+  padding: 28rpx;
+  position: relative;
+}
+
+.meal-badge {
+  background: rgba(31, 111, 95, 0.1);
+  border-radius: 999rpx;
+  color: #1f6f5f;
+  display: inline-flex;
+  font-size: 22rpx;
+  padding: 10rpx 18rpx;
+}
+
+.meal-date {
+  color: #8f8373;
+  font-size: 24rpx;
+  margin-top: 18rpx;
+}
+
+.editor-panel {
+  padding: 28rpx;
+}
+
+.field-group {
+  margin-top: 28rpx;
+}
+
+.field-group:first-child {
+  margin-top: 0;
+}
+
+.food-picker {
+  background: #fff;
+  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  border-radius: 24rpx;
+  min-height: 140rpx;
+  padding: 24rpx;
+}
+
+.food-name {
+  color: #33261c;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.food-meta {
+  color: #8f8373;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.food-category {
+  background: rgba(31, 111, 95, 0.08);
+  border-radius: 999rpx;
+  color: #1f6f5f;
+  display: inline-flex;
+  font-size: 22rpx;
+  margin-top: 14rpx;
+  padding: 8rpx 16rpx;
+}
+
+.food-placeholder {
+  align-items: center;
+  color: #8f8373;
+  display: flex;
+  font-size: 28rpx;
+  min-height: 92rpx;
+}

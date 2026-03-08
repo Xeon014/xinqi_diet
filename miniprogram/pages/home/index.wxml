@@ -1,16 +1,16 @@
 <view class="page-shell home-page">
   <view class="hero">
     <view>
-      <view class="hero-kicker">心栖轻食 · 今日状态</view>
+      <view class="hero-kicker">&#x5fc3;&#x6816;&#x8f7b;&#x98df; &#183; &#x4eca;&#x65e5;&#x72b6;&#x6001;</view>
       <view class="hero-title">{{today}}</view>
-      <view class="hero-desc">先把今天吃过的每一餐记录下来，再观察热量变化和营养结构。</view>
+      <view class="hero-desc">&#x8bb0;&#x5f55;&#x4eca;&#x5929;&#x5403;&#x8fc7;&#x7684;&#x6bcf;&#x4e00;&#x9910;&#xff0c;&#x968f;&#x65f6;&#x67e5;&#x770b;&#x70ed;&#x91cf;&#x548c;&#x996e;&#x98df;&#x53d8;&#x5316;&#x3002;</view>
     </view>
-    <view class="hero-badge">单用户演示</view>
+    <view class="hero-badge">&#x5355;&#x7528;&#x6237;&#x6f14;&#x793a;</view>
   </view>
 
   <summary-card
-    title="当日热量总览"
-    subtitle="目标、已摄入与剩余热量一屏看清"
+    title="&#x5f53;&#x65e5;&#x70ed;&#x91cf;&#x603b;&#x89c8;"
+    subtitle="&#x76ee;&#x6807;&#x3001;&#x5df2;&#x6444;&#x5165;&#x4e0e;&#x5269;&#x4f59;&#x70ed;&#x91cf;&#x4e00;&#x5c4f;&#x770b;&#x6e05;"
     targetCalories="{{summary.targetCalories}}"
     consumedCalories="{{summary.consumedCalories}}"
     remainingCalories="{{summary.remainingCalories}}"
@@ -18,20 +18,20 @@
   />
 
   <view class="action-grid">
-    <view class="primary-button" bindtap="handleCreate">记录一餐</view>
-    <view class="ghost-button" bindtap="handleOpenProgress">查看趋势</view>
+    <view class="primary-button" bindtap="handleCreate">&#x8bb0;&#x5f55;&#x4e00;&#x9910;</view>
+    <view class="ghost-button" bindtap="handleOpenProgress">&#x67e5;&#x770b;&#x8d8b;&#x52bf;</view>
   </view>
 
   <view class="section-head">
     <view>
-      <view class="section-title">今日记录</view>
-      <view class="section-subtitle">按餐次查看今天的所有摄入</view>
+      <view class="section-title">&#x4eca;&#x65e5;&#x8bb0;&#x5f55;</view>
+      <view class="section-subtitle">&#x6309;&#x9910;&#x6b21;&#x67e5;&#x770b;&#x4eca;&#x5929;&#x7684;&#x6240;&#x6709;&#x6444;&#x5165;</view>
     </view>
-    <view class="record-count">{{summary.records.length}} 条</view>
+    <view class="record-count">{{summary.records.length}} &#x6761;</view>
   </view>
 
   <view wx:if="{{summary.records.length}}" class="record-panel panel">
     <record-item wx:for="{{summary.records}}" wx:key="id" record="{{item}}" />
   </view>
-  <empty-state wx:else title="今天还没记录" description="点一下“记录一餐”，从早餐开始积累数据。" />
+  <empty-state wx:else title="&#x4eca;&#x5929;&#x8fd8;&#x6ca1;&#x8bb0;&#x5f55;" description="&#x70b9;&#x4e00;&#x4e0b;&#x201c;&#x8bb0;&#x5f55;&#x4e00;&#x9910;&#x201d;&#xff0c;&#x4ece;&#x65e9;&#x9910;&#x5f00;&#x59cb;&#x79ef;&#x7d2f;&#x6570;&#x636e;&#x3002;" />
 </view>

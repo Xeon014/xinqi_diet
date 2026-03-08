@@ -1,40 +1,23 @@
-<view class="page-shell record-page">
-  <view class="panel form-panel">
-    <view class="section-title">记录一餐</view>
-    <view class="section-subtitle">把食物、餐次和克数记下来，热量会自动计算。</view>
-
-    <view class="field-group">
-      <view class="field-label">餐次</view>
-      <view class="meal-grid">
-        <view wx:for="{{mealTypes}}" wx:key="value" class="meal-chip {{selectedMealType === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="handleMealTypeTap">
-          {{item.label}}
-        </view>
-      </view>
+<view class="page-shell record-entry-page">
+  <view class="panel date-panel">
+    <view>
+      <view class="section-title">&#x8bb0;&#x5f55;&#x4e00;&#x9910;</view>
+      <view class="section-subtitle">&#x5148;&#x9009;&#x65e5;&#x671f;&#xff0c;&#x518d;&#x8fdb;&#x5165;&#x5bf9;&#x5e94;&#x9910;&#x6b21;&#x5b8c;&#x6210;&#x8bb0;&#x5f55;</view>
     </view>
 
-    <view class="field-group">
-      <view class="field-label">食物</view>
-      <view class="food-picker panel" bindtap="handleChooseFood">
-        <view wx:if="{{selectedFood}}">
-          <view class="food-name">{{selectedFood.name}}</view>
-          <view class="food-meta">{{selectedFood.caloriesPer100g}} kcal / 100g</view>
-        </view>
-        <view wx:else class="food-placeholder">点击搜索并选择食物</view>
-      </view>
-    </view>
-
-    <view class="field-group">
-      <view class="field-label">摄入重量(g)</view>
-      <input class="field-input" type="digit" placeholder="例如 180" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
-    </view>
-
-    <view class="field-group">
-      <view class="field-label">记录日期</view>
+    <view class="field-group compact-group">
+      <view class="field-label">&#x8bb0;&#x5f55;&#x65e5;&#x671f;</view>
       <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
-        <view class="field-input picker-value">{{recordDate}}</view>
+        <view class="date-picker">{{recordDate}}</view>
       </picker>
     </view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">提交记录</view>
+  <view class="meal-grid">
+    <view wx:for="{{mealTypes}}" wx:key="value" class="meal-card panel" data-meal-type="{{item.value}}" bindtap="handleOpenEditor">
+      <view class="meal-title">{{item.label}}</view>
+      <view class="meal-note">{{item.note}}</view>
+      <view class="meal-arrow">></view>
+    </view>
+  </view>
 </view>

@@ -1,52 +1,66 @@
-.record-page {
+.record-entry-page {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
 }
 
-.form-panel {
+.date-panel {
   padding: 28rpx;
 }
 
-.field-group {
-  margin-top: 28rpx;
+.compact-group {
+  margin-top: 22rpx;
+}
+
+.date-picker {
+  align-items: center;
+  background: #fff;
+  border: 2rpx solid rgba(93, 76, 58, 0.08);
+  border-radius: 22rpx;
+  color: #2d241b;
+  display: flex;
+  font-size: 28rpx;
+  height: 88rpx;
+  padding: 0 24rpx;
 }
 
 .meal-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
-  grid-template-columns: repeat(4, 1fr);
 }
 
-.meal-chip {
-  align-items: center;
-  background: rgba(93, 76, 58, 0.06);
-  border-radius: 20rpx;
-  color: #645648;
-  display: flex;
-  font-size: 24rpx;
-  height: 80rpx;
-  justify-content: center;
-}
-
-.meal-chip.active {
-  background: #1f6f5f;
-  color: #fff;
-}
-
-.food-picker {
+.meal-card {
+  min-height: 220rpx;
   padding: 24rpx;
+  position: relative;
 }
 
-.food-name {
-  color: #33261c;
-  font-size: 30rpx;
-  font-weight: 600;
+.meal-title {
+  color: #34281e;
+  font-size: 34rpx;
+  font-weight: 700;
 }
 
-.food-meta,
-.food-placeholder,
-.picker-value {
-  color: #8f8373;
+.meal-note {
+  color: #7c6f60;
   font-size: 24rpx;
+  line-height: 1.6;
+  margin-top: 14rpx;
+  max-width: 220rpx;
+}
+
+.meal-arrow {
+  align-items: center;
+  background: rgba(31, 111, 95, 0.08);
+  border-radius: 50%;
+  bottom: 24rpx;
+  color: #1f6f5f;
+  display: flex;
+  font-size: 32rpx;
+  height: 60rpx;
+  justify-content: center;
+  position: absolute;
+  right: 24rpx;
+  width: 60rpx;
 }

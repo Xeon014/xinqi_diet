@@ -7,10 +7,10 @@ function pickErrorMessage(error) {
   if (error && error.message) {
     return error.message;
   }
-  return "请求失败，请稍后重试";
+  return "\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5";
 }
 
-function request({ url, method = "GET", data, showLoading = true, loadingTitle = "加载中" }) {
+function request({ url, method = "GET", data, showLoading = true, loadingTitle = "\u52a0\u8f7d\u4e2d" }) {
   if (showLoading) {
     wx.showLoading({
       title: loadingTitle,
@@ -40,7 +40,7 @@ function request({ url, method = "GET", data, showLoading = true, loadingTitle =
       },
       fail: (error) => {
         reject({
-          message: error.errMsg || "网络异常",
+          message: error.errMsg || "\u7f51\u7edc\u5f02\u5e38",
         });
       },
       complete: () => {

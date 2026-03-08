@@ -5,7 +5,7 @@ function createRecord(payload) {
     url: "/api/records",
     method: "POST",
     data: payload,
-    loadingTitle: "提交中",
+    loadingTitle: "\u63d0\u4ea4\u4e2d",
   });
 }
 

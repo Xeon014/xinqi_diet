@@ -24,7 +24,7 @@ function updateProfile(payload) {
     url: `/api/users/${DEFAULT_USER_ID}`,
     method: "PUT",
     data: payload,
-    loadingTitle: "保存中",
+    loadingTitle: "\u4fdd\u5b58\u4e2d",
   });
 }
 

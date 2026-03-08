@@ -1,0 +1,42 @@
+.custom-food-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.custom-panel {
+  padding: 28rpx;
+}
+
+.field-group {
+  margin-top: 28rpx;
+}
+
+.two-column {
+  display: flex;
+  gap: 16rpx;
+}
+
+.field-half {
+  flex: 1;
+}
+
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.category-chip {
+  background: rgba(93, 76, 58, 0.06);
+  border-radius: 20rpx;
+  color: #645648;
+  font-size: 24rpx;
+  padding: 16rpx 20rpx;
+}
+
+.category-chip.active {
+  background: rgba(31, 111, 95, 0.12);
+  color: #1f6f5f;
+  font-weight: 700;
+}
