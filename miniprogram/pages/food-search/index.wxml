@@ -6,29 +6,38 @@
 
   <view class="food-layout">
     <view class="category-sidebar panel">
-      <view wx:for="{{categories}}" wx:key="key" class="category-item {{selectedCategoryKey === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="handleCategoryTap">
+      <view
+        wx:for="{{systemFilters}}"
+        wx:key="key"
+        class="category-item {{selectedCategoryKey === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleCategoryTap"
+      >
+        {{item.label}}
+      </view>
+      <view class="category-divider"></view>
+      <view
+        wx:for="{{builtinCategories}}"
+        wx:key="key"
+        class="category-item {{selectedCategoryKey === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleCategoryTap"
+      >
         {{item.label}}
       </view>
     </view>
 
     <view class="food-content">
-      <view wx:if="{{recentDisplayFoods.length}}" class="panel section-panel">
-        <view class="section-title-small">最近记录</view>
-        <view class="food-list compact-list">
-          <view wx:for="{{recentDisplayFoods}}" wx:key="id" class="food-item" data-source="recent" data-index="{{index}}" bindtap="handleSelectFood">
-            <view class="food-top">
-              <view class="food-name">{{item.name}}</view>
-              <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
-            </view>
-            <view class="food-bottom">{{item.categoryLabel}} · 蛋白 {{item.proteinPer100g}}g · 碳水 {{item.carbsPer100g}}g · 脂肪 {{item.fatPer100g}}g</view>
-          </view>
-        </view>
-      </view>
-
       <view wx:if="{{displayedFoods.length}}" class="panel section-panel">
-        <view class="section-title-small">食物列表</view>
+        <view class="section-title-small">{{currentCategoryLabel}}</view>
         <view class="food-list compact-list">
-          <view wx:for="{{displayedFoods}}" wx:key="id" class="food-item" data-source="all" data-index="{{index}}" bindtap="handleSelectFood">
+          <view
+            wx:for="{{displayedFoods}}"
+            wx:key="id"
+            class="food-item"
+            data-index="{{index}}"
+            bindtap="handleSelectFood"
+          >
             <view class="food-top">
               <view class="food-name">{{item.name}}</view>
               <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
@@ -38,7 +47,7 @@
         </view>
       </view>
 
-      <empty-state wx:if="{{!recentDisplayFoods.length && !displayedFoods.length}}" title="{{emptyTitle}}" description="{{emptyDescription}}" />
+      <empty-state wx:if="{{!displayedFoods.length}}" title="{{emptyTitle}}" description="{{emptyDescription}}" />
     </view>
   </view>
 </view>

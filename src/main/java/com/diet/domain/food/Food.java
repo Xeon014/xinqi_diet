@@ -43,6 +43,9 @@ public class Food {
     @TableField("is_builtin")
     private Boolean builtin;
 
+    @TableField("sort_order")
+    private Integer sortOrder;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
@@ -62,6 +65,7 @@ public class Food {
         this.category = category;
         this.source = "MANUAL";
         this.builtin = false;
+        this.sortOrder = 9999;
         this.createdAt = LocalDateTime.now();
     }
 
