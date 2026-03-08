@@ -67,3 +67,11 @@
 - 小程序配置集中放在 `miniprogram/utils/constants.js`。
 - 修改接口字段时，同步检查 `miniprogram/services/` 与页面调用。
 - 所有卡路里相关数据在前端展示时一律取整后显示，例如 `kcal`、`BMR`、`TDEE`、每 100g 热量、单条记录热量、统计热量等。
+
+## Codex 易错防线
+
+- Codex 修改小程序文件（`miniprogram/`）时，禁止把中文文案改成英文占位或 `?`；界面文案默认保持中文。
+- 涉及中文内容的批量写入，优先使用 Node 脚本写文件（UTF-8），避免 PowerShell 终端编码导致乱码。
+- 每次修改小程序后，必须执行 `node scripts/verify-miniprogram-files.js`，未通过不得结束本次修改。
+- 若出现 JSON 解析错误（尤其 `pages/**/index.json`），必须先修复全部页面 JSON，再继续功能开发。
+- 前端文案改动后，需至少抽查首页、记录页、趋势页、运动页，确认中文显示正常且无乱码。

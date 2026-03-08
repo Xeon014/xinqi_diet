@@ -1,5 +1,6 @@
 const { getDailySummary } = require("../../services/user");
 const { getToday } = require("../../utils/date");
+const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
 
 const MEAL_TYPE_LABELS = {
@@ -9,56 +10,58 @@ const MEAL_TYPE_LABELS = {
   SNACK: "加餐",
 };
 
-const MEAL_TYPE_ORDER = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
 
 function toInteger(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? Math.round(number) : 0;
+  return Math.round(toNumber(value));
 }
 
-function buildMealCards(records) {
-  const mealMap = records.reduce((result, record) => {
-    const mealType = record.mealType;
-    if (!result[mealType]) {
-      result[mealType] = {
-        mealType,
-        mealTypeLabel: MEAL_TYPE_LABELS[mealType] || mealType,
-        foodCount: 0,
-        totalCalories: 0,
-      };
-    }
-
-    result[mealType].foodCount += 1;
-    result[mealType].totalCalories += Number(record.totalCalories || 0);
-    return result;
-  }, {});
-
-  return MEAL_TYPE_ORDER
-    .map((mealType) => mealMap[mealType])
-    .filter(Boolean)
-    .map((card) => ({
-      ...card,
-      totalCalories: toInteger(card.totalCalories),
-    }));
+function formatDietTitle(record) {
+  const mealTypeLabel = MEAL_TYPE_LABELS[record.mealType] || "饮食";
+  const quantity = toInteger(record.quantityInGram);
+  return `${mealTypeLabel} ${record.foodName || "食物"} ${quantity}g`;
 }
 
-function normalizeSummary(summary) {
-  const records = (summary.records || []).map((record) => ({
+function formatExerciseTitle(record) {
+  const duration = toInteger(record.durationMinutes);
+  const intensity = getIntensityLabel(record.intensityLevel);
+  return `${record.exerciseName || "运动"} ${duration}min ${intensity}`;
+}
+
+function normalizeRecord(record, today) {
+  const isDiet = record.recordType === "DIET";
+  const calories = toInteger(record.totalCalories);
+
+  return {
     ...record,
-    mealTypeLabel: MEAL_TYPE_LABELS[record.mealType] || record.mealType,
-    totalCalories: toInteger(record.totalCalories),
-  }));
+    title: isDiet ? formatDietTitle(record) : formatExerciseTitle(record),
+    calories,
+    signedCalories: `${isDiet ? "+" : "-"}${calories} kcal`,
+    isDiet,
+    isExercise: !isDiet,
+    recordDate: record.recordDate || today,
+    recordKey: `${record.recordType || "UNKNOWN"}-${record.recordId || ""}-${record.createdAt || ""}`,
+  };
+}
 
+function normalizeSummary(summary, today) {
+  const records = (summary.records || []).map((record) => normalizeRecord(record, today));
+  const netCalories = toInteger(summary.netCalories ?? summary.consumedCalories);
   const remainingCalories = toInteger(summary.remainingCalories);
 
   return {
     ...summary,
     targetCalories: toInteger(summary.targetCalories),
-    consumedCalories: toInteger(summary.consumedCalories),
+    dietCalories: toInteger(summary.dietCalories),
+    exerciseCalories: toInteger(summary.exerciseCalories),
+    netCalories,
+    consumedCalories: netCalories,
     remainingCalories,
     remainingAbs: Math.abs(remainingCalories),
     records,
-    mealCards: buildMealCards(records),
   };
 }
 
@@ -67,14 +70,17 @@ Page({
     today: getToday(),
     summary: {
       targetCalories: 0,
+      dietCalories: 0,
+      exerciseCalories: 0,
+      netCalories: 0,
       consumedCalories: 0,
       remainingCalories: 0,
       remainingAbs: 0,
       exceededTarget: false,
       records: [],
-      mealCards: [],
     },
   },
+
   onShow() {
     const app = getApp();
     if (app.globalData.refreshHomeOnShow) {
@@ -82,13 +88,15 @@ Page({
     }
     this.loadSummary();
   },
+
   onPullDownRefresh() {
     this.loadSummary(true);
   },
+
   loadSummary(stopPullDown = false) {
     getDailySummary(this.data.today)
       .then((summary) => {
-        this.setData({ summary: normalizeSummary(summary) });
+        this.setData({ summary: normalizeSummary(summary, this.data.today) });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -99,17 +107,26 @@ Page({
         }
       });
   },
+
   handleCreate() {
     wx.switchTab({ url: "/pages/record-create/index" });
   },
+
   handleOpenProgress() {
     wx.navigateTo({ url: "/pages/progress/index" });
   },
-  handleOpenMeal(event) {
-    const mealType = event.currentTarget.dataset.mealType;
-    const recordDate = this.data.today;
+
+  handleOpenRecord(event) {
+    const { recordType, mealType, recordDate } = event.currentTarget.dataset;
+    if (recordType === "DIET") {
+      wx.navigateTo({
+        url: `/pages/meal-editor/index?mode=edit&mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(recordDate)}`,
+      });
+      return;
+    }
+
     wx.navigateTo({
-      url: `/pages/meal-editor/index?mode=edit&mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(recordDate)}`,
+      url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
     });
   },
 });

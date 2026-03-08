@@ -1,7 +1,7 @@
 <view class="page-shell record-entry-page">
   <view class="panel date-panel">
-    <view class="section-title">选择餐次</view>
-    <view class="section-subtitle">先选日期，再进入对应餐次</view>
+    <view class="section-title">记录日期</view>
+    <view class="section-subtitle">先选择日期，再选择饮食或运动记录</view>
 
     <view class="field-group compact-group">
       <view class="field-label">日期</view>
@@ -11,13 +11,21 @@
     </view>
   </view>
 
-  <view class="meal-list panel">
-    <view wx:for="{{mealTypes}}" wx:key="value" class="meal-item" data-meal-type="{{item.value}}" bindtap="handleOpenEditor">
-      <view class="meal-main">
-        <view class="meal-title">{{item.label}}</view>
-        <view class="meal-note">{{item.note}}</view>
+  <view class="panel entry-list">
+    <view class="entry-item" bindtap="handleOpenDietEditor">
+      <view class="entry-main">
+        <view class="entry-title">记录饮食</view>
+        <view class="entry-note">选择餐次并编辑食物清单</view>
       </view>
-      <view class="meal-arrow">></view>
+      <view class="entry-arrow">></view>
+    </view>
+
+    <view class="entry-item" bindtap="handleOpenExerciseEditor">
+      <view class="entry-main">
+        <view class="entry-title">记录运动</view>
+        <view class="entry-note">添加运动项目、时长和强度</view>
+      </view>
+      <view class="entry-arrow">></view>
     </view>
   </view>
 </view>

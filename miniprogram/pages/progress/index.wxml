@@ -5,24 +5,24 @@
   </view>
 
   <view wx:if="{{summary}}" class="panel chart-panel">
-    <view class="section-title">摄入趋势</view>
-    <view class="section-subtitle">按天观察热量是否稳定收敛</view>
+    <view class="section-title">净摄入趋势</view>
+    <view class="section-subtitle">按天观察净摄入热量（饮食 - 运动）</view>
     <canvas class="trend-canvas" canvas-id="trendCanvas" id="trendCanvas" style="width: 690rpx; height: 360rpx;"></canvas>
   </view>
 
   <view wx:if="{{summary}}" class="stats-grid">
     <view class="panel stat-box">
-      <view class="stat-label">平均摄入</view>
+      <view class="stat-label">平均净摄入</view>
       <view class="stat-value">{{summary.averageCalories}}</view>
       <view class="stat-unit">kcal</view>
     </view>
     <view class="panel stat-box">
-      <view class="stat-label">总摄入</view>
+      <view class="stat-label">累计净摄入</view>
       <view class="stat-value">{{summary.totalCalories}}</view>
       <view class="stat-unit">kcal</view>
     </view>
     <view class="panel stat-box">
-      <view class="stat-label">平均差值</view>
+      <view class="stat-label">平均目标差</view>
       <view class="stat-value">{{summary.averageCalorieGap}}</view>
       <view class="stat-unit">kcal</view>
     </view>
@@ -32,5 +32,5 @@
       <view class="stat-unit">kg</view>
     </view>
   </view>
-  <empty-state wx:else title="暂无趋势数据" description="先记录几天饮食，再回来查看变化。" />
+  <empty-state wx:else title="暂无趋势数据" description="先连续记录几天饮食和运动" />
 </view>

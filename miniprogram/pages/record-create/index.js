@@ -1,10 +1,10 @@
 const { getToday } = require("../../utils/date");
 
 const MEAL_TYPES = [
-  { label: "早餐", value: "BREAKFAST", note: "开始记录早餐" },
-  { label: "午餐", value: "LUNCH", note: "开始记录午餐" },
-  { label: "晚餐", value: "DINNER", note: "开始记录晚餐" },
-  { label: "加餐", value: "SNACK", note: "零食和饮品" },
+  { label: "早餐", value: "BREAKFAST" },
+  { label: "午餐", value: "LUNCH" },
+  { label: "晚餐", value: "DINNER" },
+  { label: "加餐", value: "SNACK" },
 ];
 
 Page({
@@ -19,10 +19,24 @@ Page({
     });
   },
 
-  handleOpenEditor(event) {
-    const { mealType } = event.currentTarget.dataset;
+  handleOpenDietEditor() {
+    wx.showActionSheet({
+      itemList: this.data.mealTypes.map((item) => item.label),
+      success: (result) => {
+        const selectedType = this.data.mealTypes[result.tapIndex];
+        if (!selectedType) {
+          return;
+        }
+        wx.navigateTo({
+          url: `/pages/meal-editor/index?mealType=${selectedType.value}&recordDate=${this.data.recordDate}`,
+        });
+      },
+    });
+  },
+
+  handleOpenExerciseEditor() {
     wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${mealType}&recordDate=${this.data.recordDate}`,
+      url: `/pages/exercise-editor/index?recordDate=${this.data.recordDate}`,
     });
   },
 });

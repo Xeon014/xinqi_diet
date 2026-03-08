@@ -1,0 +1,35 @@
+<view class="page-shell exercise-search-page">
+  <view class="panel search-bar">
+    <input class="search-input" placeholder="搜索运动" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
+  </view>
+
+  <view class="panel category-panel">
+    <view
+      wx:for="{{categories}}"
+      wx:key="key"
+      class="category-chip {{selectedCategory === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleCategoryTap"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <view wx:if="{{displayedExercises.length}}" class="panel list-panel">
+    <view
+      wx:for="{{displayedExercises}}"
+      wx:key="id"
+      class="exercise-item"
+      data-index="{{index}}"
+      bindtap="handleSelectExercise"
+    >
+      <view class="exercise-head">
+        <view class="exercise-name">{{item.name}}</view>
+        <view class="exercise-met">MET {{item.metValue}}</view>
+      </view>
+      <view class="exercise-meta">{{item.categoryLabel}}</view>
+    </view>
+  </view>
+
+  <empty-state wx:else title="暂无运动项目" description="换个关键词试试" />
+</view>

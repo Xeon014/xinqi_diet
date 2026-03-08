@@ -1,5 +1,7 @@
 package com.diet.config;
 
+import com.diet.domain.exercise.ExerciseRepository;
+import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
@@ -32,14 +34,18 @@ public class DataInitializer {
             UserProfileRepository userProfileRepository,
             FoodRepository foodRepository,
             MealRecordRepository mealRecordRepository,
+            ExerciseRepository exerciseRepository,
+            ExerciseRecordRepository exerciseRecordRepository,
             JdbcTemplate jdbcTemplate
     ) {
         return args -> {
             migrateUserProfileTable(jdbcTemplate);
             migrateFoodTable(jdbcTemplate);
+            migrateExerciseTable(jdbcTemplate);
             seedBuiltinFoodsIfNeeded(foodRepository, jdbcTemplate);
+            seedBuiltinExercisesIfNeeded(exerciseRepository, jdbcTemplate);
             backfillFoodSortOrder(jdbcTemplate);
-            seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository);
+            seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository, exerciseRecordRepository);
         };
     }
 
@@ -47,8 +53,18 @@ public class DataInitializer {
         if (foodRepository.count() >= 300) {
             return;
         }
+        importSql(jdbcTemplate, "builtin_food_seed.sql");
+    }
 
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(new ClassPathResource("builtin_food_seed.sql"));
+    private void seedBuiltinExercisesIfNeeded(ExerciseRepository exerciseRepository, JdbcTemplate jdbcTemplate) {
+        if (exerciseRepository.count() >= 60) {
+            return;
+        }
+        importSql(jdbcTemplate, "builtin_exercise_seed.sql");
+    }
+
+    private void importSql(JdbcTemplate jdbcTemplate, String classpathSql) {
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(new ClassPathResource(classpathSql));
         populator.setContinueOnError(false);
         DatabasePopulatorUtils.execute(populator, jdbcTemplate.getDataSource());
     }
@@ -56,18 +72,19 @@ public class DataInitializer {
     private void seedDemoDataIfNeeded(
             UserProfileRepository userProfileRepository,
             FoodRepository foodRepository,
-            MealRecordRepository mealRecordRepository
+            MealRecordRepository mealRecordRepository,
+            ExerciseRecordRepository exerciseRecordRepository
     ) {
         if (!demoSeedEnabled) {
             return;
         }
 
-        if (userProfileRepository.count() > 0 || mealRecordRepository.count() > 0) {
+        if (userProfileRepository.count() > 0 || mealRecordRepository.count() > 0 || exerciseRecordRepository.count() > 0) {
             return;
         }
 
         UserProfile user = new UserProfile(
-                "微信用户",
+                "Wechat User",
                 Gender.FEMALE,
                 LocalDate.of(1998, 5, 20),
                 new BigDecimal("165.00"),
@@ -79,35 +96,29 @@ public class DataInitializer {
         );
         userProfileRepository.save(user);
 
-        Food rice = foodRepository.findByNameIgnoreCase("米饭（熟）").orElse(null);
-        Food chicken = foodRepository.findByNameIgnoreCase("鸡胸肉（熟）").orElse(null);
-        Food broccoli = foodRepository.findByNameIgnoreCase("西兰花").orElse(null);
-        if (rice == null || chicken == null || broccoli == null) {
+        List<Food> foods = foodRepository.findAll(null);
+        if (foods.size() < 3) {
             return;
         }
 
+        saveMealRecord(mealRecordRepository, user.getId(), foods.get(0), MealType.BREAKFAST, new BigDecimal("120"));
+        saveMealRecord(mealRecordRepository, user.getId(), foods.get(1), MealType.LUNCH, new BigDecimal("180"));
+        saveMealRecord(mealRecordRepository, user.getId(), foods.get(2), MealType.DINNER, new BigDecimal("200"));
+    }
+
+    private void saveMealRecord(
+            MealRecordRepository mealRecordRepository,
+            Long userId,
+            Food food,
+            MealType mealType,
+            BigDecimal quantityInGram
+    ) {
         mealRecordRepository.save(new MealRecord(
-                user.getId(),
-                rice.getId(),
-                MealType.BREAKFAST,
-                new BigDecimal("120"),
-                MealRecord.calculateTotalCalories(rice.getCaloriesPer100g(), new BigDecimal("120")),
-                LocalDate.now()
-        ));
-        mealRecordRepository.save(new MealRecord(
-                user.getId(),
-                chicken.getId(),
-                MealType.LUNCH,
-                new BigDecimal("180"),
-                MealRecord.calculateTotalCalories(chicken.getCaloriesPer100g(), new BigDecimal("180")),
-                LocalDate.now()
-        ));
-        mealRecordRepository.save(new MealRecord(
-                user.getId(),
-                broccoli.getId(),
-                MealType.DINNER,
-                new BigDecimal("200"),
-                MealRecord.calculateTotalCalories(broccoli.getCaloriesPer100g(), new BigDecimal("200")),
+                userId,
+                food.getId(),
+                mealType,
+                quantityInGram,
+                MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram),
                 LocalDate.now()
         ));
     }
@@ -118,12 +129,12 @@ public class DataInitializer {
         ensureColumn(jdbcTemplate, "user_profile", "birth_date", "ALTER TABLE user_profile ADD COLUMN birth_date DATE NULL");
         ensureColumn(jdbcTemplate, "user_profile", "height", "ALTER TABLE user_profile ADD COLUMN height DECIMAL(5, 2) NOT NULL DEFAULT 165.00");
         ensureColumn(jdbcTemplate, "user_profile", "activity_level", "ALTER TABLE user_profile ADD COLUMN activity_level VARCHAR(20) NOT NULL DEFAULT 'LIGHT'");
-        ensureColumn(jdbcTemplate, "user_profile", "custom_bmr", "ALTER TABLE user_profile ADD COLUMN custom_bmr INT NULL COMMENT '用户自定义基础代谢，单位 kcal'");
-        ensureColumn(jdbcTemplate, "user_profile", "open_id", "ALTER TABLE user_profile ADD COLUMN open_id VARCHAR(64) NULL COMMENT '微信 openid'");
-        ensureColumn(jdbcTemplate, "user_profile", "union_id", "ALTER TABLE user_profile ADD COLUMN union_id VARCHAR(64) NULL COMMENT '微信 unionid'");
-        ensureColumn(jdbcTemplate, "user_profile", "nickname", "ALTER TABLE user_profile ADD COLUMN nickname VARCHAR(80) NULL COMMENT '微信昵称'");
-        ensureColumn(jdbcTemplate, "user_profile", "avatar_url", "ALTER TABLE user_profile ADD COLUMN avatar_url VARCHAR(300) NULL COMMENT '微信头像地址'");
-        ensureColumn(jdbcTemplate, "user_profile", "last_login_at", "ALTER TABLE user_profile ADD COLUMN last_login_at DATETIME NULL COMMENT '最近登录时间'");
+        ensureColumn(jdbcTemplate, "user_profile", "custom_bmr", "ALTER TABLE user_profile ADD COLUMN custom_bmr INT NULL COMMENT 'custom bmr in kcal'");
+        ensureColumn(jdbcTemplate, "user_profile", "open_id", "ALTER TABLE user_profile ADD COLUMN open_id VARCHAR(64) NULL COMMENT 'wechat openid'");
+        ensureColumn(jdbcTemplate, "user_profile", "union_id", "ALTER TABLE user_profile ADD COLUMN union_id VARCHAR(64) NULL COMMENT 'wechat unionid'");
+        ensureColumn(jdbcTemplate, "user_profile", "nickname", "ALTER TABLE user_profile ADD COLUMN nickname VARCHAR(80) NULL COMMENT 'wechat nickname'");
+        ensureColumn(jdbcTemplate, "user_profile", "avatar_url", "ALTER TABLE user_profile ADD COLUMN avatar_url VARCHAR(300) NULL COMMENT 'wechat avatar url'");
+        ensureColumn(jdbcTemplate, "user_profile", "last_login_at", "ALTER TABLE user_profile ADD COLUMN last_login_at DATETIME NULL COMMENT 'last login at'");
         ensureIndex(
                 jdbcTemplate,
                 "user_profile",
@@ -134,11 +145,11 @@ public class DataInitializer {
     }
 
     private void migrateFoodTable(JdbcTemplate jdbcTemplate) {
-        ensureColumn(jdbcTemplate, "food", "source", "ALTER TABLE food ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT '数据来源' AFTER category");
-        ensureColumn(jdbcTemplate, "food", "source_ref", "ALTER TABLE food ADD COLUMN source_ref VARCHAR(100) NULL COMMENT '来源数据主键' AFTER source");
-        ensureColumn(jdbcTemplate, "food", "aliases", "ALTER TABLE food ADD COLUMN aliases VARCHAR(500) NULL COMMENT '同义词，逗号分隔' AFTER source_ref");
-        ensureColumn(jdbcTemplate, "food", "is_builtin", "ALTER TABLE food ADD COLUMN is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置食物' AFTER aliases");
-        ensureColumn(jdbcTemplate, "food", "sort_order", "ALTER TABLE food ADD COLUMN sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类内排序值，越小越靠前' AFTER is_builtin");
+        ensureColumn(jdbcTemplate, "food", "source", "ALTER TABLE food ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT 'data source' AFTER category");
+        ensureColumn(jdbcTemplate, "food", "source_ref", "ALTER TABLE food ADD COLUMN source_ref VARCHAR(100) NULL COMMENT 'source ref id' AFTER source");
+        ensureColumn(jdbcTemplate, "food", "aliases", "ALTER TABLE food ADD COLUMN aliases VARCHAR(500) NULL COMMENT 'aliases' AFTER source_ref");
+        ensureColumn(jdbcTemplate, "food", "is_builtin", "ALTER TABLE food ADD COLUMN is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'is builtin' AFTER aliases");
+        ensureColumn(jdbcTemplate, "food", "sort_order", "ALTER TABLE food ADD COLUMN sort_order INT NOT NULL DEFAULT 9999 COMMENT 'category sort order' AFTER is_builtin");
         ensureIndex(
                 jdbcTemplate,
                 "food",
@@ -147,34 +158,49 @@ public class DataInitializer {
         );
     }
 
+    private void migrateExerciseTable(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS exercise (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    name VARCHAR(80) NOT NULL,
+                    met_value DECIMAL(8, 2) NOT NULL,
+                    category VARCHAR(80) NULL,
+                    source VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
+                    source_ref VARCHAR(100) NULL,
+                    aliases VARCHAR(500) NULL,
+                    is_builtin TINYINT(1) NOT NULL DEFAULT 0,
+                    sort_order INT NOT NULL DEFAULT 9999,
+                    created_at DATETIME NOT NULL,
+                    UNIQUE KEY uk_exercise_name (name),
+                    KEY idx_exercise_category_sort (category, sort_order, id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """);
+
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_record (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    user_id BIGINT NOT NULL,
+                    exercise_id BIGINT NOT NULL,
+                    duration_minutes INT NOT NULL,
+                    intensity_level VARCHAR(20) NOT NULL,
+                    intensity_factor DECIMAL(5, 2) NOT NULL,
+                    weight_kg_snapshot DECIMAL(6, 2) NOT NULL,
+                    total_calories DECIMAL(10, 2) NOT NULL,
+                    record_date DATE NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    KEY idx_exercise_record_user_date (user_id, record_date),
+                    KEY idx_exercise_record_exercise (exercise_id),
+                    CONSTRAINT fk_exercise_record_user FOREIGN KEY (user_id) REFERENCES user_profile(id),
+                    CONSTRAINT fk_exercise_record_exercise FOREIGN KEY (exercise_id) REFERENCES exercise(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """);
+    }
+
     private void backfillFoodSortOrder(JdbcTemplate jdbcTemplate) {
         if (!hasColumn(jdbcTemplate, "food", "sort_order")) {
             return;
         }
-
         jdbcTemplate.execute("UPDATE food SET sort_order = 9999 WHERE sort_order IS NULL");
-
-        applyCategorySortOrder(jdbcTemplate, "主食", List.of("米饭", "糙米饭", "燕麦片", "全麦面包", "面条", "馒头"));
-        applyCategorySortOrder(jdbcTemplate, "肉蛋奶", List.of("鸡胸肉", "鸡蛋", "牛奶", "酸奶", "虾仁", "三文鱼"));
-        applyCategorySortOrder(jdbcTemplate, "蔬果", List.of("西兰花", "菠菜", "番茄", "黄瓜", "苹果", "香蕉"));
-        applyCategorySortOrder(jdbcTemplate, "豆制品", List.of("豆腐", "豆浆", "豆干", "毛豆"));
-        applyCategorySortOrder(jdbcTemplate, "饮品", List.of("黑咖啡", "无糖绿茶", "无糖豆浆", "柠檬水"));
-        applyCategorySortOrder(jdbcTemplate, "零食", List.of("混合坚果", "杏仁", "海苔", "高蛋白棒"));
-        applyCategorySortOrder(jdbcTemplate, "其他", List.of("番茄炒蛋", "三明治", "寿司", "饭团"));
-    }
-
-    private void applyCategorySortOrder(JdbcTemplate jdbcTemplate, String category, List<String> foodNames) {
-        for (int i = 0; i < foodNames.size(); i++) {
-            int sortOrder = i + 1;
-            String name = foodNames.get(i);
-            jdbcTemplate.update(
-                    "UPDATE food SET sort_order = ? WHERE category = ? AND sort_order = 9999 AND (name = ? OR name LIKE CONCAT(?, '（%'))",
-                    sortOrder,
-                    category,
-                    name,
-                    name
-            );
-        }
     }
 
     private void ensureNullableEmail(JdbcTemplate jdbcTemplate) {
@@ -194,8 +220,7 @@ public class DataInitializer {
         if (!hasColumn(jdbcTemplate, "user_profile", "birth_date")) {
             return;
         }
-        boolean hasAgeColumn = hasColumn(jdbcTemplate, "user_profile", "age");
-        if (hasAgeColumn) {
+        if (hasColumn(jdbcTemplate, "user_profile", "age")) {
             jdbcTemplate.execute("UPDATE user_profile SET birth_date = DATE_SUB(CURDATE(), INTERVAL age YEAR) WHERE birth_date IS NULL AND age IS NOT NULL");
         }
         jdbcTemplate.execute("UPDATE user_profile SET birth_date = '2000-01-01' WHERE birth_date IS NULL");

@@ -55,7 +55,9 @@ Page({
     const chartHeight = height - padding * 2;
     const chartWidth = width - padding * 2;
     const values = trend.map((item) => Number(item.consumedCalories || 0));
-    const maxValue = Math.max(...values, 1);
+    const maxValue = Math.max(...values, 0);
+    const minValue = Math.min(...values, 0);
+    const range = Math.max(maxValue - minValue, 1);
 
     ctx.clearRect(0, 0, width, height);
     ctx.setFillStyle("#fffdf8");
@@ -69,9 +71,20 @@ Page({
     ctx.lineTo(width - padding, height - padding);
     ctx.stroke();
 
+    const zeroY = padding + ((maxValue - 0) * chartHeight) / range;
+    ctx.setStrokeStyle("rgba(191, 102, 71, 0.26)");
+    ctx.setLineWidth(1);
+    ctx.beginPath();
+    ctx.moveTo(padding, zeroY);
+    ctx.lineTo(width - padding, zeroY);
+    ctx.stroke();
+
     ctx.setFillStyle("#8f8373");
     ctx.setFontSize(20);
     ctx.fillText(`${toInteger(maxValue)} kcal`, padding, padding - 12);
+    if (minValue < 0) {
+      ctx.fillText(`${toInteger(minValue)} kcal`, padding, height - padding + 40);
+    }
 
     if (!trend.length) {
       ctx.draw();
@@ -84,7 +97,7 @@ Page({
 
     trend.forEach((item, index) => {
       const x = padding + (chartWidth * index) / Math.max(trend.length - 1, 1);
-      const y = height - padding - (chartHeight * Number(item.consumedCalories || 0)) / maxValue;
+      const y = padding + ((maxValue - Number(item.consumedCalories || 0)) * chartHeight) / range;
       if (index === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -96,7 +109,7 @@ Page({
 
     trend.forEach((item, index) => {
       const x = padding + (chartWidth * index) / Math.max(trend.length - 1, 1);
-      const y = height - padding - (chartHeight * Number(item.consumedCalories || 0)) / maxValue;
+      const y = padding + ((maxValue - Number(item.consumedCalories || 0)) * chartHeight) / range;
       ctx.setFillStyle("#1f6f5f");
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, 2 * Math.PI);

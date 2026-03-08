@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.diet.mapper.ExerciseMapper">
+
+    <select id="findByNameIgnoreCase" resultType="com.diet.domain.exercise.Exercise">
+        SELECT
+            id,
+            name,
+            met_value,
+            category,
+            source,
+            source_ref,
+            aliases,
+            is_builtin,
+            sort_order,
+            created_at
+        FROM exercise
+        WHERE LOWER(name) = LOWER(#{name})
+        LIMIT 1
+    </select>
+
+    <select id="findAll" resultType="com.diet.domain.exercise.Exercise">
+        SELECT
+            id,
+            name,
+            met_value,
+            category,
+            source,
+            source_ref,
+            aliases,
+            is_builtin,
+            sort_order,
+            created_at
+        FROM exercise
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (name LIKE CONCAT('%', #{keyword}, '%') OR aliases LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+        ORDER BY
+            CASE
+                WHEN category = 'CARDIO' THEN 1
+                WHEN category = 'STRENGTH' THEN 2
+                WHEN category = 'BALL' THEN 3
+                WHEN category = 'FLEXIBILITY' THEN 4
+                WHEN category = 'DAILY' THEN 5
+                WHEN category = 'OTHER' THEN 6
+                ELSE 99
+            END ASC,
+            sort_order ASC,
+            name ASC,
+            id ASC
+    </select>
+
+</mapper>

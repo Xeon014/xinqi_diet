@@ -1,0 +1,63 @@
+<view class="page-shell exercise-editor-page">
+  <view class="panel editor-head">
+    <view class="editor-badge">运动记录</view>
+    <view class="editor-date">{{recordDate}}</view>
+    <view class="section-title">{{mode === 'edit' ? '编辑运动' : '添加运动'}}</view>
+    <view class="section-subtitle">支持同一天记录多个运动项目</view>
+  </view>
+
+  <view class="panel editor-panel">
+    <view class="list-head">
+      <view class="field-label">运动清单</view>
+      <view class="list-count">{{exerciseItems.length}} 项</view>
+    </view>
+
+    <view class="add-action" bindtap="handleChooseExercise">+ 添加运动</view>
+
+    <view wx:if="{{exerciseItems.length}}" class="exercise-list">
+      <view wx:for="{{exerciseItems}}" wx:key="index" class="exercise-item">
+        <view class="exercise-item-head">
+          <view class="exercise-name">{{item.name}}</view>
+          <view class="remove-action" data-index="{{index}}" bindtap="handleRemoveExercise">删除</view>
+        </view>
+
+        <view class="exercise-meta">{{item.categoryLabel}} ? MET {{item.metValue}}</view>
+
+        <view class="form-row">
+          <view class="duration-box">
+            <input
+              class="duration-input"
+              type="number"
+              value="{{item.durationMinutes}}"
+              data-index="{{index}}"
+              bindinput="handleDurationInput"
+            />
+            <view class="duration-unit">min</view>
+          </view>
+
+          <picker
+            mode="selector"
+            range="{{intensityOptions}}"
+            range-key="label"
+            value="{{item.intensityLevel === 'LOW' ? 0 : item.intensityLevel === 'MEDIUM' ? 1 : 2}}"
+            data-index="{{index}}"
+            bindchange="handleIntensityChange"
+          >
+            <view class="intensity-chip">{{item.intensityLabel}}</view>
+          </picker>
+
+          <view class="item-calories">{{item.totalCalories}} kcal</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="empty-tip">先添加运动项目，再设置时长和强度</view>
+  </view>
+
+  <view class="panel summary-panel">
+    <view class="summary-label">预计运动消耗</view>
+    <view class="summary-value">{{totalBurnedCalories}} kcal</view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
+</view>

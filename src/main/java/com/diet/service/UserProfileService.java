@@ -1,14 +1,19 @@
 package com.diet.service;
 
 import com.diet.common.NotFoundException;
+import com.diet.domain.exercise.Exercise;
+import com.diet.domain.exercise.ExerciseRecord;
+import com.diet.domain.exercise.ExerciseRecordRepository;
+import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
-import com.diet.dto.record.MealRecordResponse;
 import com.diet.dto.user.CreateUserRequest;
+import com.diet.dto.user.DailyRecordResponse;
+import com.diet.dto.user.DailyRecordType;
 import com.diet.dto.user.DailySummaryResponse;
 import com.diet.dto.user.ProgressPointResponse;
 import com.diet.dto.user.ProgressSummaryResponse;
@@ -17,9 +22,12 @@ import com.diet.dto.user.UserResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,14 +43,22 @@ public class UserProfileService {
 
     private final FoodRepository foodRepository;
 
+    private final ExerciseRecordRepository exerciseRecordRepository;
+
+    private final ExerciseRepository exerciseRepository;
+
     public UserProfileService(
             UserProfileRepository userProfileRepository,
             MealRecordRepository mealRecordRepository,
-            FoodRepository foodRepository
+            FoodRepository foodRepository,
+            ExerciseRecordRepository exerciseRecordRepository,
+            ExerciseRepository exerciseRepository
     ) {
         this.userProfileRepository = userProfileRepository;
         this.mealRecordRepository = mealRecordRepository;
         this.foodRepository = foodRepository;
+        this.exerciseRecordRepository = exerciseRecordRepository;
+        this.exerciseRepository = exerciseRepository;
     }
 
     public UserResponse create(CreateUserRequest request) {
@@ -94,30 +110,44 @@ public class UserProfileService {
     @Transactional(readOnly = true)
     public DailySummaryResponse getDailySummary(Long userId, LocalDate date) {
         UserProfile user = getUser(userId);
-        List<MealRecord> records = mealRecordRepository.findByUserAndDate(userId, date);
-        Map<Long, Food> foods = loadFoods(records);
-        BigDecimal consumed = sumCalories(records);
-        BigDecimal remaining = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(consumed);
 
-        BigDecimal proteinIntake = sumNutrient(records, foods, Food::getProteinPer100g);
-        BigDecimal carbsIntake = sumNutrient(records, foods, Food::getCarbsPer100g);
-        BigDecimal fatIntake = sumNutrient(records, foods, Food::getFatPer100g);
+        List<MealRecord> mealRecords = mealRecordRepository.findByUserAndDate(userId, date);
+        List<ExerciseRecord> exerciseRecords = exerciseRecordRepository.findByUserAndDate(userId, date);
 
-        List<MealRecordResponse> responses = records.stream()
-                .map(record -> toMealRecordResponse(record, foods.get(record.getFoodId())))
+        Map<Long, Food> foods = loadFoods(mealRecords);
+        Map<Long, Exercise> exercises = loadExercises(exerciseRecords);
+
+        BigDecimal dietCalories = sumDietCalories(mealRecords);
+        BigDecimal exerciseCalories = sumExerciseCalories(exerciseRecords);
+        BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal remaining = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(netCalories)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal proteinIntake = sumNutrient(mealRecords, foods, Food::getProteinPer100g);
+        BigDecimal carbsIntake = sumNutrient(mealRecords, foods, Food::getCarbsPer100g);
+        BigDecimal fatIntake = sumNutrient(mealRecords, foods, Food::getFatPer100g);
+
+        List<DailyRecordResponse> records = Stream.concat(
+                        mealRecords.stream().map(record -> toDietDailyRecord(record, foods.get(record.getFoodId()))),
+                        exerciseRecords.stream().map(record -> toExerciseDailyRecord(record, exercises.get(record.getExerciseId())))
+                )
+                .sorted(Comparator.comparing(DailyRecordResponse::createdAt, Comparator.nullsLast(LocalDateTime::compareTo)).reversed())
                 .toList();
 
         return new DailySummaryResponse(
                 userId,
                 date,
                 user.getDailyCalorieTarget(),
-                consumed,
+                dietCalories,
+                exerciseCalories,
+                netCalories,
+                netCalories,
                 remaining,
                 remaining.compareTo(BigDecimal.ZERO) < 0,
                 proteinIntake,
                 carbsIntake,
                 fatIntake,
-                responses
+                records
         );
     }
 
@@ -128,21 +158,27 @@ public class UserProfileService {
         }
 
         UserProfile user = getUser(userId);
-        List<MealRecord> records = mealRecordRepository.findByUserAndDateRange(userId, startDate, endDate);
+        List<MealRecord> mealRecords = mealRecordRepository.findByUserAndDateRange(userId, startDate, endDate);
+        List<ExerciseRecord> exerciseRecords = exerciseRecordRepository.findByUserAndDateRange(userId, startDate, endDate);
 
         List<ProgressPointResponse> trend = startDate.datesUntil(endDate.plusDays(1))
-                .map(date -> buildPoint(user, date, records))
+                .map(date -> buildPoint(user, date, mealRecords, exerciseRecords))
                 .toList();
 
         BigDecimal totalCalories = trend.stream()
                 .map(ProgressPointResponse::consumedCalories)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
         BigDecimal averageCalories = trend.isEmpty()
                 ? BigDecimal.ZERO
                 : totalCalories.divide(BigDecimal.valueOf(trend.size()), 2, RoundingMode.HALF_UP);
+
         BigDecimal totalGap = trend.stream()
                 .map(ProgressPointResponse::calorieGap)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
         BigDecimal averageGap = trend.isEmpty()
                 ? BigDecimal.ZERO
                 : totalGap.divide(BigDecimal.valueOf(trend.size()), 2, RoundingMode.HALF_UP);
@@ -159,18 +195,39 @@ public class UserProfileService {
         );
     }
 
-    private ProgressPointResponse buildPoint(UserProfile user, LocalDate date, List<MealRecord> records) {
-        BigDecimal consumed = records.stream()
+    private ProgressPointResponse buildPoint(
+            UserProfile user,
+            LocalDate date,
+            List<MealRecord> mealRecords,
+            List<ExerciseRecord> exerciseRecords
+    ) {
+        BigDecimal dietCalories = mealRecords.stream()
                 .filter(record -> record.getRecordDate().equals(date))
                 .map(MealRecord::getTotalCalories)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal gap = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(consumed);
-        return new ProgressPointResponse(date, consumed, user.getDailyCalorieTarget(), gap);
+
+        BigDecimal exerciseCalories = exerciseRecords.stream()
+                .filter(record -> record.getRecordDate().equals(date))
+                .map(ExerciseRecord::getTotalCalories)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gap = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(netCalories)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new ProgressPointResponse(date, netCalories, user.getDailyCalorieTarget(), gap);
     }
 
-    private BigDecimal sumCalories(List<MealRecord> records) {
+    private BigDecimal sumDietCalories(List<MealRecord> records) {
         return records.stream()
                 .map(MealRecord::getTotalCalories)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sumExerciseCalories(List<ExerciseRecord> records) {
+        return records.stream()
+                .map(ExerciseRecord::getTotalCalories)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
     }
@@ -199,6 +256,46 @@ public class UserProfileService {
                 .collect(Collectors.toMap(Food::getId, food -> food));
     }
 
+    private Map<Long, Exercise> loadExercises(List<ExerciseRecord> records) {
+        return records.stream()
+                .map(ExerciseRecord::getExerciseId)
+                .distinct()
+                .map(this::getExercise)
+                .collect(Collectors.toMap(Exercise::getId, exercise -> exercise));
+    }
+
+    private DailyRecordResponse toDietDailyRecord(MealRecord record, Food food) {
+        return new DailyRecordResponse(
+                DailyRecordType.DIET,
+                record.getId(),
+                record.getRecordDate(),
+                record.getCreatedAt(),
+                record.getMealType(),
+                food.getName(),
+                record.getQuantityInGram(),
+                null,
+                null,
+                null,
+                record.getTotalCalories()
+        );
+    }
+
+    private DailyRecordResponse toExerciseDailyRecord(ExerciseRecord record, Exercise exercise) {
+        return new DailyRecordResponse(
+                DailyRecordType.EXERCISE,
+                record.getId(),
+                record.getRecordDate(),
+                record.getCreatedAt(),
+                null,
+                null,
+                null,
+                exercise.getName(),
+                record.getDurationMinutes(),
+                record.getIntensityLevel(),
+                record.getTotalCalories()
+        );
+    }
+
     private UserProfile getUser(Long id) {
         return userProfileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
@@ -207,6 +304,11 @@ public class UserProfileService {
     private Food getFood(Long id) {
         return foodRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("food not found, id=" + id));
+    }
+
+    private Exercise getExercise(Long id) {
+        return exerciseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("exercise not found, id=" + id));
     }
 
     private UserResponse toResponse(UserProfile user) {
@@ -229,24 +331,6 @@ public class UserProfileService {
         );
     }
 
-    private MealRecordResponse toMealRecordResponse(MealRecord record, Food food) {
-        return new MealRecordResponse(
-                record.getId(),
-                record.getUserId(),
-                record.getFoodId(),
-                food.getName(),
-                food.getCaloriesPer100g(),
-                food.getProteinPer100g(),
-                food.getCarbsPer100g(),
-                food.getFatPer100g(),
-                record.getMealType(),
-                record.getQuantityInGram(),
-                record.getTotalCalories(),
-                record.getRecordDate(),
-                record.getCreatedAt()
-        );
-    }
-
     private String normalizeName(String name) {
         if (name == null || name.isBlank()) {
             return DEFAULT_NAME;
@@ -254,4 +338,3 @@ public class UserProfileService {
         return name.trim();
     }
 }
-

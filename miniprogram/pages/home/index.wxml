@@ -1,46 +1,59 @@
 <view class="page-shell home-page">
   <view class="hero panel">
     <view class="hero-head">
-      <view class="hero-title">今日摄入</view>
+      <view class="hero-title">今日净摄入</view>
       <view class="hero-date">{{today}}</view>
     </view>
     <view class="hero-main">
-      <view class="hero-value">{{summary.consumedCalories}}</view>
+      <view class="hero-value">{{summary.netCalories}}</view>
       <view class="hero-unit">kcal</view>
     </view>
     <view class="hero-status">{{summary.exceededTarget ? '已超目标' : '剩余'}} {{summary.remainingAbs}} kcal</view>
-  </view>
 
-  <view class="stats-grid">
-    <view class="stat-card panel">
-      <view class="stat-label">目标热量</view>
-      <view class="stat-value">{{summary.targetCalories}}</view>
-      <view class="stat-unit">kcal</view>
-    </view>
-    <view class="stat-card panel">
-      <view class="stat-label">当前状态</view>
-      <view class="stat-value">{{summary.exceededTarget ? '超出' : '达标中'}}</view>
-      <view class="stat-unit">{{summary.exceededTarget ? '+' : '-'}}{{summary.remainingAbs}} kcal</view>
+    <view class="hero-metrics">
+      <view class="metric-item">
+        <view class="metric-label">饮食摄入</view>
+        <view class="metric-value">+{{summary.dietCalories}}</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-label">运动消耗</view>
+        <view class="metric-value">-{{summary.exerciseCalories}}</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-label">目标热量</view>
+        <view class="metric-value">{{summary.targetCalories}}</view>
+      </view>
+      <view class="metric-item">
+        <view class="metric-label">剩余目标</view>
+        <view class="metric-value">{{summary.exceededTarget ? '-' : ''}}{{summary.remainingAbs}}</view>
+      </view>
     </view>
   </view>
 
   <view class="action-row">
-    <view class="primary-button" bindtap="handleCreate">记录饮食</view>
+    <view class="primary-button" bindtap="handleCreate">记录</view>
     <view class="ghost-button" bindtap="handleOpenProgress">趋势</view>
   </view>
 
   <view class="section-head">
-    <view class="section-title">今日餐次</view>
-    <view class="record-count">{{summary.mealCards.length}} 餐</view>
+    <view class="section-title">今日记录</view>
+    <view class="record-count">{{summary.records.length}} 条</view>
   </view>
 
-  <view wx:if="{{summary.mealCards.length}}" class="meal-list panel">
-    <view wx:for="{{summary.mealCards}}" wx:key="mealType" class="meal-item" data-meal-type="{{item.mealType}}" bindtap="handleOpenMeal">
-      <view class="meal-main">
-        <view class="meal-name">{{item.mealTypeLabel}}</view>
-        <view class="meal-meta">{{item.foodCount}} 项</view>
+  <view wx:if="{{summary.records.length}}" class="record-stream panel">
+    <view
+      wx:for="{{summary.records}}"
+      wx:key="recordKey"
+      class="stream-item"
+      data-record-type="{{item.recordType}}"
+      data-meal-type="{{item.mealType}}"
+      data-record-date="{{item.recordDate}}"
+      bindtap="handleOpenRecord"
+    >
+      <view class="stream-main">
+        <view class="stream-title">{{item.title}}</view>
       </view>
-      <view class="meal-calories">{{item.totalCalories}} kcal</view>
+      <view class="stream-calories {{item.isDiet ? 'diet' : 'exercise'}}">{{item.signedCalories}}</view>
     </view>
   </view>
 

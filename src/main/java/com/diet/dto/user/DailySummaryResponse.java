@@ -1,12 +1,11 @@
 package com.diet.dto.user;
 
-import com.diet.dto.record.MealRecordResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-@Schema(description = "用户每日饮食汇总")
+@Schema(description = "用户每日记录汇总")
 public record DailySummaryResponse(
         @Schema(description = "用户 ID")
         Long userId,
@@ -17,7 +16,16 @@ public record DailySummaryResponse(
         @Schema(description = "目标热量，单位 kcal")
         Integer targetCalories,
 
-        @Schema(description = "当日已摄入热量，单位 kcal")
+        @Schema(description = "饮食摄入热量，单位 kcal")
+        BigDecimal dietCalories,
+
+        @Schema(description = "运动消耗热量，单位 kcal")
+        BigDecimal exerciseCalories,
+
+        @Schema(description = "净摄入热量（饮食-运动），单位 kcal")
+        BigDecimal netCalories,
+
+        @Schema(description = "兼容字段：当前等于净摄入热量，单位 kcal")
         BigDecimal consumedCalories,
 
         @Schema(description = "剩余热量，单位 kcal")
@@ -35,7 +43,7 @@ public record DailySummaryResponse(
         @Schema(description = "脂肪摄入量，单位 g")
         BigDecimal fatIntake,
 
-        @Schema(description = "当日饮食记录")
-        List<MealRecordResponse> records
+        @Schema(description = "当日记录流（饮食+运动）")
+        List<DailyRecordResponse> records
 ) {
 }
