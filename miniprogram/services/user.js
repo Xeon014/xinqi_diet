@@ -1,43 +1,46 @@
 const { getCurrentUserId } = require("../utils/auth");
 const { request } = require("../utils/request");
 
-function requireUserId() {
-  const userId = getCurrentUserId();
-  if (!userId) {
-    throw new Error("当前用户未登录");
-  }
-  return userId;
+function withUserId(executor) {
+  const app = getApp();
+  const ensureLogin = app && typeof app.ensureLogin === "function"
+    ? app.ensureLogin.bind(app)
+    : () => Promise.resolve();
+
+  return ensureLogin().then(() => {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      return Promise.reject(new Error("当前用户未登录"));
+    }
+    return executor(userId);
+  });
 }
 
 function getCurrentUser() {
-  const userId = requireUserId();
-  return request({
+  return withUserId((userId) => request({
     url: `/api/users/${userId}`,
-  });
+  }));
 }
 
 function getDailySummary(date) {
-  const userId = requireUserId();
-  return request({
+  return withUserId((userId) => request({
     url: `/api/users/${userId}/daily-summary?date=${date}`,
-  });
+  }));
 }
 
 function getProgress({ startDate, endDate }) {
-  const userId = requireUserId();
-  return request({
+  return withUserId((userId) => request({
     url: `/api/users/${userId}/progress?startDate=${startDate}&endDate=${endDate}`,
-  });
+  }));
 }
 
 function updateProfile(payload) {
-  const userId = requireUserId();
-  return request({
+  return withUserId((userId) => request({
     url: `/api/users/${userId}`,
     method: "PUT",
     data: payload,
     loadingTitle: "保存中",
-  });
+  }));
 }
 
 module.exports = {

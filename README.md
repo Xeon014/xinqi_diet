@@ -10,11 +10,19 @@
 - Maven
 - MySQL 8
 
+## 配置说明
+
+- 公共配置：`src/main/resources/application.yml`
+- 开发环境配置：`src/main/resources/application-dev.yml`
+- 生产环境配置：`src/main/resources/application-prod.yml`
+
+默认激活 `dev` 环境，且 `dev` 中已开启微信登录 mock：`wechat.mock-enabled=true`。
+
 ## 快速启动
 
 1. 执行数据库初始化脚本：[`scripts/mysql-init.sql`](/D:/IdeaProjects/diet/scripts/mysql-init.sql)
-2. （可选）配置微信登录环境变量：`WECHAT_APP_ID`、`WECHAT_APP_SECRET`
-3. 启动后端服务：`mvn spring-boot:run`
+2. 启动开发环境：`mvn spring-boot:run`
+3. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
 4. 服务默认地址：`http://localhost:8080`
 
 ## 登录与鉴权

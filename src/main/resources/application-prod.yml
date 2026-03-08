@@ -1,0 +1,25 @@
+﻿spring:
+  datasource:
+    url: ${DB_URL}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    com.diet: info
+
+wechat:
+  app-id: ${WECHAT_APP_ID}
+  app-secret: ${WECHAT_APP_SECRET}
+  mock-enabled: false
+
+auth:
+  token-secret: ${AUTH_TOKEN_SECRET}
+  token-expire-days: ${AUTH_TOKEN_EXPIRE_DAYS:30}
+
+app:
+  demo-seed-enabled: false
