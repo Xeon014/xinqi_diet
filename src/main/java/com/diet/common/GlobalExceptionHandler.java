@@ -22,6 +22,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "CONFLICT", List.of(exception.getMessage()));
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<ApiErrorResponse>> handleUnauthorized(UnauthorizedException exception) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", List.of(exception.getMessage()));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<ApiErrorResponse>> handleForbidden(ForbiddenException exception) {
+        return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", List.of(exception.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<ApiErrorResponse>> handleValidation(MethodArgumentNotValidException exception) {
         List<String> details = exception.getBindingResult()

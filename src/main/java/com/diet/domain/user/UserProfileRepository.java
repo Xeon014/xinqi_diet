@@ -13,5 +13,7 @@ public interface UserProfileRepository {
 
     Optional<UserProfile> findById(Long id);
 
+    Optional<UserProfile> findByOpenId(String openId);
+
     List<UserProfile> findAll();
 }

@@ -11,6 +11,10 @@ public record FoodResponse(
         BigDecimal carbsPer100g,
         BigDecimal fatPer100g,
         String category,
+        String source,
+        String sourceRef,
+        String aliases,
+        Boolean isBuiltin,
         LocalDateTime createdAt
 ) {
 }

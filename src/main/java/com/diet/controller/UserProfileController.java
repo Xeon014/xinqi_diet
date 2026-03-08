@@ -1,5 +1,6 @@
 package com.diet.controller;
 
+import com.diet.auth.AuthContextService;
 import com.diet.common.ApiResponse;
 import com.diet.dto.user.CreateUserRequest;
 import com.diet.dto.user.DailySummaryResponse;
@@ -11,6 +12,7 @@ import com.diet.service.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,8 +35,11 @@ public class UserProfileController {
 
     private final UserProfileService userProfileService;
 
-    public UserProfileController(UserProfileService userProfileService) {
+    private final AuthContextService authContextService;
+
+    public UserProfileController(UserProfileService userProfileService, AuthContextService authContextService) {
         this.userProfileService = userProfileService;
+        this.authContextService = authContextService;
     }
 
     @Operation(summary = "创建用户", description = "创建新的用户资料")
@@ -53,17 +58,23 @@ public class UserProfileController {
 
     @Operation(summary = "查询用户详情", description = "根据用户 ID 查询资料详情")
     @GetMapping("/{id}")
-    public ApiResponse<UserResponse> findById(@Parameter(description = "用户 ID") @PathVariable Long id) {
-        return ApiResponse.success(userProfileService.findById(id));
+    public ApiResponse<UserResponse> findById(
+            @Parameter(description = "用户 ID") @PathVariable Long id,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.resolveUserId(httpServletRequest, id);
+        return ApiResponse.success(userProfileService.findById(userId));
     }
 
     @Operation(summary = "更新用户资料", description = "更新用户基础资料和目标信息")
     @PutMapping("/{id}")
     public ApiResponse<UserResponse> update(
             @Parameter(description = "用户 ID") @PathVariable Long id,
-            @Valid @RequestBody UpdateUserRequest request
+            @Valid @RequestBody UpdateUserRequest request,
+            HttpServletRequest httpServletRequest
     ) {
-        return ApiResponse.success(userProfileService.update(id, request));
+        Long userId = authContextService.resolveUserId(httpServletRequest, id);
+        return ApiResponse.success(userProfileService.update(userId, request));
     }
 
     @Operation(summary = "查询每日汇总", description = "查询指定用户在某一天的热量摄入与营养汇总")
@@ -71,9 +82,11 @@ public class UserProfileController {
     public ApiResponse<DailySummaryResponse> getDailySummary(
             @Parameter(description = "用户 ID") @PathVariable Long id,
             @Parameter(description = "查询日期，格式 yyyy-MM-dd")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest httpServletRequest
     ) {
-        return ApiResponse.success(userProfileService.getDailySummary(id, date));
+        Long userId = authContextService.resolveUserId(httpServletRequest, id);
+        return ApiResponse.success(userProfileService.getDailySummary(userId, date));
     }
 
     @Operation(summary = "查询进度趋势", description = "查询指定时间范围内的热量趋势和减重进度")
@@ -83,8 +96,10 @@ public class UserProfileController {
             @Parameter(description = "开始日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @Parameter(description = "结束日期，格式 yyyy-MM-dd")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest httpServletRequest
     ) {
-        return ApiResponse.success(userProfileService.getProgress(id, startDate, endDate));
+        Long userId = authContextService.resolveUserId(httpServletRequest, id);
+        return ApiResponse.success(userProfileService.getProgress(userId, startDate, endDate));
     }
 }

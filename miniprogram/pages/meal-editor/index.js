@@ -1,5 +1,5 @@
 const { createRecord } = require("../../services/record");
-const { DEFAULT_USER_ID } = require("../../utils/constants");
+const { getCurrentUserId } = require("../../utils/auth");
 const { getToday } = require("../../utils/date");
 const { saveRecentFood } = require("../../utils/recent-foods");
 const { pickErrorMessage } = require("../../utils/request");
@@ -70,6 +70,7 @@ Page({
   handleSubmit() {
     const { selectedFood, quantityInGram, mealType, recordDate } = this.data;
     const quantity = Number(quantityInGram);
+    const userId = getCurrentUserId();
 
     if (!selectedFood) {
       wx.showToast({
@@ -88,14 +89,15 @@ Page({
     }
 
     createRecord({
-      userId: DEFAULT_USER_ID,
       foodId: selectedFood.id,
       mealType,
       quantityInGram: quantity,
       recordDate,
     })
       .then(() => {
-        saveRecentFood(DEFAULT_USER_ID, selectedFood);
+        if (userId) {
+          saveRecentFood(userId, selectedFood);
+        }
         app.globalData.refreshHomeOnShow = true;
         wx.showToast({
           title: "记录成功",

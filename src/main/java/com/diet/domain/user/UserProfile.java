@@ -30,7 +30,18 @@ public class UserProfile {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @TableField("open_id")
+    private String openId;
+
+    @TableField("union_id")
+    private String unionId;
+
     private String name;
+
+    private String nickname;
+
+    @TableField("avatar_url")
+    private String avatarUrl;
 
     private Gender gender;
 
@@ -53,6 +64,9 @@ public class UserProfile {
 
     @TableField("custom_bmr")
     private Integer customBmr;
+
+    @TableField("last_login_at")
+    private LocalDateTime lastLoginAt;
 
     @TableField("created_at")
     private LocalDateTime createdAt;

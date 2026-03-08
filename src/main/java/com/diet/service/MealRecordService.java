@@ -37,8 +37,8 @@ public class MealRecordService {
         this.foodRepository = foodRepository;
     }
 
-    public MealRecordResponse create(CreateMealRecordRequest request) {
-        UserProfile user = getUser(request.userId());
+    public MealRecordResponse create(Long userId, CreateMealRecordRequest request) {
+        UserProfile user = getUser(userId);
         Food food = getFood(request.foodId());
         BigDecimal totalCalories = MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), request.quantityInGram());
 

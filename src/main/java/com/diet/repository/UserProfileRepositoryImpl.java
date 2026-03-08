@@ -42,6 +42,13 @@ public class UserProfileRepositoryImpl implements UserProfileRepository {
     }
 
     @Override
+    public Optional<UserProfile> findByOpenId(String openId) {
+        return Optional.ofNullable(userProfileMapper.selectOne(new LambdaQueryWrapper<UserProfile>()
+                .eq(UserProfile::getOpenId, openId)
+                .last("LIMIT 1")));
+    }
+
+    @Override
     public List<UserProfile> findAll() {
         return userProfileMapper.selectList(new LambdaQueryWrapper<UserProfile>()
                 .orderByAsc(UserProfile::getId));

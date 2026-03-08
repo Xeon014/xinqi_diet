@@ -1,5 +1,5 @@
 const { searchFoods } = require("../../services/food");
-const { DEFAULT_USER_ID } = require("../../utils/constants");
+const { getCurrentUserId } = require("../../utils/auth");
 const { decorateFood, filterFoodsByCategory, FOOD_CATEGORIES } = require("../../utils/food");
 const { getRecentFoods } = require("../../utils/recent-foods");
 const { pickErrorMessage } = require("../../utils/request");
@@ -38,7 +38,10 @@ Page({
     searchFoods("")
       .then((data) => {
         const foods = (data.foods || []).map((food) => normalizeFood(decorateFood(food)));
-        const recentFoods = getRecentFoods(DEFAULT_USER_ID).map((food) => normalizeFood(decorateFood(food)));
+        const userId = getCurrentUserId();
+        const recentFoods = userId
+          ? getRecentFoods(userId).map((food) => normalizeFood(decorateFood(food)))
+          : [];
         this.setData(
           {
             foods,

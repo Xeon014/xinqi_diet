@@ -33,6 +33,16 @@ public class Food {
 
     private String category;
 
+    private String source;
+
+    @TableField("source_ref")
+    private String sourceRef;
+
+    private String aliases;
+
+    @TableField("is_builtin")
+    private Boolean builtin;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
@@ -50,6 +60,27 @@ public class Food {
         this.carbsPer100g = carbsPer100g;
         this.fatPer100g = fatPer100g;
         this.category = category;
+        this.source = "MANUAL";
+        this.builtin = false;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Food(
+            String name,
+            BigDecimal caloriesPer100g,
+            BigDecimal proteinPer100g,
+            BigDecimal carbsPer100g,
+            BigDecimal fatPer100g,
+            String category,
+            String source,
+            String sourceRef,
+            String aliases,
+            Boolean builtin
+    ) {
+        this(name, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g, category);
+        this.source = source;
+        this.sourceRef = sourceRef;
+        this.aliases = aliases;
+        this.builtin = builtin;
     }
 }

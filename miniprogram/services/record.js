@@ -1,3 +1,4 @@
+const { getCurrentUserId } = require("../utils/auth");
 const { request } = require("../utils/request");
 
 function createRecord(payload) {
@@ -5,13 +6,15 @@ function createRecord(payload) {
     url: "/api/records",
     method: "POST",
     data: payload,
-    loadingTitle: "\u63d0\u4ea4\u4e2d",
+    loadingTitle: "提交中",
   });
 }
 
-function getRecords(userId, date) {
+function getRecords(date) {
+  const userId = getCurrentUserId();
+  const query = userId ? `?userId=${userId}&date=${date}` : `?date=${date}`;
   return request({
-    url: `/api/records?userId=${userId}&date=${date}`,
+    url: `/api/records${query}`,
     showLoading: false,
   });
 }

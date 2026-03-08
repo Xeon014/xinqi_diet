@@ -46,7 +46,11 @@ public class FoodRepositoryImpl implements FoodRepository {
         LambdaQueryWrapper<Food> queryWrapper = new LambdaQueryWrapper<Food>()
                 .orderByAsc(Food::getName);
         if (keyword != null && !keyword.isBlank()) {
-            queryWrapper.like(Food::getName, keyword.trim());
+            String trimmedKeyword = keyword.trim();
+            queryWrapper.and(wrapper -> wrapper
+                    .like(Food::getName, trimmedKeyword)
+                    .or()
+                    .like(Food::getAliases, trimmedKeyword));
         }
         return foodMapper.selectList(queryWrapper);
     }

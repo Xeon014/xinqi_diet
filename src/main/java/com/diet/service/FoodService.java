@@ -60,6 +60,10 @@ public class FoodService {
                 food.getCarbsPer100g(),
                 food.getFatPer100g(),
                 food.getCategory(),
+                food.getSource(),
+                food.getSourceRef(),
+                food.getAliases(),
+                food.getBuiltin(),
                 food.getCreatedAt()
         );
     }
