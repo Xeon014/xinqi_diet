@@ -19,6 +19,20 @@ function toInteger(value) {
   return Math.round(toNumber(value));
 }
 
+function getRecommendedMealType() {
+  const hour = new Date().getHours();
+  if (hour < 10) {
+    return "BREAKFAST";
+  }
+  if (hour < 15) {
+    return "LUNCH";
+  }
+  if (hour < 20) {
+    return "DINNER";
+  }
+  return "SNACK";
+}
+
 function formatDietTitle(record) {
   const mealTypeLabel = MEAL_TYPE_LABELS[record.mealType] || "饮食";
   const quantity = toInteger(record.quantityInGram);
@@ -38,27 +52,11 @@ function normalizeRecord(record, today) {
   return {
     ...record,
     title: isDiet ? formatDietTitle(record) : formatExerciseTitle(record),
-    calories,
     signedCalories: `${isDiet ? "+" : "-"}${calories} kcal`,
     isDiet,
-    isExercise: !isDiet,
     recordDate: record.recordDate || today,
     recordKey: `${record.recordType || "UNKNOWN"}-${record.recordId || ""}-${record.createdAt || ""}`,
   };
-}
-
-function normalizeMealProgress(mealProgress = []) {
-  return mealProgress.map((item) => {
-    const remaining = toInteger(item.remainingCalories);
-    return {
-      ...item,
-      mealLabel: item.mealLabel || MEAL_TYPE_LABELS[item.mealType] || "餐次",
-      intakeCalories: toInteger(item.intakeCalories),
-      targetCalories: toInteger(item.targetCalories),
-      remainingCalories: remaining,
-      remainingAbs: Math.abs(remaining),
-    };
-  });
 }
 
 function normalizeSummary(summary, today) {
@@ -73,43 +71,37 @@ function normalizeSummary(summary, today) {
     dietCalories: toInteger(summary.dietCalories),
     exerciseCalories: toInteger(summary.exerciseCalories),
     netCalories,
-    consumedCalories: netCalories,
     remainingCalories,
     remainingAbs: Math.abs(remainingCalories),
     records,
-    mealProgress: normalizeMealProgress(summary.mealProgress || []),
-    summaryText: dailyInsight.summaryText || "继续记录，查看今日变化。",
-    suggestions: Array.isArray(dailyInsight.suggestions) ? dailyInsight.suggestions : [],
-    trendInsight: {
-      averageNetCalories: toInteger(summary.trendInsight && summary.trendInsight.averageNetCalories),
-      exerciseDays: toInteger(summary.trendInsight && summary.trendInsight.exerciseDays),
-      topExceededMealType: summary.trendInsight && summary.trendInsight.topExceededMealType,
-    },
+    summaryText: dailyInsight.summaryText || "继续记录，保持节奏。",
   };
 }
 
 Page({
   data: {
     today: getToday(),
+    recommendedMealType: getRecommendedMealType(),
+    recommendedMealLabel: "",
     summary: {
       targetCalories: 0,
       dietCalories: 0,
       exerciseCalories: 0,
       netCalories: 0,
-      consumedCalories: 0,
       remainingCalories: 0,
       remainingAbs: 0,
       exceededTarget: false,
       records: [],
-      mealProgress: [],
       summaryText: "",
-      suggestions: [],
-      trendInsight: {
-        averageNetCalories: 0,
-        exerciseDays: 0,
-        topExceededMealType: "",
-      },
     },
+  },
+
+  onLoad() {
+    const mealType = getRecommendedMealType();
+    this.setData({
+      recommendedMealType: mealType,
+      recommendedMealLabel: MEAL_TYPE_LABELS[mealType] || "当前餐次",
+    });
   },
 
   onShow() {
@@ -117,6 +109,14 @@ Page({
     if (app.globalData.refreshHomeOnShow) {
       app.globalData.refreshHomeOnShow = false;
     }
+
+    const mealType = getRecommendedMealType();
+    this.setData({
+      today: getToday(),
+      recommendedMealType: mealType,
+      recommendedMealLabel: MEAL_TYPE_LABELS[mealType] || "当前餐次",
+    });
+
     this.loadSummary();
   },
 
@@ -139,12 +139,10 @@ Page({
       });
   },
 
-  handleCreate() {
-    wx.switchTab({ url: "/pages/record-create/index" });
-  },
-
-  handleOpenProgress() {
-    wx.navigateTo({ url: "/pages/progress/index" });
+  handleGoRecommendedMeal() {
+    wx.navigateTo({
+      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(this.data.recommendedMealType)}&recordDate=${encodeURIComponent(this.data.today)}`,
+    });
   },
 
   handleOpenRecord(event) {
@@ -159,21 +157,5 @@ Page({
     wx.navigateTo({
       url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
     });
-  },
-
-  handleGoMeal(event) {
-    const { mealType } = event.currentTarget.dataset;
-    wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(this.data.today)}`,
-    });
-  },
-
-  handleSuggestionTap(event) {
-    const { mealType } = event.currentTarget.dataset;
-    if (mealType) {
-      this.handleGoMeal({ currentTarget: { dataset: { mealType } } });
-      return;
-    }
-    wx.switchTab({ url: "/pages/record-create/index" });
   },
 });

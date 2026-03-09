@@ -1,46 +1,47 @@
 <view class="page-shell profile-page" wx:if="{{profile && summary}}">
-  <view class="profile-hero panel">
-    <view class="hero-kicker">我的</view>
-    <view class="hero-title">{{profile.name}}</view>
-    <view class="hero-date">{{today}}</view>
+  <view class="panel profile-hero">
+    <view class="hero-top">
+      <view class="hero-avatar">{{nameInitial}}</view>
+      <view class="hero-main">
+        <view class="hero-title">{{profile.name}}</view>
+        <view class="hero-subtitle">{{heroSubtitle}}</view>
+      </view>
+      <view class="hero-pill">{{todayStatus}}</view>
+    </view>
+
+    <view class="hero-metrics">
+      <view class="hero-metric">
+        <view class="metric-label">BMI</view>
+        <view class="metric-value">{{bmiLabel}}</view>
+      </view>
+      <view class="hero-metric">
+        <view class="metric-label">今日摄入</view>
+        <view class="metric-value">{{intakeLabel}}</view>
+      </view>
+    </view>
   </view>
 
-  <view class="overview-grid">
-    <view wx:for="{{overviewCards}}" wx:key="label" class="overview-card panel {{'tone-' + item.tone}}">
-      <view class="overview-label">{{item.label}}</view>
-      <view class="overview-value">{{item.value}}</view>
+  <view class="panel card-item" bindtap="handleOpenPersonalInfo">
+    <view class="card-main">
+      <view class="card-title">个人信息</view>
+      <view class="card-desc">身高、体重、目标体重等基础参数</view>
     </view>
+    <view class="card-arrow">></view>
   </view>
 
-  <view class="entry-list">
-    <view class="entry-card panel" bindtap="handleOpenPersonalInfo">
-      <view class="entry-main">
-        <view class="entry-title">个人信息</view>
-        <view class="entry-tags">
-          <view wx:for="{{personalTags}}" wx:key="*this" class="entry-tag">{{item}}</view>
-        </view>
-        <view class="entry-note">{{personalNote}}</view>
-      </view>
-      <view class="entry-icon">></view>
+  <view class="panel card-item" bindtap="handleOpenHealthProfile">
+    <view class="card-main">
+      <view class="card-title">健康档案</view>
+      <view class="card-desc">BMR、TDEE 与每日热量目标设置</view>
     </view>
-
-    <view class="entry-card panel" bindtap="handleOpenHealthProfile">
-      <view class="entry-main">
-        <view class="entry-title">健康档案</view>
-        <view class="entry-tags">
-          <view wx:for="{{healthTags}}" wx:key="*this" class="entry-tag entry-tag-accent">{{item}}</view>
-        </view>
-        <view class="entry-note">{{healthNote}}</view>
-      </view>
-      <view class="entry-icon">></view>
-    </view>
+    <view class="card-arrow">></view>
   </view>
 
   <view class="panel tools-panel">
-    <view class="section-title">长期参数与工具</view>
+    <view class="tools-title">长期参数与工具</view>
     <view wx:for="{{toolEntries}}" wx:key="key" class="tool-item" data-key="{{item.key}}" bindtap="handleOpenTool">
       <view class="tool-main">
-        <view class="tool-title">{{item.title}}</view>
+        <view class="tool-name">{{item.title}}</view>
         <view class="tool-desc">{{item.desc}}</view>
       </view>
       <view class="tool-arrow">></view>

@@ -1,10 +1,25 @@
 <view class="page-shell record-entry-page">
+  <view class="panel date-panel">
+    <view class="date-switch-row">
+      <view class="date-step" bindtap="handlePrevDay">前一天</view>
+      <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
+        <view class="date-center">
+          <view class="date-label">{{displayDateLabel}}</view>
+        </view>
+      </picker>
+      <view class="date-step" bindtap="handleNextDay">后一天</view>
+    </view>
+  </view>
+
   <view class="panel summary-panel">
-    <view class="section-title">今日结果反馈</view>
     <view class="summary-grid">
       <view class="summary-item">
         <view class="summary-label">已摄入</view>
         <view class="summary-value">{{summary.consumedCalories}} kcal</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">已消耗</view>
+        <view class="summary-value">{{summary.exerciseCalories}} kcal</view>
       </view>
       <view class="summary-item">
         <view class="summary-label">目标</view>
@@ -17,44 +32,8 @@
     </view>
   </view>
 
-  <view class="panel date-panel">
-    <view class="section-title">记录日期</view>
-    <view class="section-subtitle">默认今天，可按需切换日期后再记录</view>
-
-    <view class="field-group compact-group">
-      <view class="field-label">日期</view>
-      <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
-        <view class="date-picker">{{recordDate}}</view>
-      </picker>
-    </view>
-  </view>
-
-  <view class="panel quick-panel">
-    <view class="section-title">快速记录</view>
-    <view class="quick-action" bindtap="handleQuickMeal">记录当前推荐餐次</view>
-
-    <view class="meal-grid">
-      <view wx:for="{{mealTypes}}" wx:key="value" class="meal-chip" data-meal-type="{{item.value}}" bindtap="handleMealTap">
-        记录{{item.label}}
-      </view>
-    </view>
-  </view>
-
-  <view class="panel entry-list">
-    <view class="entry-item" bindtap="handleOpenDietEditor">
-      <view class="entry-main">
-        <view class="entry-title">记录饮食</view>
-        <view class="entry-note">选择餐次并编辑食物清单</view>
-      </view>
-      <view class="entry-arrow">></view>
-    </view>
-
-    <view class="entry-item" bindtap="handleOpenExerciseEditor">
-      <view class="entry-main">
-        <view class="entry-title">记录运动</view>
-        <view class="entry-note">添加运动项目、时长和强度</view>
-      </view>
-      <view class="entry-arrow">></view>
-    </view>
+  <view class="panel action-panel">
+    <view class="entry-btn" bindtap="handleOpenDietEditor">记录{{recommendedMealLabel}}</view>
+    <view class="entry-btn secondary" bindtap="handleOpenExerciseEditor">记录运动</view>
   </view>
 </view>

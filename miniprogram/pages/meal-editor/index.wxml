@@ -1,9 +1,25 @@
 <view class="page-shell meal-editor-page">
   <view class="panel meal-head">
-    <view class="meal-badge">{{mealLabel}}</view>
-    <view class="meal-date">{{recordDate}}</view>
-    <view class="section-title">{{mealLabel}}</view>
-    <view class="section-subtitle">{{mode === 'edit' ? '调整已记录食物，保存后同步到首页' : '添加食物后一次性保存到该餐次'}}</view>
+    <view class="head-top">
+      <view class="meal-badge">{{mealLabel}}</view>
+      <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
+        <view class="meal-date">{{recordDate}}</view>
+      </picker>
+    </view>
+
+    <view class="meal-types">
+      <view
+        wx:for="{{mealTypes}}"
+        wx:key="value"
+        class="meal-chip {{mealType === item.value ? 'active' : ''}}"
+        data-meal-type="{{item.value}}"
+        bindtap="handleMealTypeTap"
+      >
+        {{item.label}}
+      </view>
+    </view>
+
+    <view class="section-subtitle">{{mode === 'edit' ? '可切换餐次和日期查看并编辑记录' : '默认推荐餐次，可按需切换后记录'}}</view>
   </view>
 
   <view class="panel editor-panel">
@@ -43,7 +59,7 @@
       </view>
     </view>
 
-    <view wx:else class="empty-tip">{{mode === 'edit' ? '该餐次暂无食物，可点击“添加食物”继续补录。' : '还没有添加食物，先点“添加食物”。'}}</view>
+    <view wx:else class="empty-tip">{{mode === 'edit' ? '当前餐次和日期暂无记录，可点击添加食物补录。' : '还没有添加食物，先点“添加食物”。'}}</view>
   </view>
 
   <view class="panel summary-panel">

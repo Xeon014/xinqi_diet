@@ -1,13 +1,5 @@
 const { getDailySummary } = require("../../services/user");
-const { getToday } = require("../../utils/date");
-const { pickErrorMessage } = require("../../utils/request");
-
-const MEAL_TYPES = [
-  { label: "早餐", value: "BREAKFAST" },
-  { label: "午餐", value: "LUNCH" },
-  { label: "晚餐", value: "DINNER" },
-  { label: "加餐", value: "SNACK" },
-];
+const { addDays, getToday } = require("../../utils/date");
 
 function toInteger(value) {
   const number = Number(value);
@@ -28,29 +20,92 @@ function getRecommendedMealType() {
   return "SNACK";
 }
 
+const MEAL_TYPE_LABELS = {
+  BREAKFAST: "早餐",
+  LUNCH: "午餐",
+  DINNER: "晚餐",
+  SNACK: "加餐",
+};
+
+function resolveDateLabel(recordDate) {
+  const today = getToday();
+  const yesterday = addDays(today, -1);
+  const tomorrow = addDays(today, 1);
+  if (recordDate === today) {
+    return "今天";
+  }
+  if (recordDate === yesterday) {
+    return "昨天";
+  }
+  if (recordDate === tomorrow) {
+    return "明天";
+  }
+  return recordDate;
+}
+
 Page({
   data: {
     recordDate: getToday(),
-    mealTypes: MEAL_TYPES,
+    displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
+    recommendedMealLabel: "当前餐次",
     summary: {
       consumedCalories: 0,
+      exerciseCalories: 0,
       targetCalories: 0,
       remainingCalories: 0,
       exceededTarget: false,
     },
   },
 
+  onLoad() {
+    this.refreshDateMeta();
+  },
+
   onShow() {
+    this.refreshDateMeta();
     this.loadSummary();
   },
 
-  handleDateChange(event) {
+  refreshDateMeta() {
+    const recommendedMealType = getRecommendedMealType();
     this.setData({
-      recordDate: event.detail.value,
-    }, () => {
-      this.loadSummary();
+      displayDateLabel: resolveDateLabel(this.data.recordDate),
+      recommendedMealType,
+      recommendedMealLabel: MEAL_TYPE_LABELS[recommendedMealType] || "当前餐次",
     });
+  },
+
+  handlePrevDay() {
+    this.shiftDay(-1);
+  },
+
+  handleNextDay() {
+    this.shiftDay(1);
+  },
+
+  shiftDay(offset) {
+    this.setData(
+      {
+        recordDate: addDays(this.data.recordDate, offset),
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
+  },
+
+  handleDateChange(event) {
+    this.setData(
+      {
+        recordDate: event.detail.value,
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
   },
 
   loadSummary() {
@@ -59,6 +114,7 @@ Page({
         this.setData({
           summary: {
             consumedCalories: toInteger(summary.consumedCalories),
+            exerciseCalories: toInteger(summary.exerciseCalories),
             targetCalories: toInteger(summary.targetCalories),
             remainingCalories: Math.abs(toInteger(summary.remainingCalories)),
             exceededTarget: !!summary.exceededTarget,
@@ -69,6 +125,7 @@ Page({
         this.setData({
           summary: {
             consumedCalories: 0,
+            exerciseCalories: 0,
             targetCalories: 0,
             remainingCalories: 0,
             exceededTarget: false,
@@ -78,21 +135,6 @@ Page({
   },
 
   handleOpenDietEditor() {
-    wx.showActionSheet({
-      itemList: this.data.mealTypes.map((item) => item.label),
-      success: (result) => {
-        const selectedType = this.data.mealTypes[result.tapIndex];
-        if (!selectedType) {
-          return;
-        }
-        wx.navigateTo({
-          url: `/pages/meal-editor/index?mealType=${selectedType.value}&recordDate=${this.data.recordDate}`,
-        });
-      },
-    });
-  },
-
-  handleQuickMeal() {
     wx.navigateTo({
       url: `/pages/meal-editor/index?mealType=${this.data.recommendedMealType}&recordDate=${this.data.recordDate}`,
     });
@@ -101,13 +143,6 @@ Page({
   handleOpenExerciseEditor() {
     wx.navigateTo({
       url: `/pages/exercise-editor/index?recordDate=${this.data.recordDate}`,
-    });
-  },
-
-  handleMealTap(event) {
-    const { mealType } = event.currentTarget.dataset;
-    wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${mealType}&recordDate=${this.data.recordDate}`,
     });
   },
 });

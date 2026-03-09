@@ -7,6 +7,13 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
 
+const MEAL_TYPES = [
+  { value: "BREAKFAST", label: "早餐" },
+  { value: "LUNCH", label: "午餐" },
+  { value: "DINNER", label: "晚餐" },
+  { value: "SNACK", label: "加餐" },
+];
+
 const MEAL_TYPE_LABELS = {
   BREAKFAST: "早餐",
   LUNCH: "午餐",
@@ -86,6 +93,7 @@ Page({
     mode: "create",
     mealType: "BREAKFAST",
     mealLabel: "早餐",
+    mealTypes: MEAL_TYPES,
     recordDate: getToday(),
     foodItems: [],
     deletedRecordIds: [],
@@ -106,7 +114,7 @@ Page({
     });
 
     wx.setNavigationBarTitle({
-      title: mode === "edit" ? "编辑餐次" : "添加餐次",
+      title: mode === "edit" ? "编辑饮食" : "记录饮食",
     });
 
     if (mode === "edit") {
@@ -143,6 +151,64 @@ Page({
           icon: "none",
         });
       });
+  },
+
+  switchEditContext(nextMealType, nextRecordDate) {
+    this.setData({
+      mealType: nextMealType,
+      mealLabel: MEAL_TYPE_LABELS[nextMealType] || "早餐",
+      recordDate: nextRecordDate,
+    }, () => {
+      if (this.data.mode === "edit") {
+        this.loadMealRecords();
+      }
+    });
+  },
+
+  handleMealTypeTap(event) {
+    const nextMealType = event.currentTarget.dataset.mealType;
+    if (!nextMealType || nextMealType === this.data.mealType) {
+      return;
+    }
+
+    if (this.data.mode === "edit" && this.hasPendingChanges()) {
+      wx.showModal({
+        title: "切换餐次",
+        content: "当前修改尚未保存，切换后会丢失，是否继续？",
+        success: (result) => {
+          if (!result.confirm) {
+            return;
+          }
+          this.switchEditContext(nextMealType, this.data.recordDate);
+        },
+      });
+      return;
+    }
+
+    this.switchEditContext(nextMealType, this.data.recordDate);
+  },
+
+  handleDateChange(event) {
+    const nextDate = event.detail.value;
+    if (!nextDate || nextDate === this.data.recordDate) {
+      return;
+    }
+
+    if (this.data.mode === "edit" && this.hasPendingChanges()) {
+      wx.showModal({
+        title: "切换日期",
+        content: "当前修改尚未保存，切换后会丢失，是否继续？",
+        success: (result) => {
+          if (!result.confirm) {
+            return;
+          }
+          this.switchEditContext(this.data.mealType, nextDate);
+        },
+      });
+      return;
+    }
+
+    this.switchEditContext(this.data.mealType, nextDate);
   },
 
   handleChooseFood() {
