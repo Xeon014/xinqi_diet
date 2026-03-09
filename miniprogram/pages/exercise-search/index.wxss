@@ -18,6 +18,25 @@
   padding: 0 24rpx;
 }
 
+.tool-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tool-btn {
+  align-items: center;
+  background: rgba(30, 90, 79, 0.1);
+  border-radius: 14rpx;
+  color: #1e5a4f;
+  display: flex;
+  font-size: 24rpx;
+  font-weight: 700;
+  height: 66rpx;
+  justify-content: center;
+  margin-right: 6rpx;
+  padding: 0 18rpx;
+}
+
 .category-panel {
   display: flex;
   flex-wrap: wrap;

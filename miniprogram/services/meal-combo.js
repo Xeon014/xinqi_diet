@@ -21,6 +21,23 @@ function createMealCombo(payload) {
   }));
 }
 
+function updateMealCombo(comboId, payload) {
+  return withUserId((userId) => request({
+    url: `/api/meal-combos/${comboId}?userId=${userId}`,
+    method: "PUT",
+    data: payload,
+    loadingTitle: "保存中",
+  }));
+}
+
+function deleteMealCombo(comboId) {
+  return withUserId((userId) => request({
+    url: `/api/meal-combos/${comboId}?userId=${userId}`,
+    method: "DELETE",
+    loadingTitle: "删除中",
+  }));
+}
+
 function getMealComboList() {
   return withUserId((userId) => request({
     url: `/api/meal-combos?userId=${userId}`,
@@ -37,6 +54,8 @@ function getMealComboDetail(comboId) {
 
 module.exports = {
   createMealCombo,
+  updateMealCombo,
+  deleteMealCombo,
   getMealComboList,
   getMealComboDetail,
 };

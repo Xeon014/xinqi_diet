@@ -16,4 +16,6 @@ public interface MealComboRepository {
     List<MealComboItem> findItemsByComboId(Long comboId);
 
     void deleteItemsByComboId(Long comboId);
+
+    void deleteById(Long comboId);
 }

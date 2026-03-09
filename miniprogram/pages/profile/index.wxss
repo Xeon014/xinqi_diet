@@ -142,3 +142,43 @@
   justify-content: center;
   width: 60rpx;
 }
+
+.tools-panel {
+  padding: 20rpx 24rpx;
+}
+
+.tool-item {
+  align-items: center;
+  border-top: 1rpx solid rgba(70, 57, 47, 0.12);
+  display: flex;
+  justify-content: space-between;
+  min-height: 98rpx;
+  padding: 12rpx 0;
+}
+
+.tool-item:first-child {
+  border-top: 0;
+}
+
+.tool-main {
+  flex: 1;
+}
+
+.tool-title {
+  color: #2f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.tool-desc {
+  color: #74685c;
+  font-size: 22rpx;
+  margin-top: 6rpx;
+}
+
+.tool-arrow {
+  color: #1e5a4f;
+  font-size: 28rpx;
+  font-weight: 700;
+  margin-left: 12rpx;
+}

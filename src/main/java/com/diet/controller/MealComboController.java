@@ -5,6 +5,7 @@ import com.diet.common.ApiResponse;
 import com.diet.dto.combo.CreateMealComboRequest;
 import com.diet.dto.combo.MealComboListResponse;
 import com.diet.dto.combo.MealComboResponse;
+import com.diet.dto.combo.UpdateMealComboRequest;
 import com.diet.service.MealComboService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,9 +15,11 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,6 +48,29 @@ public class MealComboController {
         Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(mealComboService.create(userId, request)));
+    }
+
+    @Operation(summary = "编辑套餐", description = "编辑套餐名称、餐次和食物明细")
+    @PutMapping("/{id}")
+    public ApiResponse<MealComboResponse> update(
+            @Parameter(description = "套餐 ID") @PathVariable Long id,
+            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
+            @Valid @RequestBody UpdateMealComboRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        return ApiResponse.success(mealComboService.update(resolvedUserId, id, request));
+    }
+
+    @Operation(summary = "删除套餐", description = "删除当前用户的自定义套餐")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Boolean> delete(
+            @Parameter(description = "套餐 ID") @PathVariable Long id,
+            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        return ApiResponse.success(mealComboService.delete(resolvedUserId, id));
     }
 
     @Operation(summary = "查询套餐列表", description = "查询当前用户可用的套餐列表")

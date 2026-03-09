@@ -1,0 +1,29 @@
+.custom-exercise-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+}
+
+.form-panel {
+  padding: 24rpx;
+}
+
+.category-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.category-chip {
+  background: rgba(70, 57, 47, 0.08);
+  border-radius: 999rpx;
+  color: #5d4c3a;
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 10rpx 20rpx;
+}
+
+.category-chip.active {
+  background: rgba(30, 90, 79, 0.14);
+  color: #1e5a4f;
+}

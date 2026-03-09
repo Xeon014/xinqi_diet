@@ -50,6 +50,27 @@ Page({
       });
   },
 
+  handleOpenCustomExercise() {
+    wx.navigateTo({
+      url: "/pages/custom-exercise/index",
+      success: (res) => {
+        res.eventChannel.on("exerciseCreated", (exercise) => {
+          if (this.openerEventChannel) {
+            this.openerEventChannel.emit("exerciseSelected", {
+              ...decorateExercise(exercise),
+              metValue: toNumber(exercise.metValue),
+            });
+            wx.navigateBack({
+              delta: 2,
+            });
+            return;
+          }
+          this.loadExercises();
+        });
+      },
+    });
+  },
+
   handleInput(event) {
     this.setData({ keyword: event.detail.value }, () => {
       this.refreshDisplayedExercises();

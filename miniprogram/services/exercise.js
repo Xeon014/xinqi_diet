@@ -16,6 +16,16 @@ function searchExercises({ keyword = "", category = "" } = {}) {
   });
 }
 
+function createExercise(payload) {
+  return request({
+    url: "/api/exercises",
+    method: "POST",
+    data: payload,
+    loadingTitle: "保存中",
+  });
+}
+
 module.exports = {
   searchExercises,
+  createExercise,
 };

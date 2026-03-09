@@ -11,6 +11,7 @@ import com.diet.dto.combo.CreateMealComboItemRequest;
 import com.diet.dto.combo.CreateMealComboRequest;
 import com.diet.dto.combo.MealComboItemResponse;
 import com.diet.dto.combo.MealComboResponse;
+import com.diet.dto.combo.UpdateMealComboRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -45,19 +46,34 @@ public class MealComboService {
         combo.setUpdatedAt(LocalDateTime.now());
         mealComboRepository.save(combo);
 
-        List<MealComboItem> comboItems = new ArrayList<>();
-        for (int i = 0; i < request.items().size(); i++) {
-            CreateMealComboItemRequest requestItem = request.items().get(i);
-            comboItems.add(new MealComboItem(
-                    combo.getId(),
-                    requestItem.foodId(),
-                    requestItem.quantityInGram(),
-                    i
-            ));
-        }
+        List<MealComboItem> comboItems = buildItems(combo.getId(), request.items());
         mealComboRepository.saveItems(comboItems);
 
         return toResponse(combo, comboItems);
+    }
+
+    public MealComboResponse update(Long userId, Long comboId, UpdateMealComboRequest request) {
+        ensureUserExists(userId);
+        MealCombo combo = getOwnedCombo(userId, comboId);
+        combo.setName(request.name().trim());
+        combo.setDescription(request.description());
+        combo.setMealType(request.mealType());
+        combo.setUpdatedAt(LocalDateTime.now());
+        mealComboRepository.save(combo);
+
+        mealComboRepository.deleteItemsByComboId(combo.getId());
+        List<MealComboItem> comboItems = buildItems(combo.getId(), request.items());
+        mealComboRepository.saveItems(comboItems);
+
+        return toResponse(combo, comboItems);
+    }
+
+    public boolean delete(Long userId, Long comboId) {
+        ensureUserExists(userId);
+        MealCombo combo = getOwnedCombo(userId, comboId);
+        mealComboRepository.deleteItemsByComboId(combo.getId());
+        mealComboRepository.deleteById(combo.getId());
+        return true;
     }
 
     @Transactional(readOnly = true)
@@ -74,6 +90,20 @@ public class MealComboService {
         ensureUserExists(userId);
         MealCombo combo = getOwnedCombo(userId, comboId);
         return toResponse(combo, mealComboRepository.findItemsByComboId(combo.getId()));
+    }
+
+    private List<MealComboItem> buildItems(Long comboId, List<CreateMealComboItemRequest> requestItems) {
+        List<MealComboItem> comboItems = new ArrayList<>();
+        for (int i = 0; i < requestItems.size(); i++) {
+            CreateMealComboItemRequest requestItem = requestItems.get(i);
+            comboItems.add(new MealComboItem(
+                    comboId,
+                    requestItem.foodId(),
+                    requestItem.quantityInGram(),
+                    i
+            ));
+        }
+        return comboItems;
     }
 
     private MealComboResponse toResponse(MealCombo combo, List<MealComboItem> items) {

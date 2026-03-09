@@ -3,6 +3,10 @@
     <input class="search-input" placeholder="搜索运动" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
   </view>
 
+  <view class="tool-row">
+    <view class="tool-btn" bindtap="handleOpenCustomExercise">自定义运动</view>
+  </view>
+
   <view class="panel category-panel">
     <view
       wx:for="{{categories}}"

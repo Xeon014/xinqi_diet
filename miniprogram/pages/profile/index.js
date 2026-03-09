@@ -4,8 +4,26 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const GENDER_LABELS = {
   FEMALE: "女",
-  MALE: "男"
+  MALE: "男",
 };
+
+const TOOL_ENTRIES = [
+  {
+    key: "custom-food",
+    title: "自定义食物",
+    desc: "维护常吃食物，录入时可直接复用",
+  },
+  {
+    key: "custom-combo",
+    title: "自定义套餐",
+    desc: "管理常用食物组合，支持编辑和删除",
+  },
+  {
+    key: "custom-exercise",
+    title: "自定义运动",
+    desc: "补充个人常用运动项目，记录更高效",
+  },
+];
 
 function toInteger(value) {
   return Math.round(Number(value || 0));
@@ -24,7 +42,7 @@ function buildOverview(profile, summary) {
     { label: "当前体重", value: `${profile.currentWeight} kg`, tone: "green" },
     { label: "BMI", value: toOneDecimal(profile.bmi), tone: "sand" },
     { label: "今日摄入", value: `${toInteger(summary.consumedCalories)} / ${toInteger(summary.targetCalories)}`, tone: "teal" },
-    { label: "基础代谢(BMR)", value: `${toInteger(profile.bmr)} kcal/天`, tone: "orange" }
+    { label: "基础代谢(BMR)", value: `${toInteger(profile.bmr)} kcal/天`, tone: "orange" },
   ];
 }
 
@@ -32,7 +50,7 @@ function buildPersonalTags(profile) {
   return [
     GENDER_LABELS[profile.gender] || "未设置",
     profile.age != null ? `${profile.age} 岁` : "年龄未算出",
-    profile.height != null ? `${profile.height} cm` : "身高未设置"
+    profile.height != null ? `${profile.height} cm` : "身高未设置",
   ];
 }
 
@@ -43,7 +61,7 @@ function buildHealthTags(profile, summary) {
   return [
     `今日 ${toInteger(summary.consumedCalories)} kcal`,
     remainingLabel,
-    `基础代谢 ${toInteger(profile.bmr)}`
+    `基础代谢 ${toInteger(profile.bmr)}`,
   ];
 }
 
@@ -64,7 +82,8 @@ Page({
     personalTags: [],
     healthTags: [],
     personalNote: "",
-    healthNote: ""
+    healthNote: "",
+    toolEntries: TOOL_ENTRIES,
   },
   onShow() {
     this.loadPageData();
@@ -82,7 +101,7 @@ Page({
           personalTags: buildPersonalTags(profile),
           healthTags: buildHealthTags(profile, summary),
           personalNote: buildPersonalNote(profile),
-          healthNote: buildHealthNote(summary)
+          healthNote: buildHealthNote(summary),
         });
       })
       .catch((error) => {
@@ -99,5 +118,19 @@ Page({
   },
   handleOpenHealthProfile() {
     wx.navigateTo({ url: "/pages/health-profile/index" });
-  }
+  },
+  handleOpenTool(event) {
+    const { key } = event.currentTarget.dataset;
+    if (key === "custom-food") {
+      wx.navigateTo({ url: "/pages/food-search/index" });
+      return;
+    }
+    if (key === "custom-combo") {
+      wx.navigateTo({ url: "/pages/meal-combo-manage/index" });
+      return;
+    }
+    if (key === "custom-exercise") {
+      wx.navigateTo({ url: "/pages/exercise-search/index" });
+    }
+  },
 });

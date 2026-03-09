@@ -64,4 +64,9 @@ public class MealComboRepositoryImpl implements MealComboRepository {
         mealComboItemMapper.delete(new LambdaQueryWrapper<MealComboItem>()
                 .eq(MealComboItem::getComboId, comboId));
     }
+
+    @Override
+    public void deleteById(Long comboId) {
+        mealComboMapper.deleteById(comboId);
+    }
 }

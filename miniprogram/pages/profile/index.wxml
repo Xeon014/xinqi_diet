@@ -35,6 +35,17 @@
       <view class="entry-icon">></view>
     </view>
   </view>
+
+  <view class="panel tools-panel">
+    <view class="section-title">长期参数与工具</view>
+    <view wx:for="{{toolEntries}}" wx:key="key" class="tool-item" data-key="{{item.key}}" bindtap="handleOpenTool">
+      <view class="tool-main">
+        <view class="tool-title">{{item.title}}</view>
+        <view class="tool-desc">{{item.desc}}</view>
+      </view>
+      <view class="tool-arrow">></view>
+    </view>
+  </view>
 </view>
 
 <empty-state wx:else title="暂无用户资料" description="请先完成资料初始化。" />

@@ -1,0 +1,33 @@
+<view class="page-shell custom-exercise-page">
+  <view class="panel form-panel">
+    <view class="section-title">新增自定义运动</view>
+    <view class="section-subtitle">填写名称、MET 值与分类后保存到运动库</view>
+
+    <view class="field-group">
+      <view class="field-label">运动名称</view>
+      <input class="field-input" placeholder="例如：室内骑行" data-field="name" value="{{form.name}}" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">MET 值</view>
+      <input class="field-input" type="digit" placeholder="例如：6.8" data-field="metValue" value="{{form.metValue}}" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">分类</view>
+      <view class="category-wrap">
+        <view
+          wx:for="{{categories}}"
+          wx:key="key"
+          class="category-chip {{selectedCategoryKey === item.key ? 'active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="handleCategoryTap"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSubmit">保存</view>
+</view>
