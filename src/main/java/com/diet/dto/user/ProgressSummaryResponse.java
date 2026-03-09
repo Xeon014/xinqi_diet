@@ -1,5 +1,6 @@
 package com.diet.dto.user;
 
+import com.diet.domain.record.MealType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -12,6 +13,8 @@ public record ProgressSummaryResponse(
         BigDecimal totalCalories,
         BigDecimal averageCalorieGap,
         BigDecimal weightToLose,
+        int exerciseDays,
+        MealType topExceededMealType,
         List<ProgressPointResponse> trend
 ) {
 }

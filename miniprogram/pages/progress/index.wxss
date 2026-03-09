@@ -71,6 +71,14 @@
   background: linear-gradient(180deg, #f6f3ee 0%, #ece5db 100%);
 }
 
+.stat-box:nth-child(5) {
+  background: linear-gradient(180deg, #eef6fb 0%, #ddebf6 100%);
+}
+
+.stat-box:nth-child(6) {
+  background: linear-gradient(180deg, #f5f1fb 0%, #e9e1f7 100%);
+}
+
 .stat-label {
   color: #75695d;
   font-size: 22rpx;

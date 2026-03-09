@@ -1,13 +1,42 @@
 <view class="page-shell record-entry-page">
+  <view class="panel summary-panel">
+    <view class="section-title">今日结果反馈</view>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <view class="summary-label">已摄入</view>
+        <view class="summary-value">{{summary.consumedCalories}} kcal</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">目标</view>
+        <view class="summary-value">{{summary.targetCalories}} kcal</view>
+      </view>
+      <view class="summary-item highlight {{summary.exceededTarget ? 'danger' : ''}}">
+        <view class="summary-label">{{summary.exceededTarget ? '已超出' : '剩余'}}</view>
+        <view class="summary-value">{{summary.remainingCalories}} kcal</view>
+      </view>
+    </view>
+  </view>
+
   <view class="panel date-panel">
     <view class="section-title">记录日期</view>
-    <view class="section-subtitle">先选择日期，再选择饮食或运动记录</view>
+    <view class="section-subtitle">默认今天，可按需切换日期后再记录</view>
 
     <view class="field-group compact-group">
       <view class="field-label">日期</view>
       <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
         <view class="date-picker">{{recordDate}}</view>
       </picker>
+    </view>
+  </view>
+
+  <view class="panel quick-panel">
+    <view class="section-title">快速记录</view>
+    <view class="quick-action" bindtap="handleQuickMeal">记录当前推荐餐次</view>
+
+    <view class="meal-grid">
+      <view wx:for="{{mealTypes}}" wx:key="value" class="meal-chip" data-meal-type="{{item.value}}" bindtap="handleMealTap">
+        记录{{item.label}}
+      </view>
     </view>
   </view>
 

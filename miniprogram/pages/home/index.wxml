@@ -28,11 +28,51 @@
         <view class="metric-value">{{summary.exceededTarget ? '-' : ''}}{{summary.remainingAbs}}</view>
       </view>
     </view>
+
+    <view class="summary-note">{{summary.summaryText}}</view>
   </view>
 
   <view class="action-row">
     <view class="primary-button" bindtap="handleCreate">记录</view>
     <view class="ghost-button" bindtap="handleOpenProgress">趋势</view>
+  </view>
+
+  <view class="panel meal-progress-panel" wx:if="{{summary.mealProgress.length}}">
+    <view class="section-title">餐次进度</view>
+    <view wx:for="{{summary.mealProgress}}" wx:key="mealType" class="meal-row">
+      <view class="meal-main">
+        <view class="meal-title">{{item.mealLabel}}</view>
+        <view class="meal-detail">{{item.intakeCalories}} / {{item.targetCalories}} kcal</view>
+      </view>
+      <view class="meal-right">
+        <view class="meal-status {{item.exceededTarget ? 'danger' : 'normal'}}">
+          {{item.exceededTarget ? '超出' : '剩余'}} {{item.remainingAbs}}
+        </view>
+        <view class="meal-go" data-meal-type="{{item.mealType}}" bindtap="handleGoMeal">去记录</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel suggestion-panel" wx:if="{{summary.suggestions.length}}">
+    <view class="section-title">今日建议</view>
+    <view wx:for="{{summary.suggestions}}" wx:key="title" class="suggestion-item" data-meal-type="{{item.mealType}}" bindtap="handleSuggestionTap">
+      <view class="suggestion-title">{{item.title}}</view>
+      <view class="suggestion-desc">{{item.description}}</view>
+    </view>
+  </view>
+
+  <view class="panel trend-panel">
+    <view class="section-title">阶段反馈</view>
+    <view class="trend-grid">
+      <view class="trend-item">
+        <view class="trend-label">近7天平均</view>
+        <view class="trend-value">{{summary.trendInsight.averageNetCalories}} kcal</view>
+      </view>
+      <view class="trend-item">
+        <view class="trend-label">近7天运动天数</view>
+        <view class="trend-value">{{summary.trendInsight.exerciseDays}} 天</view>
+      </view>
+    </view>
   </view>
 
   <view class="section-head">

@@ -2,6 +2,13 @@ const { getProgress } = require("../../services/user");
 const { getRangeDays } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
+const MEAL_TYPE_LABELS = {
+  BREAKFAST: "早餐",
+  LUNCH: "午餐",
+  DINNER: "晚餐",
+  SNACK: "加餐",
+};
+
 function toInteger(value) {
   return Math.round(Number(value || 0));
 }
@@ -9,7 +16,7 @@ function toInteger(value) {
 Page({
   data: {
     rangeDays: 7,
-    summary: null
+    summary: null,
   },
   onLoad() {
     this.loadProgress(7);
@@ -28,7 +35,7 @@ Page({
         const normalizedTrend = (summary.trend || []).map((item) => ({
           ...item,
           consumedCalories: toInteger(item.consumedCalories),
-          calorieGap: toInteger(item.calorieGap)
+          calorieGap: toInteger(item.calorieGap),
         }));
 
         this.setData({
@@ -38,8 +45,11 @@ Page({
             averageCalories: toInteger(summary.averageCalories),
             totalCalories: toInteger(summary.totalCalories),
             averageCalorieGap: toInteger(summary.averageCalorieGap),
-            trend: normalizedTrend
-          }
+            weightToLose: Number(summary.weightToLose || 0).toFixed(1),
+            exerciseDays: toInteger(summary.exerciseDays),
+            topExceededMealLabel: MEAL_TYPE_LABELS[summary.topExceededMealType] || "暂无",
+            trend: normalizedTrend,
+          },
         });
         this.drawChart(normalizedTrend);
       })
@@ -123,5 +133,5 @@ Page({
     });
 
     ctx.draw();
-  }
+  },
 });

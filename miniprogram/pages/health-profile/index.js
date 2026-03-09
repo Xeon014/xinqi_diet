@@ -14,9 +14,18 @@ function toInteger(value) {
   return Math.round(Number(value || 0));
 }
 
+function toOneDecimal(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return "0.0";
+  }
+  return number.toFixed(1);
+}
+
 function normalizeProfile(profile) {
   return {
     ...profile,
+    bmi: toOneDecimal(profile.bmi),
     bmr: toInteger(profile.bmr),
     tdee: toInteger(profile.tdee)
   };

@@ -47,10 +47,25 @@ function normalizeRecord(record, today) {
   };
 }
 
+function normalizeMealProgress(mealProgress = []) {
+  return mealProgress.map((item) => {
+    const remaining = toInteger(item.remainingCalories);
+    return {
+      ...item,
+      mealLabel: item.mealLabel || MEAL_TYPE_LABELS[item.mealType] || "餐次",
+      intakeCalories: toInteger(item.intakeCalories),
+      targetCalories: toInteger(item.targetCalories),
+      remainingCalories: remaining,
+      remainingAbs: Math.abs(remaining),
+    };
+  });
+}
+
 function normalizeSummary(summary, today) {
   const records = (summary.records || []).map((record) => normalizeRecord(record, today));
   const netCalories = toInteger(summary.netCalories ?? summary.consumedCalories);
   const remainingCalories = toInteger(summary.remainingCalories);
+  const dailyInsight = summary.dailyInsight || {};
 
   return {
     ...summary,
@@ -62,6 +77,14 @@ function normalizeSummary(summary, today) {
     remainingCalories,
     remainingAbs: Math.abs(remainingCalories),
     records,
+    mealProgress: normalizeMealProgress(summary.mealProgress || []),
+    summaryText: dailyInsight.summaryText || "继续记录，查看今日变化。",
+    suggestions: Array.isArray(dailyInsight.suggestions) ? dailyInsight.suggestions : [],
+    trendInsight: {
+      averageNetCalories: toInteger(summary.trendInsight && summary.trendInsight.averageNetCalories),
+      exerciseDays: toInteger(summary.trendInsight && summary.trendInsight.exerciseDays),
+      topExceededMealType: summary.trendInsight && summary.trendInsight.topExceededMealType,
+    },
   };
 }
 
@@ -78,6 +101,14 @@ Page({
       remainingAbs: 0,
       exceededTarget: false,
       records: [],
+      mealProgress: [],
+      summaryText: "",
+      suggestions: [],
+      trendInsight: {
+        averageNetCalories: 0,
+        exerciseDays: 0,
+        topExceededMealType: "",
+      },
     },
   },
 
@@ -128,5 +159,21 @@ Page({
     wx.navigateTo({
       url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
     });
+  },
+
+  handleGoMeal(event) {
+    const { mealType } = event.currentTarget.dataset;
+    wx.navigateTo({
+      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(this.data.today)}`,
+    });
+  },
+
+  handleSuggestionTap(event) {
+    const { mealType } = event.currentTarget.dataset;
+    if (mealType) {
+      this.handleGoMeal({ currentTarget: { dataset: { mealType } } });
+      return;
+    }
+    wx.switchTab({ url: "/pages/record-create/index" });
   },
 });

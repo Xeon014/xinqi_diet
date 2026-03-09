@@ -9,21 +9,29 @@ import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
+import com.diet.domain.record.MealType;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.user.ActionSuggestionResponse;
 import com.diet.dto.user.CreateUserRequest;
+import com.diet.dto.user.DailyInsightResponse;
 import com.diet.dto.user.DailyRecordResponse;
 import com.diet.dto.user.DailyRecordType;
 import com.diet.dto.user.DailySummaryResponse;
+import com.diet.dto.user.MealProgressResponse;
 import com.diet.dto.user.ProgressPointResponse;
 import com.diet.dto.user.ProgressSummaryResponse;
+import com.diet.dto.user.TrendInsightResponse;
 import com.diet.dto.user.UpdateUserRequest;
 import com.diet.dto.user.UserResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,6 +44,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserProfileService {
 
     private static final String DEFAULT_NAME = "微信用户";
+
+    private static final Map<MealType, BigDecimal> MEAL_TARGET_RATIO = Map.of(
+            MealType.BREAKFAST, BigDecimal.valueOf(0.25),
+            MealType.LUNCH, BigDecimal.valueOf(0.35),
+            MealType.DINNER, BigDecimal.valueOf(0.30),
+            MealType.SNACK, BigDecimal.valueOf(0.10)
+    );
+
+    private static final Map<MealType, String> MEAL_LABELS = Map.of(
+            MealType.BREAKFAST, "早餐",
+            MealType.LUNCH, "午餐",
+            MealType.DINNER, "晚餐",
+            MealType.SNACK, "加餐"
+    );
 
     private final UserProfileRepository userProfileRepository;
 
@@ -134,6 +156,18 @@ public class UserProfileService {
                 .sorted(Comparator.comparing(DailyRecordResponse::createdAt, Comparator.nullsLast(LocalDateTime::compareTo)).reversed())
                 .toList();
 
+        List<MealProgressResponse> mealProgress = buildMealProgress(user.getDailyCalorieTarget(), mealRecords);
+        MealType topIssueMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, date, date);
+        DailyInsightResponse dailyInsight = buildDailyInsight(
+                remaining,
+                topIssueMealType,
+                mealProgress,
+                proteinIntake,
+                mealRecords.isEmpty(),
+                records.size()
+        );
+        TrendInsightResponse trendInsight = buildTrendInsight(user, date);
+
         return new DailySummaryResponse(
                 userId,
                 date,
@@ -147,7 +181,10 @@ public class UserProfileService {
                 proteinIntake,
                 carbsIntake,
                 fatIntake,
-                records
+                records,
+                mealProgress,
+                dailyInsight,
+                trendInsight
         );
     }
 
@@ -183,6 +220,13 @@ public class UserProfileService {
                 ? BigDecimal.ZERO
                 : totalGap.divide(BigDecimal.valueOf(trend.size()), 2, RoundingMode.HALF_UP);
 
+        int exerciseDays = (int) exerciseRecords.stream()
+                .map(ExerciseRecord::getRecordDate)
+                .distinct()
+                .count();
+
+        MealType topExceededMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, startDate, endDate);
+
         return new ProgressSummaryResponse(
                 userId,
                 startDate,
@@ -191,6 +235,8 @@ public class UserProfileService {
                 totalCalories,
                 averageGap,
                 user.weightToLose(),
+                exerciseDays,
+                topExceededMealType,
                 trend
         );
     }
@@ -216,6 +262,163 @@ public class UserProfileService {
                 .setScale(2, RoundingMode.HALF_UP);
 
         return new ProgressPointResponse(date, netCalories, user.getDailyCalorieTarget(), gap);
+    }
+
+    private List<MealProgressResponse> buildMealProgress(Integer dailyTargetCalories, List<MealRecord> mealRecords) {
+        EnumMap<MealType, BigDecimal> intakeByMeal = new EnumMap<>(MealType.class);
+        for (MealType mealType : MealType.values()) {
+            intakeByMeal.put(mealType, BigDecimal.ZERO);
+        }
+
+        for (MealRecord mealRecord : mealRecords) {
+            intakeByMeal.merge(mealRecord.getMealType(), mealRecord.getTotalCalories(), BigDecimal::add);
+        }
+
+        return List.of(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER, MealType.SNACK)
+                .stream()
+                .map(mealType -> {
+                    BigDecimal intake = intakeByMeal.getOrDefault(mealType, BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal target = BigDecimal.valueOf(dailyTargetCalories)
+                            .multiply(MEAL_TARGET_RATIO.get(mealType))
+                            .setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal remaining = target.subtract(intake).setScale(2, RoundingMode.HALF_UP);
+
+                    return new MealProgressResponse(
+                            mealType,
+                            MEAL_LABELS.get(mealType),
+                            intake,
+                            target,
+                            remaining,
+                            remaining.compareTo(BigDecimal.ZERO) < 0,
+                            intake.compareTo(BigDecimal.ZERO) > 0
+                    );
+                })
+                .toList();
+    }
+
+    private MealType resolveTopIssueMealType(
+            Integer dailyTargetCalories,
+            List<MealRecord> mealRecords,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        EnumMap<MealType, BigDecimal> overflowMap = new EnumMap<>(MealType.class);
+        for (MealType mealType : MealType.values()) {
+            overflowMap.put(mealType, BigDecimal.ZERO);
+        }
+
+        Map<LocalDate, List<MealRecord>> recordsByDate = mealRecords.stream()
+                .collect(Collectors.groupingBy(MealRecord::getRecordDate, LinkedHashMap::new, Collectors.toList()));
+
+        startDate.datesUntil(endDate.plusDays(1)).forEach(date -> {
+            List<MealRecord> sameDayRecords = recordsByDate.getOrDefault(date, List.of());
+            for (MealType mealType : MealType.values()) {
+                BigDecimal dayIntake = sameDayRecords.stream()
+                        .filter(record -> record.getMealType() == mealType)
+                        .map(MealRecord::getTotalCalories)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal dayTarget = BigDecimal.valueOf(dailyTargetCalories)
+                        .multiply(MEAL_TARGET_RATIO.get(mealType));
+
+                BigDecimal overflow = dayIntake.subtract(dayTarget);
+                if (overflow.compareTo(BigDecimal.ZERO) > 0) {
+                    overflowMap.merge(mealType, overflow, BigDecimal::add);
+                }
+            }
+        });
+
+        return overflowMap.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .filter(entry -> entry.getValue().compareTo(BigDecimal.ZERO) > 0)
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    private DailyInsightResponse buildDailyInsight(
+            BigDecimal remainingCalories,
+            MealType topIssueMealType,
+            List<MealProgressResponse> mealProgress,
+            BigDecimal proteinIntake,
+            boolean noRecords,
+            int totalRecords
+    ) {
+        int recordedMeals = (int) mealProgress.stream().filter(MealProgressResponse::recorded).count();
+        double completeness = BigDecimal.valueOf(recordedMeals)
+                .divide(BigDecimal.valueOf(mealProgress.size()), 2, RoundingMode.HALF_UP)
+                .doubleValue();
+
+        List<ActionSuggestionResponse> suggestions = new ArrayList<>();
+        MealProgressResponse firstMissingMeal = mealProgress.stream()
+                .filter(progress -> !progress.recorded())
+                .findFirst()
+                .orElse(null);
+        if (firstMissingMeal != null) {
+            suggestions.add(new ActionSuggestionResponse(
+                    "RECORD_MEAL",
+                    "补齐记录",
+                    "你还未记录" + firstMissingMeal.mealLabel() + "，建议及时补充。",
+                    firstMissingMeal.mealType()
+            ));
+        }
+
+        if (remainingCalories.compareTo(BigDecimal.ZERO) < 0 && topIssueMealType != null) {
+            suggestions.add(new ActionSuggestionResponse(
+                    "CONTROL_MEAL",
+                    "重点控制餐次",
+                    MEAL_LABELS.get(topIssueMealType) + "是今日超标主因，下一餐建议清淡一些。",
+                    topIssueMealType
+            ));
+        }
+
+        if (proteinIntake.compareTo(BigDecimal.valueOf(60)) < 0 && suggestions.size() < 2) {
+            suggestions.add(new ActionSuggestionResponse(
+                    "PROTEIN",
+                    "补充蛋白质",
+                    "今日蛋白质摄入偏低，可适量增加鸡蛋、牛奶或豆制品。",
+                    null
+            ));
+        }
+
+        String summaryText;
+        if (noRecords) {
+            summaryText = "今天还没有记录，先从当前这一餐开始吧。";
+        } else if (remainingCalories.compareTo(BigDecimal.ZERO) < 0) {
+            String mealTip = topIssueMealType == null ? "" : ("，主要来自" + MEAL_LABELS.get(topIssueMealType));
+            summaryText = "今日已超目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString()
+                    + " kcal" + mealTip + "。";
+        } else if (completeness >= 0.75) {
+            summaryText = "今日热量控制稳定，记录完成度较高，继续保持。";
+        } else {
+            summaryText = "今日已记录 " + totalRecords + " 条，继续补齐剩余餐次会更准确。";
+        }
+
+        return new DailyInsightResponse(summaryText, topIssueMealType, completeness, suggestions.stream().limit(2).toList());
+    }
+
+    private TrendInsightResponse buildTrendInsight(UserProfile user, LocalDate date) {
+        LocalDate startDate = date.minusDays(6);
+        List<MealRecord> mealRecords = mealRecordRepository.findByUserAndDateRange(user.getId(), startDate, date);
+        List<ExerciseRecord> exerciseRecords = exerciseRecordRepository.findByUserAndDateRange(user.getId(), startDate, date);
+
+        List<ProgressPointResponse> points = startDate.datesUntil(date.plusDays(1))
+                .map(day -> buildPoint(user, day, mealRecords, exerciseRecords))
+                .toList();
+
+        BigDecimal averageNetCalories = points.stream()
+                .map(ProgressPointResponse::consumedCalories)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(points.size()), 2, RoundingMode.HALF_UP);
+
+        int exerciseDays = (int) exerciseRecords.stream()
+                .map(ExerciseRecord::getRecordDate)
+                .distinct()
+                .count();
+
+        MealType topExceededMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, startDate, date);
+
+        return new TrendInsightResponse(averageNetCalories, exerciseDays, topExceededMealType);
     }
 
     private BigDecimal sumDietCalories(List<MealRecord> records) {

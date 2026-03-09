@@ -67,6 +67,7 @@
 - 小程序配置集中放在 `miniprogram/utils/constants.js`。
 - 修改接口字段时，同步检查 `miniprogram/services/` 与页面调用。
 - 所有卡路里相关数据在前端展示时一律取整后显示，例如 `kcal`、`BMR`、`TDEE`、每 100g 热量、单条记录热量、统计热量等。
+- BMI 在前端展示时统一保留 1 位小数（例如 22.6）。
 
 ## Codex 易错防线
 
@@ -75,3 +76,4 @@
 - 每次修改小程序后，必须执行 `node scripts/verify-miniprogram-files.js`，未通过不得结束本次修改。
 - 若出现 JSON 解析错误（尤其 `pages/**/index.json`），必须先修复全部页面 JSON，再继续功能开发。
 - 前端文案改动后，需至少抽查首页、记录页、趋势页、运动页，确认中文显示正常且无乱码。
+

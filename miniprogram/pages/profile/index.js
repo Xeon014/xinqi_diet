@@ -11,10 +11,18 @@ function toInteger(value) {
   return Math.round(Number(value || 0));
 }
 
+function toOneDecimal(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return "0.0";
+  }
+  return number.toFixed(1);
+}
+
 function buildOverview(profile, summary) {
   return [
     { label: "当前体重", value: `${profile.currentWeight} kg`, tone: "green" },
-    { label: "BMI", value: profile.bmi, tone: "sand" },
+    { label: "BMI", value: toOneDecimal(profile.bmi), tone: "sand" },
     { label: "今日摄入", value: `${toInteger(summary.consumedCalories)} / ${toInteger(summary.targetCalories)}`, tone: "teal" },
     { label: "基础代谢(BMR)", value: `${toInteger(profile.bmr)} kcal/天`, tone: "orange" }
   ];

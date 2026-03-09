@@ -1,4 +1,5 @@
 const { createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
+const { createMealCombo, getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
 const { getCurrentUserId } = require("../../utils/auth");
 const { getToday } = require("../../utils/date");
 const { saveRecentFood } = require("../../utils/recent-foods");
@@ -49,7 +50,7 @@ function normalizeFood(food) {
     proteinPer100g: toInteger(food.proteinPer100g),
     carbsPer100g: toInteger(food.carbsPer100g),
     fatPer100g: toInteger(food.fatPer100g),
-    quantityInGram: String(DEFAULT_QUANTITY),
+    quantityInGram: String(food.quantityInGram || DEFAULT_QUANTITY),
     originQuantityInGram: null,
   };
 }
@@ -89,6 +90,7 @@ Page({
     foodItems: [],
     deletedRecordIds: [],
     mealTotalCalories: 0,
+    combos: [],
   },
 
   onLoad(options) {
@@ -110,6 +112,21 @@ Page({
     if (mode === "edit") {
       this.loadMealRecords();
     }
+  },
+
+  onShow() {
+    this.loadCombos();
+  },
+
+  loadCombos() {
+    getMealComboList()
+      .then((result) => {
+        const combos = Array.isArray(result.combos) ? result.combos : [];
+        this.setData({ combos });
+      })
+      .catch(() => {
+        this.setData({ combos: [] });
+      });
   },
 
   loadMealRecords() {
@@ -139,12 +156,126 @@ Page({
     });
   },
 
+  handleChooseCombo() {
+    const options = this.data.combos.filter((combo) => combo.mealType === this.data.mealType || !combo.mealType);
+    if (!options.length) {
+      wx.showToast({
+        title: "暂无可用套餐",
+        icon: "none",
+      });
+      return;
+    }
+
+    wx.showActionSheet({
+      itemList: options.map((combo) => combo.name),
+      success: (result) => {
+        const selected = options[result.tapIndex];
+        if (!selected) {
+          return;
+        }
+        this.applyCombo(selected.id);
+      },
+    });
+  },
+
+  applyCombo(comboId) {
+    getMealComboDetail(comboId)
+      .then((combo) => {
+        const items = Array.isArray(combo.items) ? combo.items : [];
+        if (!items.length) {
+          wx.showToast({
+            title: "该套餐暂无食物",
+            icon: "none",
+          });
+          return;
+        }
+
+        items.forEach((item) => {
+          this.addFoodToList(normalizeFood({
+            id: item.foodId,
+            name: item.foodName,
+            caloriesPer100g: item.caloriesPer100g,
+            proteinPer100g: item.proteinPer100g,
+            carbsPer100g: item.carbsPer100g,
+            fatPer100g: item.fatPer100g,
+            quantityInGram: item.quantityInGram,
+          }));
+        });
+
+        wx.showToast({
+          title: "套餐已加入",
+          icon: "success",
+        });
+      })
+      .catch((error) => {
+        wx.showToast({
+          title: pickErrorMessage(error),
+          icon: "none",
+        });
+      });
+  },
+
+  handleSaveAsCombo() {
+    if (!this.data.foodItems.length) {
+      wx.showToast({
+        title: "请先添加食物",
+        icon: "none",
+      });
+      return;
+    }
+
+    wx.showModal({
+      title: "保存为套餐",
+      placeholderText: "例如：低脂晚餐",
+      editable: true,
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+
+        const comboName = (result.content || "").trim();
+        if (!comboName) {
+          wx.showToast({
+            title: "请输入套餐名称",
+            icon: "none",
+          });
+          return;
+        }
+
+        const payload = {
+          name: comboName,
+          description: `${this.data.mealLabel}常用套餐`,
+          mealType: this.data.mealType,
+          items: this.data.foodItems.map((item) => ({
+            foodId: item.id,
+            quantityInGram: toNumber(item.quantityInGram),
+          })),
+        };
+
+        createMealCombo(payload)
+          .then(() => {
+            wx.showToast({
+              title: "套餐保存成功",
+              icon: "success",
+            });
+            this.loadCombos();
+          })
+          .catch((error) => {
+            wx.showToast({
+              title: pickErrorMessage(error),
+              icon: "none",
+            });
+          });
+      },
+    });
+  },
+
   addFoodToList(food) {
     const foodItems = [...this.data.foodItems];
     const targetIndex = foodItems.findIndex((item) => item.id === food.id);
 
     if (targetIndex >= 0) {
-      const quantity = toNumber(foodItems[targetIndex].quantityInGram) + DEFAULT_QUANTITY;
+      const quantity = toNumber(foodItems[targetIndex].quantityInGram) + toNumber(food.quantityInGram || DEFAULT_QUANTITY);
       foodItems[targetIndex] = {
         ...foodItems[targetIndex],
         quantityInGram: String(quantity),
@@ -227,7 +358,7 @@ Page({
     const invalidItem = this.data.foodItems.find((item) => toNumber(item.quantityInGram) <= 0);
     if (invalidItem) {
       wx.showToast({
-        title: `请检查${invalidItem.name}的克数`,
+        title: `请检查 ${invalidItem.name} 的克数`,
         icon: "none",
       });
       return false;

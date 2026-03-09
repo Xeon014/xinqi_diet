@@ -83,3 +83,27 @@ CREATE TABLE IF NOT EXISTS exercise_record (
     CONSTRAINT fk_exercise_record_user FOREIGN KEY (user_id) REFERENCES user_profile(id),
     CONSTRAINT fk_exercise_record_exercise FOREIGN KEY (exercise_id) REFERENCES exercise(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运动记录表';
+CREATE TABLE IF NOT EXISTS meal_combo (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '套餐主键 ID',
+    user_id BIGINT NOT NULL COMMENT '用户 ID',
+    name VARCHAR(50) NOT NULL COMMENT '套餐名称',
+    description VARCHAR(200) NULL COMMENT '套餐说明',
+    meal_type VARCHAR(20) NOT NULL COMMENT '默认餐次类型',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+    KEY idx_meal_combo_user_created (user_id, created_at),
+    CONSTRAINT fk_meal_combo_user FOREIGN KEY (user_id) REFERENCES user_profile(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户自定义套餐表';
+
+CREATE TABLE IF NOT EXISTS meal_combo_item (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '套餐明细主键 ID',
+    combo_id BIGINT NOT NULL COMMENT '套餐 ID',
+    food_id BIGINT NOT NULL COMMENT '食物 ID',
+    quantity_in_gram DECIMAL(8, 2) NOT NULL COMMENT '默认克重 g',
+    sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    KEY idx_meal_combo_item_combo (combo_id, sort_order),
+    KEY idx_meal_combo_item_food (food_id),
+    CONSTRAINT fk_meal_combo_item_combo FOREIGN KEY (combo_id) REFERENCES meal_combo(id),
+    CONSTRAINT fk_meal_combo_item_food FOREIGN KEY (food_id) REFERENCES food(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户自定义套餐明细表';

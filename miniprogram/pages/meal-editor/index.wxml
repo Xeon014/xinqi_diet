@@ -12,7 +12,11 @@
       <view class="list-count">{{foodItems.length}} 种</view>
     </view>
 
-    <view class="add-food" bindtap="handleChooseFood">+ 添加食物</view>
+    <view class="quick-actions">
+      <view class="quick-action" bindtap="handleChooseFood">+ 添加食物</view>
+      <view class="quick-action" bindtap="handleChooseCombo">+ 添加套餐</view>
+      <view class="quick-action ghost" bindtap="handleSaveAsCombo">保存为套餐</view>
+    </view>
 
     <view wx:if="{{foodItems.length}}" class="food-list">
       <view wx:for="{{foodItems}}" wx:key="index" class="food-item">

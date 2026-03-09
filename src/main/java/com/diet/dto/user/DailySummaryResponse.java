@@ -44,6 +44,15 @@ public record DailySummaryResponse(
         BigDecimal fatIntake,
 
         @Schema(description = "当日记录流（饮食+运动）")
-        List<DailyRecordResponse> records
+        List<DailyRecordResponse> records,
+
+        @Schema(description = "餐次进度")
+        List<MealProgressResponse> mealProgress,
+
+        @Schema(description = "每日反馈")
+        DailyInsightResponse dailyInsight,
+
+        @Schema(description = "阶段趋势反馈")
+        TrendInsightResponse trendInsight
 ) {
 }

@@ -31,6 +31,16 @@
       <view class="stat-value">{{summary.weightToLose}}</view>
       <view class="stat-unit">kg</view>
     </view>
+    <view class="panel stat-box">
+      <view class="stat-label">运动天数</view>
+      <view class="stat-value">{{summary.exerciseDays}}</view>
+      <view class="stat-unit">天</view>
+    </view>
+    <view class="panel stat-box">
+      <view class="stat-label">高风险餐次</view>
+      <view class="stat-value">{{summary.topExceededMealLabel}}</view>
+      <view class="stat-unit">近{{rangeDays}}天</view>
+    </view>
   </view>
   <empty-state wx:else title="暂无趋势数据" description="先连续记录几天饮食和运动" />
 </view>
