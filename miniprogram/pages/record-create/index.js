@@ -1,5 +1,6 @@
 const { getDailySummary } = require("../../services/user");
 const { addDays, getToday } = require("../../utils/date");
+const { pickErrorMessage } = require("../../utils/request");
 
 function toInteger(value) {
   const number = Number(value);
@@ -21,10 +22,10 @@ function getRecommendedMealType() {
 }
 
 const MEAL_TYPE_LABELS = {
-  BREAKFAST: "早餐",
-  LUNCH: "午餐",
-  DINNER: "晚餐",
-  SNACK: "加餐",
+  BREAKFAST: "\u65e9\u9910",
+  LUNCH: "\u5348\u9910",
+  DINNER: "\u665a\u9910",
+  SNACK: "\u52a0\u9910",
 };
 
 function resolveDateLabel(recordDate) {
@@ -32,30 +33,34 @@ function resolveDateLabel(recordDate) {
   const yesterday = addDays(today, -1);
   const tomorrow = addDays(today, 1);
   if (recordDate === today) {
-    return "今天";
+    return "\u4eca\u5929";
   }
   if (recordDate === yesterday) {
-    return "昨天";
+    return "\u6628\u5929";
   }
   if (recordDate === tomorrow) {
-    return "明天";
+    return "\u660e\u5929";
   }
   return recordDate;
+}
+
+function buildEmptySummary() {
+  return {
+    dietCalories: 0,
+    exerciseCalories: 0,
+    targetCalories: 0,
+    remainingCalories: 0,
+    exceededTarget: false,
+  };
 }
 
 Page({
   data: {
     recordDate: getToday(),
-    displayDateLabel: "今天",
+    displayDateLabel: "\u4eca\u5929",
     recommendedMealType: getRecommendedMealType(),
-    recommendedMealLabel: "当前餐次",
-    summary: {
-      consumedCalories: 0,
-      exerciseCalories: 0,
-      targetCalories: 0,
-      remainingCalories: 0,
-      exceededTarget: false,
-    },
+    recommendedMealLabel: "\u5f53\u524d\u9910\u6b21",
+    summary: buildEmptySummary(),
   },
 
   onLoad() {
@@ -67,12 +72,16 @@ Page({
     this.loadSummary();
   },
 
+  onPullDownRefresh() {
+    this.loadSummary(true);
+  },
+
   refreshDateMeta() {
     const recommendedMealType = getRecommendedMealType();
     this.setData({
       displayDateLabel: resolveDateLabel(this.data.recordDate),
       recommendedMealType,
-      recommendedMealLabel: MEAL_TYPE_LABELS[recommendedMealType] || "当前餐次",
+      recommendedMealLabel: MEAL_TYPE_LABELS[recommendedMealType] || "\u5f53\u524d\u9910\u6b21",
     });
   },
 
@@ -108,12 +117,12 @@ Page({
     );
   },
 
-  loadSummary() {
+  loadSummary(stopPullDown = false) {
     getDailySummary(this.data.recordDate)
       .then((summary) => {
         this.setData({
           summary: {
-            consumedCalories: toInteger(summary.consumedCalories),
+            dietCalories: toInteger(summary.dietCalories),
             exerciseCalories: toInteger(summary.exerciseCalories),
             targetCalories: toInteger(summary.targetCalories),
             remainingCalories: Math.abs(toInteger(summary.remainingCalories)),
@@ -121,28 +130,31 @@ Page({
           },
         });
       })
-      .catch(() => {
+      .catch((error) => {
         this.setData({
-          summary: {
-            consumedCalories: 0,
-            exerciseCalories: 0,
-            targetCalories: 0,
-            remainingCalories: 0,
-            exceededTarget: false,
-          },
+          summary: buildEmptySummary(),
         });
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      })
+      .finally(() => {
+        if (stopPullDown) {
+          wx.stopPullDownRefresh();
+        }
       });
   },
 
   handleOpenDietEditor() {
     wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${this.data.recommendedMealType}&recordDate=${this.data.recordDate}`,
+      url: "/pages/meal-editor/index?mealType="
+        + encodeURIComponent(this.data.recommendedMealType)
+        + "&recordDate="
+        + encodeURIComponent(this.data.recordDate),
     });
   },
 
   handleOpenExerciseEditor() {
     wx.navigateTo({
-      url: `/pages/exercise-editor/index?recordDate=${this.data.recordDate}`,
+      url: "/pages/exercise-editor/index?recordDate=" + encodeURIComponent(this.data.recordDate),
     });
   },
 });

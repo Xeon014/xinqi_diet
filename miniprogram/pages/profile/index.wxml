@@ -1,22 +1,20 @@
-<view class="page-shell profile-page" wx:if="{{profile && summary}}">
+<view class="page-shell profile-page" wx:if="{{profile}}">
   <view class="panel profile-hero">
     <view class="hero-top">
-      <view class="hero-avatar">{{nameInitial}}</view>
       <view class="hero-main">
-        <view class="hero-title">{{profile.name}}</view>
+        <view class="hero-title">{{heroTitle}}</view>
         <view class="hero-subtitle">{{heroSubtitle}}</view>
       </view>
-      <view class="hero-pill">{{todayStatus}}</view>
     </view>
 
     <view class="hero-metrics">
-      <view class="hero-metric">
+      <view class="hero-metric hero-metric-bmi">
         <view class="metric-label">BMI</view>
         <view class="metric-value">{{bmiLabel}}</view>
       </view>
-      <view class="hero-metric">
-        <view class="metric-label">今日摄入</view>
-        <view class="metric-value">{{intakeLabel}}</view>
+      <view class="hero-metric hero-metric-bmr">
+        <view class="metric-label">基础代谢</view>
+        <view class="metric-value">{{bmrLabel}}</view>
       </view>
     </view>
   </view>
@@ -24,7 +22,6 @@
   <view class="panel card-item" bindtap="handleOpenPersonalInfo">
     <view class="card-main">
       <view class="card-title">个人信息</view>
-      <view class="card-desc">身高、体重、目标体重等基础参数</view>
     </view>
     <view class="card-arrow">></view>
   </view>
@@ -32,17 +29,20 @@
   <view class="panel card-item" bindtap="handleOpenHealthProfile">
     <view class="card-main">
       <view class="card-title">健康档案</view>
-      <view class="card-desc">BMR、TDEE 与每日热量目标设置</view>
     </view>
     <view class="card-arrow">></view>
   </view>
 
   <view class="panel tools-panel">
-    <view class="tools-title">长期参数与工具</view>
-    <view wx:for="{{toolEntries}}" wx:key="key" class="tool-item" data-key="{{item.key}}" bindtap="handleOpenTool">
+    <view
+      wx:for="{{toolEntries}}"
+      wx:key="key"
+      class="tool-item"
+      data-key="{{item.key}}"
+      bindtap="handleOpenTool"
+    >
       <view class="tool-main">
         <view class="tool-name">{{item.title}}</view>
-        <view class="tool-desc">{{item.desc}}</view>
       </view>
       <view class="tool-arrow">></view>
     </view>

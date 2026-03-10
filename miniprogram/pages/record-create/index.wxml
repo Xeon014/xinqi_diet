@@ -15,7 +15,7 @@
     <view class="summary-grid">
       <view class="summary-item">
         <view class="summary-label">已摄入</view>
-        <view class="summary-value">{{summary.consumedCalories}} kcal</view>
+        <view class="summary-value">{{summary.dietCalories}} kcal</view>
       </view>
       <view class="summary-item">
         <view class="summary-label">已消耗</view>

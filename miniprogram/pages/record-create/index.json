@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "记录"
+  "navigationBarTitleText": "\u8bb0\u5f55",
+  "enablePullDownRefresh": true
 }
