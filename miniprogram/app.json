@@ -34,8 +34,8 @@
                                     "text":  "首页"
                                 },
                                 {
-                                    "pagePath":  "pages/record-create/index",
-                                    "text":  "记录"
+                                    "pagePath":  "pages/progress/index",
+                                    "text":  "趋势"
                                 },
                                 {
                                     "pagePath":  "pages/profile/index",

@@ -1,5 +1,9 @@
 Component({
   properties: {
+    showIcon: {
+      type: Boolean,
+      value: true,
+    },
     title: {
       type: String,
       value: "暂无内容",

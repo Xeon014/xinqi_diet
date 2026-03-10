@@ -1,5 +1,5 @@
 const { getDailySummary } = require("../../services/user");
-const { getToday } = require("../../utils/date");
+const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
 
@@ -9,6 +9,14 @@ const MEAL_TYPE_LABELS = {
   DINNER: "晚餐",
   SNACK: "加餐",
 };
+
+const RECORD_GROUPS = [
+  { key: "BREAKFAST", label: "早餐", type: "DIET", mealType: "BREAKFAST" },
+  { key: "LUNCH", label: "午餐", type: "DIET", mealType: "LUNCH" },
+  { key: "DINNER", label: "晚餐", type: "DIET", mealType: "DINNER" },
+  { key: "SNACK", label: "加餐", type: "DIET", mealType: "SNACK" },
+  { key: "EXERCISE", label: "运动", type: "EXERCISE", mealType: "" },
+];
 
 function toNumber(value) {
   const number = Number(value);
@@ -33,10 +41,25 @@ function getRecommendedMealType() {
   return "SNACK";
 }
 
+function resolveDateLabel(recordDate) {
+  const today = getToday();
+  const yesterday = addDays(today, -1);
+  const tomorrow = addDays(today, 1);
+  if (recordDate === today) {
+    return "今天";
+  }
+  if (recordDate === yesterday) {
+    return "昨天";
+  }
+  if (recordDate === tomorrow) {
+    return "明天";
+  }
+  return recordDate;
+}
+
 function formatDietTitle(record) {
-  const mealTypeLabel = MEAL_TYPE_LABELS[record.mealType] || "饮食";
   const quantity = toInteger(record.quantityInGram);
-  return `${mealTypeLabel} ${record.foodName || "食物"} ${quantity}g`;
+  return `${record.foodName || "食物"} ${quantity}g`;
 }
 
 function formatExerciseTitle(record) {
@@ -78,11 +101,39 @@ function normalizeSummary(summary, today) {
   };
 }
 
+function buildRecordGroups(records) {
+  const groupedRecords = {
+    BREAKFAST: [],
+    LUNCH: [],
+    DINNER: [],
+    SNACK: [],
+    EXERCISE: [],
+  };
+
+  (records || []).forEach((record) => {
+    if (record.recordType === "DIET") {
+      if (groupedRecords[record.mealType]) {
+        groupedRecords[record.mealType].push(record);
+      }
+      return;
+    }
+    groupedRecords.EXERCISE.push(record);
+  });
+
+  return RECORD_GROUPS
+    .map((group) => ({
+      ...group,
+      records: groupedRecords[group.key] || [],
+    }))
+    .filter((group) => group.records.length);
+}
+
 Page({
   data: {
-    today: getToday(),
+    recordDate: getToday(),
+    displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
-    recommendedMealLabel: "",
+    recordGroups: [],
     summary: {
       targetCalories: 0,
       dietCalories: 0,
@@ -97,11 +148,7 @@ Page({
   },
 
   onLoad() {
-    const mealType = getRecommendedMealType();
-    this.setData({
-      recommendedMealType: mealType,
-      recommendedMealLabel: MEAL_TYPE_LABELS[mealType] || "当前餐次",
-    });
+    this.refreshDateMeta();
   },
 
   onShow() {
@@ -110,13 +157,7 @@ Page({
       app.globalData.refreshHomeOnShow = false;
     }
 
-    const mealType = getRecommendedMealType();
-    this.setData({
-      today: getToday(),
-      recommendedMealType: mealType,
-      recommendedMealLabel: MEAL_TYPE_LABELS[mealType] || "当前餐次",
-    });
-
+    this.refreshDateMeta();
     this.loadSummary();
   },
 
@@ -124,10 +165,53 @@ Page({
     this.loadSummary(true);
   },
 
+  refreshDateMeta() {
+    this.setData({
+      displayDateLabel: resolveDateLabel(this.data.recordDate),
+      recommendedMealType: getRecommendedMealType(),
+    });
+  },
+
+  handlePrevDay() {
+    this.shiftDay(-1);
+  },
+
+  handleNextDay() {
+    this.shiftDay(1);
+  },
+
+  shiftDay(offset) {
+    this.setData(
+      {
+        recordDate: addDays(this.data.recordDate, offset),
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
+  },
+
+  handleDateChange(event) {
+    this.setData(
+      {
+        recordDate: event.detail.value,
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
+  },
+
   loadSummary(stopPullDown = false) {
-    getDailySummary(this.data.today)
+    getDailySummary(this.data.recordDate)
       .then((summary) => {
-        this.setData({ summary: normalizeSummary(summary, this.data.today) });
+        const normalized = normalizeSummary(summary, this.data.recordDate);
+        this.setData({
+          summary: normalized,
+          recordGroups: buildRecordGroups(normalized.records),
+        });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -139,9 +223,9 @@ Page({
       });
   },
 
-  handleGoRecommendedMeal() {
+  handleQuickAddDiet() {
     wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(this.data.recommendedMealType)}&recordDate=${encodeURIComponent(this.data.today)}`,
+      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(this.data.recommendedMealType)}&recordDate=${encodeURIComponent(this.data.recordDate)}`,
     });
   },
 
