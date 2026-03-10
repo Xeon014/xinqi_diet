@@ -81,23 +81,43 @@ function normalizeRecord(record) {
 function decorateItem(item) {
   const quantity = toNumber(item.quantityInGram);
   const totalCalories = quantity > 0 ? toInteger((toNumber(item.caloriesPer100g) * quantity) / 100) : 0;
+  const totalProtein = quantity > 0 ? toInteger((toNumber(item.proteinPer100g) * quantity) / 100) : 0;
+  const totalCarbs = quantity > 0 ? toInteger((toNumber(item.carbsPer100g) * quantity) / 100) : 0;
+  const totalFat = quantity > 0 ? toInteger((toNumber(item.fatPer100g) * quantity) / 100) : 0;
+
   return {
     ...item,
     quantityInGram: item.quantityInGram,
     totalCalories,
+    totalProtein,
+    totalCarbs,
+    totalFat,
   };
+}
+
+function resolveDateFromEvent(event) {
+  if (!event || !event.detail) {
+    return "";
+  }
+  return event.detail.recordDate || event.detail.value || "";
+}
+
+function buildExerciseEditorUrl({ mode, recordDate, mealType }) {
+  return `/pages/exercise-editor/index?mode=${encodeURIComponent(mode)}&recordDate=${encodeURIComponent(recordDate)}&mealType=${encodeURIComponent(mealType)}`;
 }
 
 Page({
   data: {
     mode: "create",
     mealType: "BREAKFAST",
-    mealLabel: "早餐",
     mealTypes: MEAL_TYPES,
     recordDate: getToday(),
     foodItems: [],
     deletedRecordIds: [],
     mealTotalCalories: 0,
+    mealTotalCarbs: 0,
+    mealTotalProtein: 0,
+    mealTotalFat: 0,
     combos: [],
   },
 
@@ -109,7 +129,6 @@ Page({
     this.setData({
       mode,
       mealType,
-      mealLabel: MEAL_TYPE_LABELS[mealType] || "早餐",
       recordDate,
     });
 
@@ -156,13 +175,44 @@ Page({
   switchEditContext(nextMealType, nextRecordDate) {
     this.setData({
       mealType: nextMealType,
-      mealLabel: MEAL_TYPE_LABELS[nextMealType] || "早餐",
       recordDate: nextRecordDate,
     }, () => {
       if (this.data.mode === "edit") {
         this.loadMealRecords();
       }
     });
+  },
+
+  handleModeSwitch(event) {
+    const nextMode = event.detail.mode;
+    if (nextMode !== "EXERCISE") {
+      return;
+    }
+
+    const navigate = () => {
+      wx.redirectTo({
+        url: buildExerciseEditorUrl({
+          mode: this.data.mode,
+          recordDate: this.data.recordDate,
+          mealType: this.data.mealType,
+        }),
+      });
+    };
+
+    if (this.hasPendingChanges()) {
+      wx.showModal({
+        title: "切换到运动",
+        content: "当前修改尚未保存，切换后会丢失，是否继续？",
+        success: (result) => {
+          if (result.confirm) {
+            navigate();
+          }
+        },
+      });
+      return;
+    }
+
+    navigate();
   },
 
   handleMealTypeTap(event) {
@@ -189,7 +239,7 @@ Page({
   },
 
   handleDateChange(event) {
-    const nextDate = event.detail.value;
+    const nextDate = resolveDateFromEvent(event);
     if (!nextDate || nextDate === this.data.recordDate) {
       return;
     }
@@ -308,9 +358,10 @@ Page({
           return;
         }
 
+        const mealLabel = MEAL_TYPE_LABELS[this.data.mealType] || "餐次";
         const payload = {
           name: comboName,
-          description: `${this.data.mealLabel}常用套餐`,
+          description: `${mealLabel}常用套餐`,
           mealType: this.data.mealType,
           items: this.data.foodItems.map((item) => ({
             foodId: item.id,
@@ -387,10 +438,24 @@ Page({
 
   applyFoodItems(foodItems) {
     const normalized = foodItems.map(decorateItem);
-    const mealTotalCalories = normalized.reduce((sum, item) => sum + item.totalCalories, 0);
+    const total = normalized.reduce((acc, item) => ({
+      calories: acc.calories + item.totalCalories,
+      carbs: acc.carbs + item.totalCarbs,
+      protein: acc.protein + item.totalProtein,
+      fat: acc.fat + item.totalFat,
+    }), {
+      calories: 0,
+      carbs: 0,
+      protein: 0,
+      fat: 0,
+    });
+
     this.setData({
       foodItems: normalized,
-      mealTotalCalories,
+      mealTotalCalories: total.calories,
+      mealTotalCarbs: total.carbs,
+      mealTotalProtein: total.protein,
+      mealTotalFat: total.fat,
     });
   },
 

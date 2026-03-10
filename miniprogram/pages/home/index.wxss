@@ -173,73 +173,81 @@
 .record-groups {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
+  gap: 12rpx;
 }
 
 .record-group {
-  border: 1rpx solid rgba(70, 57, 47, 0.1);
-  padding: 4rpx 18rpx 4rpx 20rpx;
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, 0.84), rgba(250, 244, 234, 0.7)),
+    rgba(255, 252, 246, 0.93);
+  border: 1rpx solid rgba(70, 57, 47, 0.11);
+  box-shadow: 0 10rpx 22rpx rgba(58, 45, 34, 0.08);
+  padding: 8rpx 16rpx 6rpx 16rpx;
 }
 
-.record-group-diet {
-  box-shadow:
-    inset 8rpx 0 0 rgba(31, 90, 79, 0.16),
-    0 20rpx 38rpx rgba(62, 48, 36, 0.09);
+.record-group:nth-child(odd) {
+  margin-right: 10rpx;
 }
 
-.record-group-exercise {
-  box-shadow:
-    inset 8rpx 0 0 rgba(185, 94, 58, 0.18),
-    0 20rpx 38rpx rgba(62, 48, 36, 0.09);
+.record-group:nth-child(even) {
+  margin-left: 10rpx;
 }
 
 .group-head {
   align-items: center;
   display: flex;
-  justify-content: flex-start;
-  min-height: 68rpx;
+  justify-content: space-between;
+  min-height: 64rpx;
 }
 
-.group-title-wrap {
+.group-main {
   align-items: center;
   display: flex;
-  gap: 12rpx;
+  gap: 10rpx;
+}
+
+.group-accent {
+  border-radius: 999rpx;
+  height: 26rpx;
+  width: 6rpx;
+}
+
+.record-group-diet .group-accent {
+  background: linear-gradient(180deg, rgba(31, 90, 79, 0.86), rgba(31, 90, 79, 0.4));
+}
+
+.record-group-exercise .group-accent {
+  background: linear-gradient(180deg, rgba(185, 94, 58, 0.9), rgba(185, 94, 58, 0.45));
 }
 
 .group-title {
   color: #2f2a24;
-  font-size: 27rpx;
+  font-size: 28rpx;
   font-weight: 800;
 }
 
-.group-tag {
-  background: rgba(31, 90, 79, 0.08);
-  border: 1rpx solid rgba(31, 90, 79, 0.18);
+.group-count {
+  background: rgba(70, 57, 47, 0.06);
   border-radius: 999rpx;
-  color: #1f5a4f;
-  font-size: 18rpx;
+  color: #7a6e61;
+  font-size: 20rpx;
+  font-weight: 600;
   line-height: 1;
-  padding: 6rpx 10rpx;
-}
-
-.record-group-exercise .group-tag {
-  background: rgba(185, 94, 58, 0.12);
-  border-color: rgba(185, 94, 58, 0.2);
-  color: #b95e3a;
+  padding: 7rpx 14rpx;
 }
 
 .group-list {
-  padding-bottom: 2rpx;
+  padding: 2rpx 4rpx;
 }
 
 .stream-item {
   align-items: center;
-  border-bottom: 1rpx solid rgba(70, 57, 47, 0.12);
+  border-bottom: 1rpx solid rgba(70, 57, 47, 0.1);
   display: flex;
   gap: 10rpx;
   justify-content: space-between;
-  min-height: 88rpx;
-  padding: 12rpx 0;
+  min-height: 84rpx;
+  padding: 10rpx 0;
 }
 
 .stream-item:active {
@@ -257,7 +265,7 @@
 
 .stream-title {
   color: #2f2a24;
-  font-size: 26rpx;
+  font-size: 25rpx;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -265,8 +273,9 @@
 }
 
 .stream-calories {
+  font-family: "DIN Alternate", "PingFang SC", sans-serif;
   font-size: 24rpx;
-  font-weight: 700;
+  font-weight: 800;
   margin-left: 12rpx;
 }
 
@@ -312,30 +321,10 @@
   animation-delay: 40ms;
 }
 
-.record-group:nth-child(1) {
-  animation-delay: 80ms;
-}
-
-.record-group:nth-child(2) {
-  animation-delay: 120ms;
-}
-
-.record-group:nth-child(3) {
-  animation-delay: 160ms;
-}
-
-.record-group:nth-child(4) {
-  animation-delay: 200ms;
-}
-
-.record-group:nth-child(5) {
-  animation-delay: 240ms;
-}
-
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(12rpx);
+    transform: translateY(8rpx);
   }
   to {
     opacity: 1;

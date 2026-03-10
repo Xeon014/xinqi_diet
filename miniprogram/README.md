@@ -3,7 +3,8 @@
 ## 目录
 
 - `pages/home`：首页与今日汇总
-- `pages/record-create`：新增饮食记录
+- `pages/meal-editor`：饮食记录编辑
+- `pages/exercise-editor`：运动记录编辑
 - `pages/food-search`：食品搜索与选择
 - `pages/progress`：热量趋势图
 - `pages/profile`：用户资料编辑

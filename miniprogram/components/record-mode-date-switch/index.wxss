@@ -1,0 +1,40 @@
+.mode-date-switch {
+  align-items: center;
+  border: 1rpx solid rgba(30, 90, 79, 0.14);
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx;
+}
+
+.mode-tabs {
+  align-items: center;
+  background: rgba(70, 57, 47, 0.08);
+  border-radius: 999rpx;
+  display: flex;
+  gap: 8rpx;
+  padding: 8rpx;
+}
+
+.mode-tab {
+  border-radius: 999rpx;
+  color: #665b50;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1;
+  padding: 14rpx 22rpx;
+}
+
+.mode-tab.active {
+  background: rgba(30, 90, 79, 0.16);
+  color: #1e5a4f;
+}
+
+.date-pill {
+  background: #fffef9;
+  border: 1rpx solid rgba(70, 57, 47, 0.16);
+  border-radius: 999rpx;
+  color: #5f5347;
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 12rpx 18rpx;
+}

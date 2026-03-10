@@ -1,7 +1,12 @@
 <view class="page-shell exercise-editor-page">
+  <record-mode-date-switch
+    activeMode="EXERCISE"
+    recordDate="{{recordDate}}"
+    bindmodechange="handleModeSwitch"
+    binddatechange="handleDateChange"
+  />
+
   <view class="panel editor-head">
-    <view class="editor-badge">运动记录</view>
-    <view class="editor-date">{{recordDate}}</view>
     <view class="section-title">{{mode === 'edit' ? '编辑运动' : '添加运动'}}</view>
     <view class="section-subtitle">支持同一天记录多个运动项目</view>
   </view>
@@ -9,10 +14,11 @@
   <view class="panel editor-panel">
     <view class="list-head">
       <view class="field-label">运动清单</view>
-      <view class="list-count">{{exerciseItems.length}} 项</view>
+      <view class="list-actions">
+        <view class="list-count">{{exerciseItems.length}} 项</view>
+        <view class="list-add" bindtap="handleChooseExercise">添加运动</view>
+      </view>
     </view>
-
-    <view class="add-action" bindtap="handleChooseExercise">+ 添加运动</view>
 
     <view wx:if="{{exerciseItems.length}}" class="exercise-list">
       <view wx:for="{{exerciseItems}}" wx:key="index" class="exercise-item">
@@ -21,7 +27,7 @@
           <view class="remove-action" data-index="{{index}}" bindtap="handleRemoveExercise">删除</view>
         </view>
 
-        <view class="exercise-meta">{{item.categoryLabel}} ? MET {{item.metValue}}</view>
+        <view class="exercise-meta">{{item.categoryLabel}} · MET {{item.metValue}}</view>
 
         <view class="form-row">
           <view class="duration-box">
@@ -50,8 +56,6 @@
         </view>
       </view>
     </view>
-
-    <view wx:else class="empty-tip">先添加运动项目，再设置时长和强度</view>
   </view>
 
   <view class="panel summary-panel">
@@ -59,5 +63,7 @@
     <view class="summary-value">{{totalBurnedCalories}} kcal</view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
+  <view class="submit-wrap">
+    <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
+  </view>
 </view>

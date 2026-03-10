@@ -1,7 +1,6 @@
 {
     "pages":  [
                   "pages/home/index",
-                  "pages/record-create/index",
                   "pages/meal-editor/index",
                   "pages/food-search/index",
                   "pages/custom-food/index",
@@ -46,6 +45,7 @@
     "usingComponents":  {
                             "summary-card":  "/components/summary-card/index",
                             "record-item":  "/components/record-item/index",
-                            "empty-state":  "/components/empty-state/index"
+                            "empty-state":  "/components/empty-state/index",
+                            "record-mode-date-switch":  "/components/record-mode-date-switch/index"
                         }
 }

@@ -85,9 +85,21 @@ function decorateItem(item) {
   };
 }
 
+function resolveDateFromEvent(event) {
+  if (!event || !event.detail) {
+    return "";
+  }
+  return event.detail.recordDate || event.detail.value || "";
+}
+
+function buildMealEditorUrl({ mode, recordDate, mealType }) {
+  return `/pages/meal-editor/index?mode=${encodeURIComponent(mode)}&recordDate=${encodeURIComponent(recordDate)}&mealType=${encodeURIComponent(mealType)}`;
+}
+
 Page({
   data: {
     mode: "create",
+    mealType: "BREAKFAST",
     recordDate: getToday(),
     intensityOptions: INTENSITY_OPTIONS,
     exerciseItems: [],
@@ -98,11 +110,12 @@ Page({
   onLoad(options) {
     const recordDate = options.recordDate || getToday();
     const mode = options.mode === "edit" ? "edit" : "create";
+    const mealType = options.mealType || "BREAKFAST";
 
-    this.setData({ mode, recordDate });
+    this.setData({ mode, mealType, recordDate });
 
     wx.setNavigationBarTitle({
-      title: mode === "edit" ? "????" : "????",
+      title: mode === "edit" ? "编辑运动" : "记录运动",
     });
 
     if (mode === "edit") {
@@ -120,6 +133,68 @@ Page({
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       });
+  },
+
+  handleModeSwitch(event) {
+    const nextMode = event.detail.mode;
+    if (nextMode !== "DIET") {
+      return;
+    }
+
+    const navigate = () => {
+      wx.redirectTo({
+        url: buildMealEditorUrl({
+          mode: this.data.mode,
+          recordDate: this.data.recordDate,
+          mealType: this.data.mealType,
+        }),
+      });
+    };
+
+    if (this.hasPendingChanges()) {
+      wx.showModal({
+        title: "切换到饮食",
+        content: "当前修改尚未保存，切换后会丢失，是否继续？",
+        success: (result) => {
+          if (result.confirm) {
+            navigate();
+          }
+        },
+      });
+      return;
+    }
+
+    navigate();
+  },
+
+  handleDateChange(event) {
+    const nextDate = resolveDateFromEvent(event);
+    if (!nextDate || nextDate === this.data.recordDate) {
+      return;
+    }
+
+    const switchDate = () => {
+      this.setData({ recordDate: nextDate }, () => {
+        if (this.data.mode === "edit") {
+          this.loadExerciseRecords();
+        }
+      });
+    };
+
+    if (this.data.mode === "edit" && this.hasPendingChanges()) {
+      wx.showModal({
+        title: "切换日期",
+        content: "当前修改尚未保存，切换后会丢失，是否继续？",
+        success: (result) => {
+          if (result.confirm) {
+            switchDate();
+          }
+        },
+      });
+      return;
+    }
+
+    switchDate();
   },
 
   handleChooseExercise() {
@@ -144,7 +219,7 @@ Page({
         durationMinutes: String(currentDuration + DEFAULT_DURATION_MINUTES),
       };
       this.applyExerciseItems(exerciseItems);
-      wx.showToast({ title: "???", icon: "none" });
+      wx.showToast({ title: "已合并到列表", icon: "none" });
       return;
     }
 
@@ -222,18 +297,18 @@ Page({
       if (isEdit && this.data.deletedRecordIds.length > 0) {
         return true;
       }
-      wx.showToast({ title: "??????", icon: "none" });
+      wx.showToast({ title: "请先添加运动", icon: "none" });
       return false;
     }
 
     const invalidItem = this.data.exerciseItems.find((item) => toNumber(item.durationMinutes) <= 0);
     if (invalidItem) {
-      wx.showToast({ title: `??????${invalidItem.name}`, icon: "none" });
+      wx.showToast({ title: `请检查 ${invalidItem.name} 的时长`, icon: "none" });
       return false;
     }
 
     if (isEdit && !this.hasPendingChanges()) {
-      wx.showToast({ title: "????????", icon: "none" });
+      wx.showToast({ title: "没有可保存的变更", icon: "none" });
       return false;
     }
 
@@ -302,7 +377,7 @@ Page({
 
   handleSubmitSuccess() {
     app.globalData.refreshHomeOnShow = true;
-    wx.showToast({ title: "???", icon: "success" });
+    wx.showToast({ title: "已完成", icon: "success" });
     setTimeout(() => {
       wx.switchTab({ url: "/pages/home/index" });
     }, 350);

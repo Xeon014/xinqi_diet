@@ -1,0 +1,22 @@
+<view class="panel mode-date-switch">
+  <view class="mode-tabs">
+    <view
+      class="mode-tab {{activeMode === 'DIET' ? 'active' : ''}}"
+      data-mode="DIET"
+      bindtap="handleModeTap"
+    >
+      {{dietLabel}}
+    </view>
+    <view
+      class="mode-tab {{activeMode === 'EXERCISE' ? 'active' : ''}}"
+      data-mode="EXERCISE"
+      bindtap="handleModeTap"
+    >
+      {{exerciseLabel}}
+    </view>
+  </view>
+
+  <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
+    <view class="date-pill">{{recordDate}}</view>
+  </picker>
+</view>

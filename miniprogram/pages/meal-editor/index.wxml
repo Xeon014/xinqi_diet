@@ -1,12 +1,12 @@
 <view class="page-shell meal-editor-page">
-  <view class="panel meal-head">
-    <view class="head-top">
-      <view class="meal-badge">{{mealLabel}}</view>
-      <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
-        <view class="meal-date">{{recordDate}}</view>
-      </picker>
-    </view>
+  <record-mode-date-switch
+    activeMode="DIET"
+    recordDate="{{recordDate}}"
+    bindmodechange="handleModeSwitch"
+    binddatechange="handleDateChange"
+  />
 
+  <view class="panel meal-head">
     <view class="meal-types">
       <view
         wx:for="{{mealTypes}}"
@@ -18,13 +18,11 @@
         {{item.label}}
       </view>
     </view>
-
-    <view class="section-subtitle">{{mode === 'edit' ? '可切换餐次和日期查看并编辑记录' : '默认推荐餐次，可按需切换后记录'}}</view>
   </view>
 
   <view class="panel editor-panel">
     <view class="list-head">
-      <view class="field-label">食物清单</view>
+      <view class="list-title">食物清单</view>
       <view class="list-count">{{foodItems.length}} 种</view>
     </view>
 
@@ -58,14 +56,30 @@
         </view>
       </view>
     </view>
-
-    <view wx:else class="empty-tip">{{mode === 'edit' ? '当前餐次和日期暂无记录，可点击添加食物补录。' : '还没有添加食物，先点“添加食物”。'}}</view>
   </view>
 
   <view class="panel summary-panel">
-    <view class="summary-label">本餐热量</view>
-    <view class="summary-value">{{mealTotalCalories}} kcal</view>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <view class="summary-label">热量</view>
+        <view class="summary-value">{{mealTotalCalories}} kcal</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">碳水</view>
+        <view class="summary-value">{{mealTotalCarbs}} g</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">蛋白质</view>
+        <view class="summary-value">{{mealTotalProtein}} g</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">脂肪</view>
+        <view class="summary-value">{{mealTotalFat}} g</view>
+      </view>
+    </view>
   </view>
 
-  <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
+  <view class="submit-wrap">
+    <view class="primary-button" bindtap="handleSubmit">{{mode === 'edit' ? '保存修改' : '完成'}}</view>
+  </view>
 </view>

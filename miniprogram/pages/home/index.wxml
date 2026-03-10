@@ -55,10 +55,11 @@
       class="record-group panel {{group.type === 'EXERCISE' ? 'record-group-exercise' : 'record-group-diet'}}"
     >
       <view class="group-head">
-        <view class="group-title-wrap">
+        <view class="group-main">
+          <view class="group-accent"></view>
           <view class="group-title">{{group.label}}</view>
-          <view class="group-tag">{{group.type === 'EXERCISE' ? '运动' : '饮食'}}</view>
         </view>
+        <view class="group-count">{{group.records.length}} 条</view>
       </view>
 
       <view class="group-list">

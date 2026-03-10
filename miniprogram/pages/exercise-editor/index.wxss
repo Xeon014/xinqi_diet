@@ -2,29 +2,13 @@
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
 }
 
 .editor-head {
   background: linear-gradient(130deg, rgba(28, 111, 95, 0.15) 0%, rgba(255, 253, 248, 0.95) 56%);
   border: 1rpx solid rgba(28, 111, 95, 0.14);
-  margin-right: 28rpx;
   padding: 30rpx;
-}
-
-.editor-badge {
-  background: rgba(28, 111, 95, 0.12);
-  border-radius: 999rpx;
-  color: #1f6f5f;
-  display: inline-flex;
-  font-size: 22rpx;
-  font-weight: 700;
-  padding: 10rpx 18rpx;
-}
-
-.editor-date {
-  color: #7b6f62;
-  font-size: 24rpx;
-  margin-top: 18rpx;
 }
 
 .editor-panel {
@@ -37,23 +21,28 @@
   justify-content: space-between;
 }
 
+.list-head .field-label {
+  margin-bottom: 0;
+}
+
+.list-actions {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+}
+
 .list-count {
   color: #7d7062;
   font-size: 24rpx;
 }
 
-.add-action {
-  align-items: center;
+.list-add {
   background: rgba(28, 111, 95, 0.1);
-  border: 1rpx solid rgba(28, 111, 95, 0.16);
-  border-radius: 22rpx;
+  border-radius: 999rpx;
   color: #1f6f5f;
-  display: flex;
-  font-size: 28rpx;
+  font-size: 22rpx;
   font-weight: 700;
-  height: 88rpx;
-  justify-content: center;
-  margin-top: 14rpx;
+  padding: 10rpx 18rpx;
 }
 
 .exercise-list {
@@ -138,12 +127,6 @@
   margin-left: auto;
 }
 
-.empty-tip {
-  color: #7d7062;
-  font-size: 24rpx;
-  margin-top: 18rpx;
-}
-
 .summary-panel {
   align-items: center;
   background: linear-gradient(140deg, rgba(28, 111, 95, 0.14) 0%, rgba(255, 253, 248, 0.95) 44%);
@@ -161,4 +144,12 @@
   color: #1f6f5f;
   font-size: 34rpx;
   font-weight: 700;
+}
+
+.submit-wrap {
+  bottom: calc(28rpx + env(safe-area-inset-bottom));
+  left: 26rpx;
+  position: fixed;
+  right: 26rpx;
+  z-index: 30;
 }
