@@ -189,9 +189,7 @@ public class DataInitializer {
                     record_date DATE NOT NULL,
                     created_at DATETIME NOT NULL,
                     KEY idx_exercise_record_user_date (user_id, record_date),
-                    KEY idx_exercise_record_exercise (exercise_id),
-                    CONSTRAINT fk_exercise_record_user FOREIGN KEY (user_id) REFERENCES user_profile(id),
-                    CONSTRAINT fk_exercise_record_exercise FOREIGN KEY (exercise_id) REFERENCES exercise(id)
+                    KEY idx_exercise_record_exercise (exercise_id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                 """);
     }
