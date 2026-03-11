@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "运动记录"
+  "navigationBarTitleText": "运动记录",
+  "usingComponents": {
+    "record-mode-date-switch": "/components/record-mode-date-switch/index"
+  }
 }

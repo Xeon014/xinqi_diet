@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "自定义套餐"
+  "navigationBarTitleText": "自定义套餐",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }

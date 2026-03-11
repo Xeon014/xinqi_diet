@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "选择食物"
+  "navigationBarTitleText": "选择食物",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }

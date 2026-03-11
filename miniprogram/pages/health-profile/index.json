@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "健康档案",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }
