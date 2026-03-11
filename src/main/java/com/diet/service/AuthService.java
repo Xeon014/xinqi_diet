@@ -38,15 +38,18 @@ public class AuthService {
         this.accessTokenService = accessTokenService;
     }
 
-    public WechatLoginResponse login(WechatLoginRequest request) {
-        WechatSessionResult sessionResult = wechatCode2SessionClient.exchangeCode(request.code(), request.clientUserKey());
-
-        Optional<UserProfile> existingUser = userProfileRepository.findByOpenId(sessionResult.openId());
+    /**
+     * 云托管方式登录：直接使用 openid
+     */
+    public WechatLoginResponse loginByOpenId(String openId, String unionId) {
+        Optional<UserProfile> existingUser = userProfileRepository.findByOpenId(openId);
         boolean isNewUser = existingUser.isEmpty();
 
-        UserProfile user = existingUser.orElseGet(() -> createDefaultUser(sessionResult.openId(), sessionResult.unionId()));
-        user.setOpenId(sessionResult.openId());
-        user.setUnionId(sessionResult.unionId());
+        UserProfile user = existingUser.orElseGet(() -> createDefaultUser(openId, unionId));
+        user.setOpenId(openId);
+        if (unionId != null && !unionId.isBlank()) {
+            user.setUnionId(unionId);
+        }
         user.setLastLoginAt(LocalDateTime.now());
 
         if (isNewUser) {
@@ -57,6 +60,14 @@ public class AuthService {
 
         String accessToken = accessTokenService.generateToken(user.getId());
         return new WechatLoginResponse(accessToken, user.getId(), isNewUser);
+    }
+
+    /**
+     * 传统方式登录：通过 code 换取 openid
+     */
+    public WechatLoginResponse login(WechatLoginRequest request) {
+        WechatSessionResult sessionResult = wechatCode2SessionClient.exchangeCode(request.code(), request.clientUserKey());
+        return loginByOpenId(sessionResult.openId(), sessionResult.unionId());
     }
 
     private UserProfile createDefaultUser(String openId, String unionId) {
