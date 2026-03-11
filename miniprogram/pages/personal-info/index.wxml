@@ -4,6 +4,18 @@
     <view class="age-chip">{{profile.age}} 岁</view>
 
     <view class="field-group">
+      <view class="field-label">昵称</view>
+      <input
+        class="field-input"
+        value="{{form.name}}"
+        data-field="name"
+        bindinput="handleInput"
+        maxlength="20"
+        placeholder="请输入昵称"
+      />
+    </view>
+
+    <view class="field-group">
       <view class="field-label">性别</view>
       <picker mode="selector" range="{{genderOptions}}" range-key="label" value="{{genderIndex}}" bindchange="handleGenderChange">
         <view class="field-picker">{{genderOptions[genderIndex].label}}</view>

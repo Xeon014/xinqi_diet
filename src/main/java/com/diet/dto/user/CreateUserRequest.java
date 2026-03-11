@@ -7,12 +7,14 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Schema(description = "创建用户请求")
 public record CreateUserRequest(
         @Schema(description = "用户昵称，为空时后端默认填充微信用户")
+        @Size(max = 20, message = "name length must be less than or equal to 20")
         String name,
 
         @Schema(description = "性别")

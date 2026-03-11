@@ -79,6 +79,19 @@ CREATE TABLE IF NOT EXISTS exercise_record (
     KEY idx_exercise_record_user_date (user_id, record_date),
     KEY idx_exercise_record_exercise (exercise_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运动记录表';
+
+CREATE TABLE IF NOT EXISTS health_diary (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '健康日记主键 ID',
+    user_id BIGINT NOT NULL COMMENT '用户 ID',
+    record_date DATE NOT NULL COMMENT '记录日期',
+    content VARCHAR(500) NULL COMMENT '日记文字',
+    image_file_ids TEXT NULL COMMENT '图片 fileID 列表 JSON',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+    UNIQUE KEY uk_health_diary_user_date (user_id, record_date),
+    KEY idx_health_diary_user_date (user_id, record_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='健康日记表';
+
 CREATE TABLE IF NOT EXISTS meal_combo (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '套餐主键 ID',
     user_id BIGINT NOT NULL COMMENT '用户 ID',

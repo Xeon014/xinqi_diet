@@ -45,6 +45,8 @@ public class UserProfileService {
 
     private static final String DEFAULT_NAME = "微信用户";
 
+    private static final int NAME_MAX_LENGTH = 20;
+
     private static final Map<MealType, BigDecimal> MEAL_TARGET_RATIO = Map.of(
             MealType.BREAKFAST, BigDecimal.valueOf(0.25),
             MealType.LUNCH, BigDecimal.valueOf(0.35),
@@ -85,7 +87,7 @@ public class UserProfileService {
 
     public UserResponse create(CreateUserRequest request) {
         UserProfile user = new UserProfile(
-                normalizeName(request.name()),
+                normalizeNameForCreate(request.name()),
                 request.gender(),
                 request.birthDate(),
                 request.height(),
@@ -115,7 +117,7 @@ public class UserProfileService {
     public UserResponse update(Long id, UpdateUserRequest request) {
         UserProfile user = getUser(id);
         user.updateProfile(
-                normalizeName(request.name() == null ? user.getName() : request.name()),
+                resolveNameForUpdate(request.name(), user.getName()),
                 request.gender(),
                 request.birthDate(),
                 request.height(),
@@ -534,10 +536,28 @@ public class UserProfileService {
         );
     }
 
-    private String normalizeName(String name) {
+    private String normalizeNameForCreate(String name) {
         if (name == null || name.isBlank()) {
             return DEFAULT_NAME;
         }
-        return name.trim();
+        return normalizeName(name, "name must not be blank");
+    }
+
+    private String resolveNameForUpdate(String requestedName, String currentName) {
+        if (requestedName == null) {
+            return currentName;
+        }
+        return normalizeName(requestedName, "name must not be blank");
+    }
+
+    private String normalizeName(String name, String blankMessage) {
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException(blankMessage);
+        }
+        if (trimmed.length() > NAME_MAX_LENGTH) {
+            throw new IllegalArgumentException("name length must be less than or equal to " + NAME_MAX_LENGTH);
+        }
+        return trimmed;
     }
 }

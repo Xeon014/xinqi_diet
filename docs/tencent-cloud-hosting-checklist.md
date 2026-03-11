@@ -74,6 +74,10 @@
 ## 7. 上线验收（最小回归）
 
 - 微信登录：`/api/auth/wechat/login` 成功返回 token
+- 启动日志：确认出现 `activeProfiles=prod` 且 `wechat.mock-enabled=false`
+- 数据抽样：执行 `SELECT id, open_id FROM user_profile ORDER BY id DESC LIMIT 20;`，确认 `open_id` 不包含 `mock_openid_`
 - 首页汇总：`/api/users/{id}/daily-summary` 返回成功
 - 饮食记录新增/查询成功
 - 运动记录新增/查询成功
+- 健康日记：保存/查询/删除成功，首页可展示当日日记摘要
+- 个人信息页：首次出现“微信用户”时会提示完善昵称，保存后昵称正常展示

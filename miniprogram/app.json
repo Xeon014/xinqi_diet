@@ -1,6 +1,7 @@
 {
     "pages":  [
                   "pages/home/index",
+                  "pages/health-diary-editor/index",
                   "pages/meal-editor/index",
                   "pages/food-search/index",
                   "pages/custom-food/index",

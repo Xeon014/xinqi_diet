@@ -1,0 +1,114 @@
+.diary-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+}
+
+.diary-date-panel {
+  padding: 20rpx 24rpx;
+}
+
+.date-label {
+  color: #7a6e61;
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+.diary-content-panel {
+  padding: 20rpx 24rpx;
+}
+
+.diary-textarea {
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  height: 260rpx;
+  line-height: 1.6;
+  margin-top: 8rpx;
+  padding: 20rpx;
+  width: 100%;
+}
+
+.word-count {
+  color: #8a7f74;
+  font-size: 22rpx;
+  margin-top: 12rpx;
+  text-align: right;
+}
+
+.diary-image-panel {
+  padding: 20rpx 24rpx;
+}
+
+.image-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.image-count {
+  color: #7a6e61;
+  font-size: 22rpx;
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 10rpx;
+}
+
+.image-item,
+.add-image {
+  border-radius: 16rpx;
+  height: 194rpx;
+  overflow: hidden;
+  width: 194rpx;
+}
+
+.image-item {
+  border: 1rpx solid rgba(70, 57, 47, 0.14);
+  position: relative;
+}
+
+.image-preview {
+  height: 100%;
+  width: 100%;
+}
+
+.remove-image {
+  background: rgba(47, 42, 36, 0.7);
+  border-radius: 999rpx;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 6rpx 14rpx;
+  position: absolute;
+  right: 10rpx;
+  top: 10rpx;
+}
+
+.add-image {
+  align-items: center;
+  background: rgba(30, 90, 79, 0.08);
+  border: 2rpx dashed rgba(30, 90, 79, 0.22);
+  color: #1e5a4f;
+  display: flex;
+  font-size: 24rpx;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.danger-button {
+  align-items: center;
+  background: rgba(185, 94, 58, 0.12);
+  border: 1rpx solid rgba(185, 94, 58, 0.24);
+  border-radius: 999rpx;
+  color: #b95e3a;
+  display: flex;
+  font-size: 26rpx;
+  font-weight: 600;
+  height: 84rpx;
+  justify-content: center;
+}

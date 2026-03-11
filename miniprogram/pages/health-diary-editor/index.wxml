@@ -1,0 +1,37 @@
+<view class="page-shell diary-editor-page">
+  <view class="panel diary-date-panel">
+    <view class="section-title">健康日记</view>
+    <view class="date-label">{{recordDate}}</view>
+  </view>
+
+  <view class="panel diary-content-panel">
+    <view class="field-label">文字</view>
+    <textarea
+      class="diary-textarea"
+      maxlength="500"
+      placeholder="记录今天的状态"
+      value="{{content}}"
+      bindinput="handleContentInput"
+    />
+    <view class="word-count">{{contentLength}}/500</view>
+  </view>
+
+  <view class="panel diary-image-panel">
+    <view class="image-head">
+      <view class="field-label">图片</view>
+      <view class="image-count">{{imageFileIds.length}}/3</view>
+    </view>
+
+    <view class="image-grid">
+      <view class="image-item" wx:for="{{imageFileIds}}" wx:key="*this" wx:for-item="imageFileId" wx:for-index="index">
+        <image class="image-preview" src="{{imageFileId}}" mode="aspectFill" data-index="{{index}}" bindtap="handlePreviewImage" />
+        <view class="remove-image" data-index="{{index}}" bindtap="handleRemoveImage">删除</view>
+      </view>
+
+      <view wx:if="{{imageFileIds.length < 3}}" class="add-image" bindtap="handleChooseImage">添加图片</view>
+    </view>
+  </view>
+
+  <view class="primary-button" bindtap="handleSave">保存日记</view>
+  <view class="danger-button" wx:if="{{diaryExists}}" bindtap="handleDelete">删除日记</view>
+</view>

@@ -2,6 +2,10 @@ const { getCurrentUser, updateProfile } = require("../../services/user");
 const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
+const DEFAULT_WECHAT_NAME = "微信用户";
+const NICKNAME_PROMPTED_PREFIX = "nickname_prompted_";
+const MAX_NICKNAME_LENGTH = 20;
+
 const GENDER_OPTIONS = [
   { label: "女", value: "FEMALE" },
   { label: "男", value: "MALE" }
@@ -18,6 +22,7 @@ Page({
     genderIndex: 0,
     profile: null,
     form: {
+      name: "",
       gender: "FEMALE",
       birthDate: "",
       height: "",
@@ -39,6 +44,7 @@ Page({
           profile,
           genderIndex: this.findOptionIndex(profile.gender),
           form: {
+            name: profile.name || "",
             gender: profile.gender,
             birthDate: profile.birthDate || "",
             height: profile.height == null ? "" : String(profile.height),
@@ -47,6 +53,7 @@ Page({
             customBmr: String(profile.customBmr || toInteger(profile.bmr))
           }
         });
+        this.maybePromptNickname(profile);
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -75,13 +82,35 @@ Page({
   handleBirthDateChange(event) {
     this.setData({ "form.birthDate": event.detail.value });
   },
+  maybePromptNickname(profile) {
+    const userId = profile && profile.id != null ? profile.id : "unknown";
+    if (!profile || profile.name !== DEFAULT_WECHAT_NAME) {
+      return;
+    }
+    const storageKey = `${NICKNAME_PROMPTED_PREFIX}${userId}`;
+    const prompted = wx.getStorageSync(storageKey);
+    if (prompted) {
+      return;
+    }
+    wx.showToast({ title: "建议先设置昵称", icon: "none" });
+    wx.setStorageSync(storageKey, true);
+  },
   handleSave() {
     const { profile, form } = this.data;
+    const name = String(form.name || "").trim();
     const height = Number(form.height);
     const currentWeight = Number(form.currentWeight);
     const targetWeight = Number(form.targetWeight);
     const customBmr = Number(form.customBmr);
 
+    if (!name) {
+      wx.showToast({ title: "请输入昵称", icon: "none" });
+      return;
+    }
+    if (name.length > MAX_NICKNAME_LENGTH) {
+      wx.showToast({ title: "昵称最多 20 个字符", icon: "none" });
+      return;
+    }
     if (!form.birthDate) {
       wx.showToast({ title: "请选择生日", icon: "none" });
       return;
@@ -104,7 +133,7 @@ Page({
     }
 
     updateProfile({
-      name: profile.name,
+      name,
       gender: form.gender,
       birthDate: form.birthDate,
       height,

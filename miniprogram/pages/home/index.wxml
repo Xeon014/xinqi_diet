@@ -84,6 +84,29 @@
 
   <empty-state wx:else show-icon="{{false}}" title="暂无记录" description="点击右下角加号开始记录" />
 
+  <view class="section-head diary-section-head">
+    <view class="section-title">健康日记</view>
+    <view class="diary-entry-action" bindtap="handleOpenHealthDiary">{{healthDiary ? "编辑" : "记录"}}</view>
+  </view>
+
+  <view class="panel diary-panel" bindtap="handleOpenHealthDiary">
+    <view wx:if="{{healthDiary}}">
+      <view wx:if="{{healthDiary.hasContent}}" class="diary-content">{{healthDiary.contentPreview}}</view>
+      <view wx:if="{{healthDiary.hasImages}}" class="diary-image-list">
+        <image
+          wx:for="{{healthDiary.imageFileIds}}"
+          wx:key="*this"
+          wx:for-item="imageFileId"
+          class="diary-image"
+          mode="aspectFill"
+          src="{{imageFileId}}"
+        />
+      </view>
+      <view class="diary-meta">已记录</view>
+    </view>
+    <view wx:else class="diary-empty">点击记录今天状态</view>
+  </view>
+
   <view class="quick-add-fab" bindtap="handleQuickAddDiet">
     <view class="quick-add-icon">+</view>
   </view>

@@ -148,6 +148,91 @@
 
 - 返回结构保持不变，`averageCalories/totalCalories/trend[].consumedCalories` 均表示净摄入热量。
 
+### 11. 查询某日健康日记
+
+`GET /api/health-diaries/daily?date=2026-03-11`
+
+响应（无记录时 `data` 为 `null`）：
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "ok",
+  "data": {
+    "id": 12,
+    "userId": 1,
+    "recordDate": "2026-03-11",
+    "content": "今天饮食节奏稳定，状态不错。",
+    "imageFileIds": [
+      "cloud://xxx/health-diary/1/2026-03-11/a.jpg"
+    ],
+    "createdAt": "2026-03-11T10:20:30",
+    "updatedAt": "2026-03-11T10:20:30"
+  },
+  "timestamp": "2026-03-11T10:20:30"
+}
+```
+
+### 12. 保存某日健康日记（新建或覆盖）
+
+`PUT /api/health-diaries/daily`
+
+请求：
+
+```json
+{
+  "recordDate": "2026-03-11",
+  "content": "今天饮食节奏稳定，状态不错。",
+  "imageFileIds": [
+    "cloud://xxx/health-diary/1/2026-03-11/a.jpg"
+  ]
+}
+```
+
+响应：
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "ok",
+  "data": {
+    "diary": {
+      "id": 12,
+      "userId": 1,
+      "recordDate": "2026-03-11",
+      "content": "今天饮食节奏稳定，状态不错。",
+      "imageFileIds": [
+        "cloud://xxx/health-diary/1/2026-03-11/a.jpg"
+      ],
+      "createdAt": "2026-03-11T10:20:30",
+      "updatedAt": "2026-03-11T10:20:30"
+    },
+    "removedImageFileIds": []
+  },
+  "timestamp": "2026-03-11T10:20:30"
+}
+```
+
+### 13. 删除某日健康日记
+
+`DELETE /api/health-diaries/daily?date=2026-03-11`
+
+响应：
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "ok",
+  "data": {
+    "deleted": true,
+    "removedImageFileIds": [
+      "cloud://xxx/health-diary/1/2026-03-11/a.jpg"
+    ]
+  },
+  "timestamp": "2026-03-11T10:20:30"
+}
+```
+
 ## 小程序接入建议
 
 - `app.onLaunch` 先执行 `wx.login -> /api/auth/wechat/login`，保存 `accessToken + userId`。
@@ -155,3 +240,4 @@
 - 首页调用 `/api/users/{id}/daily-summary` 展示饮食摄入、运动消耗和净摄入。
 - 记录页分两条入口：饮食记录（`/api/records`）与运动记录（`/api/exercise-records`）。
 - 趋势页调用 `/api/users/{id}/progress` 展示净摄入趋势。
+- 首页在记录区下方展示“健康日记”入口与当日摘要，点击进入独立编辑页。

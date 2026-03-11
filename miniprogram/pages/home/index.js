@@ -1,4 +1,5 @@
 const { getDailySummary } = require("../../services/user");
+const { getDailyHealthDiary } = require("../../services/health-diary");
 const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
@@ -101,6 +102,26 @@ function normalizeSummary(summary, today) {
   };
 }
 
+function normalizeDiary(diary) {
+  if (!diary) {
+    return null;
+  }
+  const content = String(diary.content || "").trim();
+  const imageFileIds = Array.isArray(diary.imageFileIds)
+    ? diary.imageFileIds.filter((item) => typeof item === "string" && item.trim()).slice(0, 3)
+    : [];
+  const contentPreview = content.length > 48 ? `${content.slice(0, 48)}...` : content;
+
+  return {
+    ...diary,
+    content,
+    contentPreview,
+    imageFileIds,
+    hasContent: content.length > 0,
+    hasImages: imageFileIds.length > 0,
+  };
+}
+
 function buildRecordGroups(records) {
   const groupedRecords = {
     BREAKFAST: [],
@@ -145,6 +166,7 @@ Page({
       records: [],
       summaryText: "",
     },
+    healthDiary: null,
   },
 
   onLoad() {
@@ -205,12 +227,16 @@ Page({
   },
 
   loadSummary(stopPullDown = false) {
-    getDailySummary(this.data.recordDate)
-      .then((summary) => {
+    Promise.all([
+      getDailySummary(this.data.recordDate),
+      getDailyHealthDiary(this.data.recordDate),
+    ])
+      .then(([summary, diary]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
         this.setData({
           summary: normalized,
           recordGroups: buildRecordGroups(normalized.records),
+          healthDiary: normalizeDiary(diary),
         });
       })
       .catch((error) => {
@@ -221,6 +247,12 @@ Page({
           wx.stopPullDownRefresh();
         }
       });
+  },
+
+  handleOpenHealthDiary() {
+    wx.navigateTo({
+      url: `/pages/health-diary-editor/index?recordDate=${encodeURIComponent(this.data.recordDate)}`,
+    });
   },
 
   handleQuickAddDiet() {

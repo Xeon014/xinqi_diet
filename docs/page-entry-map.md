@@ -13,6 +13,7 @@
 - 首页主按钮 `记录推荐餐次` -> `pages/meal-editor/index`
 - 首页记录流（饮食项） -> `pages/meal-editor/index?mode=edit`
 - 首页记录流（运动项） -> `pages/exercise-editor/index?mode=edit`
+- 首页健康日记区 -> `pages/health-diary-editor/index`
 
 ## 3. 饮食链路
 
@@ -43,11 +44,17 @@
 - 编辑态 -> 保存套餐更新
 - 列表态 -> 删除套餐
 
-## 7. 当前“有页面但无可见入口”
+## 7. 健康日记链路
+
+- `health-diary-editor` -> 选择图片（相册/拍照）并上传云存储
+- `health-diary-editor` -> 保存当日日记（覆盖更新）
+- `health-diary-editor` -> 删除当日日记
+
+## 8. 当前“有页面但无可见入口”
 
 - 暂无
 
-## 8. 建议维护方式
+## 9. 建议维护方式
 
 - 每新增页面或入口，先更新本文件。
 - 入口变更时同步更新 `docs/feature-inventory.md` 中对应功能编号。
