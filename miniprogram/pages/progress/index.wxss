@@ -1,98 +1,31 @@
 .progress-page {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  min-height: 100vh;
 }
 
-.range-switch {
-  background: rgba(255, 253, 248, 0.94);
-  border: 1rpx solid rgba(70, 57, 47, 0.14);
-  display: flex;
-  gap: 14rpx;
-  margin-right: 80rpx;
-  padding: 14rpx;
-}
-
-.range-chip {
+.coming-soon {
   align-items: center;
-  background: rgba(70, 57, 47, 0.06);
-  border-radius: 999rpx;
-  color: #665b50;
   display: flex;
-  flex: 1;
-  font-size: 26rpx;
-  font-weight: 600;
-  height: 76rpx;
+  flex-direction: column;
   justify-content: center;
+  margin-top: 200rpx;
+  text-align: center;
 }
 
-.range-chip.active {
-  background: #1e5a4f;
-  box-shadow: 0 10rpx 18rpx rgba(30, 90, 79, 0.2);
-  color: #fffef8;
+.coming-soon-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
 }
 
-.chart-panel {
-  border-left: 8rpx solid #1e5a4f;
-  padding: 28rpx 24rpx 24rpx;
-}
-
-.trend-canvas {
-  margin-top: 22rpx;
-}
-
-.stats-grid {
-  display: grid;
-  gap: 16rpx;
-  grid-template-columns: 1.15fr 0.85fr;
-}
-
-.stat-box {
-  padding: 24rpx;
-}
-
-.stat-box:nth-child(odd) {
-  margin-right: 12rpx;
-}
-
-.stat-box:nth-child(1) {
-  background: linear-gradient(180deg, #f4f8f5 0%, #ecf3ef 100%);
-}
-
-.stat-box:nth-child(2) {
-  background: linear-gradient(180deg, #fbf4ec 0%, #f8ebde 100%);
-}
-
-.stat-box:nth-child(3) {
-  background: linear-gradient(180deg, #fff6ef 0%, #fde8d8 100%);
-}
-
-.stat-box:nth-child(4) {
-  background: linear-gradient(180deg, #f6f3ee 0%, #ece5db 100%);
-}
-
-.stat-box:nth-child(5) {
-  background: linear-gradient(180deg, #eef6fb 0%, #ddebf6 100%);
-}
-
-.stat-box:nth-child(6) {
-  background: linear-gradient(180deg, #f5f1fb 0%, #e9e1f7 100%);
-}
-
-.stat-label {
-  color: #75695d;
-  font-size: 22rpx;
-}
-
-.stat-value {
+.coming-soon-title {
   color: #2f2a24;
-  font-size: 40rpx;
-  font-weight: 700;
-  margin-top: 12rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
 }
 
-.stat-unit {
-  color: #7f7367;
-  font-size: 22rpx;
-  margin-top: 8rpx;
+.coming-soon-desc {
+  color: #8f8373;
+  font-size: 28rpx;
 }

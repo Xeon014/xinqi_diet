@@ -1,46 +1,7 @@
 <view class="page-shell progress-page">
-  <view class="range-switch panel">
-    <view class="range-chip {{rangeDays === 7 ? 'active' : ''}}" data-days="7" bindtap="handleSwitchRange">近 7 天</view>
-    <view class="range-chip {{rangeDays === 30 ? 'active' : ''}}" data-days="30" bindtap="handleSwitchRange">近 30 天</view>
+  <view class="coming-soon">
+    <view class="coming-soon-icon">📊</view>
+    <view class="coming-soon-title">功能内测中</view>
+    <view class="coming-soon-desc">敬请期待</view>
   </view>
-
-  <view wx:if="{{summary}}" class="panel chart-panel">
-    <view class="section-title">净摄入趋势</view>
-    <view class="section-subtitle">按天观察净摄入热量（饮食 - 运动）</view>
-    <canvas class="trend-canvas" canvas-id="trendCanvas" id="trendCanvas" style="width: 690rpx; height: 360rpx;"></canvas>
-  </view>
-
-  <view wx:if="{{summary}}" class="stats-grid">
-    <view class="panel stat-box">
-      <view class="stat-label">平均净摄入</view>
-      <view class="stat-value">{{summary.averageCalories}}</view>
-      <view class="stat-unit">kcal</view>
-    </view>
-    <view class="panel stat-box">
-      <view class="stat-label">累计净摄入</view>
-      <view class="stat-value">{{summary.totalCalories}}</view>
-      <view class="stat-unit">kcal</view>
-    </view>
-    <view class="panel stat-box">
-      <view class="stat-label">平均目标差</view>
-      <view class="stat-value">{{summary.averageCalorieGap}}</view>
-      <view class="stat-unit">kcal</view>
-    </view>
-    <view class="panel stat-box">
-      <view class="stat-label">待减体重</view>
-      <view class="stat-value">{{summary.weightToLose}}</view>
-      <view class="stat-unit">kg</view>
-    </view>
-    <view class="panel stat-box">
-      <view class="stat-label">运动天数</view>
-      <view class="stat-value">{{summary.exerciseDays}}</view>
-      <view class="stat-unit">天</view>
-    </view>
-    <view class="panel stat-box">
-      <view class="stat-label">高风险餐次</view>
-      <view class="stat-value">{{summary.topExceededMealLabel}}</view>
-      <view class="stat-unit">近{{rangeDays}}天</view>
-    </view>
-  </view>
-  <empty-state wx:else title="暂无趋势数据" description="先连续记录几天饮食和运动" />
 </view>
