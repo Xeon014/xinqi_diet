@@ -32,11 +32,13 @@ COPY --from=build /build/target/diet-0.0.1-SNAPSHOT.jar app.jar
 # 腾讯云托管要求端口必须是 80
 EXPOSE 80
 
-# 启动应用，指定端口 80 和 prod 环境
+# 默认生产配置，可在云托管环境变量中覆盖
+ENV SERVER_PORT=80
+ENV SPRING_PROFILES_ACTIVE=prod
+
+# 启动应用
 CMD ["java", \
      "-Xmx1024m", \
-     "-512", \
+     "-Xms512m", \
      "-jar", \
-     "-Dserver.port=80", \
-     "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod}", \
      "app.jar"]

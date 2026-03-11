@@ -46,3 +46,4 @@
 
 - 小程序接口说明：[`docs/miniprogram-api.md`](/D:/IdeaProjects/diet/docs/miniprogram-api.md)
 - 小程序工程说明：[`miniprogram/README.md`](/D:/IdeaProjects/diet/miniprogram/README.md)
+- 腾讯云托管部署清单：`docs/tencent-cloud-hosting-checklist.md`
