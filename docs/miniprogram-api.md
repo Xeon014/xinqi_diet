@@ -50,6 +50,27 @@
 
 ## 记录与查询接口
 
+### 0. 更新用户资料（按字段部分更新）
+
+`PUT /api/users/{userId}`
+
+说明：
+
+- 只更新请求体中传入的字段；未传字段保持原值。
+- `useFormulaBmr=true` 时后端会清空 `customBmr`，改为公式计算口径。
+- 字段可不填，不要求一次性补齐。
+
+请求示例：
+
+```json
+{
+  "name": "小林",
+  "height": 168.5,
+  "currentWeight": 58.2,
+  "useFormulaBmr": true
+}
+```
+
 ### 1. 查询食品列表
 
 `GET /api/foods?keyword=米饭`

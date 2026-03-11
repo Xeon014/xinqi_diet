@@ -117,18 +117,31 @@ public class UserProfile {
     }
 
     public Integer calculateAge() {
+        if (birthDate == null) {
+            return null;
+        }
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
     public BigDecimal calculateBmi() {
+        if (height == null || currentWeight == null || height.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
         BigDecimal heightInMeter = height.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        if (heightInMeter.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
         return currentWeight.divide(heightInMeter.multiply(heightInMeter), 2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal calculateFormulaBmr() {
+        Integer age = calculateAge();
+        if (gender == null || currentWeight == null || height == null || age == null) {
+            return null;
+        }
         BigDecimal base = currentWeight.multiply(TEN)
                 .add(height.multiply(SIX_POINT_TWENTY_FIVE))
-                .subtract(BigDecimal.valueOf(calculateAge()).multiply(FIVE));
+                .subtract(BigDecimal.valueOf(age).multiply(FIVE));
         BigDecimal offset = gender == Gender.MALE ? MALE_OFFSET : FEMALE_OFFSET;
         return base.add(offset).setScale(2, RoundingMode.HALF_UP);
     }
@@ -141,10 +154,17 @@ public class UserProfile {
     }
 
     public BigDecimal calculateTdee() {
-        return calculateBmr().multiply(activityLevel.getMultiplier()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal bmr = calculateBmr();
+        if (bmr == null || activityLevel == null) {
+            return null;
+        }
+        return bmr.multiply(activityLevel.getMultiplier()).setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal weightToLose() {
+        if (currentWeight == null || targetWeight == null) {
+            return null;
+        }
         return currentWeight.subtract(targetWeight).max(BigDecimal.ZERO);
     }
 }

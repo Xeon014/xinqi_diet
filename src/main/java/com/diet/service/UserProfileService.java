@@ -10,6 +10,7 @@ import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
+import com.diet.domain.user.Gender;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.user.ActionSuggestionResponse;
@@ -42,8 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class UserProfileService {
-
-    private static final String DEFAULT_NAME = "微信用户";
 
     private static final int NAME_MAX_LENGTH = 20;
 
@@ -116,16 +115,26 @@ public class UserProfileService {
 
     public UserResponse update(Long id, UpdateUserRequest request) {
         UserProfile user = getUser(id);
+        String nextName = resolveNameForUpdate(request.name(), user.getName());
+        var nextGender = resolveValue(request.gender(), user.getGender());
+        LocalDate nextBirthDate = resolveValue(request.birthDate(), user.getBirthDate());
+        BigDecimal nextHeight = resolveValue(request.height(), user.getHeight());
+        var nextActivityLevel = resolveValue(request.activityLevel(), user.getActivityLevel());
+        Integer nextDailyCalorieTarget = resolveValue(request.dailyCalorieTarget(), user.getDailyCalorieTarget());
+        BigDecimal nextCurrentWeight = resolveValue(request.currentWeight(), user.getCurrentWeight());
+        BigDecimal nextTargetWeight = resolveValue(request.targetWeight(), user.getTargetWeight());
+        Integer nextCustomBmr = resolveCustomBmr(request, nextGender, nextBirthDate, nextHeight, nextCurrentWeight, user.getCustomBmr());
+
         user.updateProfile(
-                resolveNameForUpdate(request.name(), user.getName()),
-                request.gender(),
-                request.birthDate(),
-                request.height(),
-                request.activityLevel(),
-                request.dailyCalorieTarget(),
-                request.currentWeight(),
-                request.targetWeight(),
-                request.customBmr()
+                nextName,
+                nextGender,
+                nextBirthDate,
+                nextHeight,
+                nextActivityLevel,
+                nextDailyCalorieTarget,
+                nextCurrentWeight,
+                nextTargetWeight,
+                nextCustomBmr
         );
         userProfileRepository.update(user);
         return toResponse(user);
@@ -144,8 +153,10 @@ public class UserProfileService {
         BigDecimal dietCalories = sumDietCalories(mealRecords);
         BigDecimal exerciseCalories = sumExerciseCalories(exerciseRecords);
         BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal remaining = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(netCalories)
-                .setScale(2, RoundingMode.HALF_UP);
+        Integer targetCalories = user.getDailyCalorieTarget();
+        BigDecimal remaining = targetCalories == null
+                ? null
+                : BigDecimal.valueOf(targetCalories).subtract(netCalories).setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal proteinIntake = sumNutrient(mealRecords, foods, Food::getProteinPer100g);
         BigDecimal carbsIntake = sumNutrient(mealRecords, foods, Food::getCarbsPer100g);
@@ -158,8 +169,8 @@ public class UserProfileService {
                 .sorted(Comparator.comparing(DailyRecordResponse::createdAt, Comparator.nullsLast(LocalDateTime::compareTo)).reversed())
                 .toList();
 
-        List<MealProgressResponse> mealProgress = buildMealProgress(user.getDailyCalorieTarget(), mealRecords);
-        MealType topIssueMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, date, date);
+        List<MealProgressResponse> mealProgress = buildMealProgress(targetCalories, mealRecords);
+        MealType topIssueMealType = resolveTopIssueMealType(targetCalories, mealRecords, date, date);
         DailyInsightResponse dailyInsight = buildDailyInsight(
                 remaining,
                 topIssueMealType,
@@ -173,13 +184,13 @@ public class UserProfileService {
         return new DailySummaryResponse(
                 userId,
                 date,
-                user.getDailyCalorieTarget(),
+                targetCalories,
                 dietCalories,
                 exerciseCalories,
                 netCalories,
                 netCalories,
                 remaining,
-                remaining.compareTo(BigDecimal.ZERO) < 0,
+                remaining != null && remaining.compareTo(BigDecimal.ZERO) < 0,
                 proteinIntake,
                 carbsIntake,
                 fatIntake,
@@ -213,14 +224,18 @@ public class UserProfileService {
                 ? BigDecimal.ZERO
                 : totalCalories.divide(BigDecimal.valueOf(trend.size()), 2, RoundingMode.HALF_UP);
 
-        BigDecimal totalGap = trend.stream()
+        List<BigDecimal> gaps = trend.stream()
                 .map(ProgressPointResponse::calorieGap)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .filter(java.util.Objects::nonNull)
+                .toList();
 
-        BigDecimal averageGap = trend.isEmpty()
-                ? BigDecimal.ZERO
-                : totalGap.divide(BigDecimal.valueOf(trend.size()), 2, RoundingMode.HALF_UP);
+        BigDecimal totalGap = gaps.isEmpty()
+                ? null
+                : gaps.stream().reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal averageGap = gaps.isEmpty()
+                ? null
+                : totalGap.divide(BigDecimal.valueOf(gaps.size()), 2, RoundingMode.HALF_UP);
 
         int exerciseDays = (int) exerciseRecords.stream()
                 .map(ExerciseRecord::getRecordDate)
@@ -260,10 +275,12 @@ public class UserProfileService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal gap = BigDecimal.valueOf(user.getDailyCalorieTarget()).subtract(netCalories)
-                .setScale(2, RoundingMode.HALF_UP);
+        Integer targetCalories = user.getDailyCalorieTarget();
+        BigDecimal gap = targetCalories == null
+                ? null
+                : BigDecimal.valueOf(targetCalories).subtract(netCalories).setScale(2, RoundingMode.HALF_UP);
 
-        return new ProgressPointResponse(date, netCalories, user.getDailyCalorieTarget(), gap);
+        return new ProgressPointResponse(date, netCalories, targetCalories, gap);
     }
 
     private List<MealProgressResponse> buildMealProgress(Integer dailyTargetCalories, List<MealRecord> mealRecords) {
@@ -280,10 +297,12 @@ public class UserProfileService {
                 .stream()
                 .map(mealType -> {
                     BigDecimal intake = intakeByMeal.getOrDefault(mealType, BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
-                    BigDecimal target = BigDecimal.valueOf(dailyTargetCalories)
+                    BigDecimal target = dailyTargetCalories == null
+                            ? null
+                            : BigDecimal.valueOf(dailyTargetCalories)
                             .multiply(MEAL_TARGET_RATIO.get(mealType))
                             .setScale(2, RoundingMode.HALF_UP);
-                    BigDecimal remaining = target.subtract(intake).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal remaining = target == null ? null : target.subtract(intake).setScale(2, RoundingMode.HALF_UP);
 
                     return new MealProgressResponse(
                             mealType,
@@ -291,7 +310,7 @@ public class UserProfileService {
                             intake,
                             target,
                             remaining,
-                            remaining.compareTo(BigDecimal.ZERO) < 0,
+                            remaining != null && remaining.compareTo(BigDecimal.ZERO) < 0,
                             intake.compareTo(BigDecimal.ZERO) > 0
                     );
                 })
@@ -304,6 +323,10 @@ public class UserProfileService {
             LocalDate startDate,
             LocalDate endDate
     ) {
+        if (dailyTargetCalories == null) {
+            return null;
+        }
+
         EnumMap<MealType, BigDecimal> overflowMap = new EnumMap<>(MealType.class);
         for (MealType mealType : MealType.values()) {
             overflowMap.put(mealType, BigDecimal.ZERO);
@@ -347,9 +370,11 @@ public class UserProfileService {
             int totalRecords
     ) {
         int recordedMeals = (int) mealProgress.stream().filter(MealProgressResponse::recorded).count();
-        double completeness = BigDecimal.valueOf(recordedMeals)
-                .divide(BigDecimal.valueOf(mealProgress.size()), 2, RoundingMode.HALF_UP)
-                .doubleValue();
+        double completeness = mealProgress.isEmpty()
+                ? 0d
+                : BigDecimal.valueOf(recordedMeals)
+                        .divide(BigDecimal.valueOf(mealProgress.size()), 2, RoundingMode.HALF_UP)
+                        .doubleValue();
 
         List<ActionSuggestionResponse> suggestions = new ArrayList<>();
         MealProgressResponse firstMissingMeal = mealProgress.stream()
@@ -365,7 +390,7 @@ public class UserProfileService {
             ));
         }
 
-        if (remainingCalories.compareTo(BigDecimal.ZERO) < 0 && topIssueMealType != null) {
+        if (remainingCalories != null && remainingCalories.compareTo(BigDecimal.ZERO) < 0 && topIssueMealType != null) {
             suggestions.add(new ActionSuggestionResponse(
                     "CONTROL_MEAL",
                     "重点控制餐次",
@@ -386,6 +411,8 @@ public class UserProfileService {
         String summaryText;
         if (noRecords) {
             summaryText = "今天还没有记录，先从当前这一餐开始吧。";
+        } else if (remainingCalories == null) {
+            summaryText = "你还未设置目标热量，完善后可获得更准确建议。";
         } else if (remainingCalories.compareTo(BigDecimal.ZERO) < 0) {
             String mealTip = topIssueMealType == null ? "" : ("，主要来自" + MEAL_LABELS.get(topIssueMealType));
             summaryText = "今日已超目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString()
@@ -538,7 +565,7 @@ public class UserProfileService {
 
     private String normalizeNameForCreate(String name) {
         if (name == null || name.isBlank()) {
-            return DEFAULT_NAME;
+            return null;
         }
         return normalizeName(name, "name must not be blank");
     }
@@ -559,5 +586,29 @@ public class UserProfileService {
             throw new IllegalArgumentException("name length must be less than or equal to " + NAME_MAX_LENGTH);
         }
         return trimmed;
+    }
+
+    private <T> T resolveValue(T requested, T currentValue) {
+        return requested != null ? requested : currentValue;
+    }
+
+    private Integer resolveCustomBmr(
+            UpdateUserRequest request,
+            Gender resolvedGender,
+            LocalDate resolvedBirthDate,
+            BigDecimal resolvedHeight,
+            BigDecimal resolvedCurrentWeight,
+            Integer currentCustomBmr
+    ) {
+        if (Boolean.TRUE.equals(request.useFormulaBmr())) {
+            if (resolvedGender == null || resolvedBirthDate == null || resolvedHeight == null || resolvedCurrentWeight == null) {
+                throw new IllegalArgumentException("useFormulaBmr requires gender, birthDate, height and currentWeight");
+            }
+            return null;
+        }
+        if (request.customBmr() != null) {
+            return request.customBmr();
+        }
+        return currentCustomBmr;
     }
 }

@@ -1,5 +1,6 @@
 const { getDailySummary } = require("../../services/user");
 const { getDailyHealthDiary } = require("../../services/health-diary");
+const { getCurrentUserId } = require("../../utils/auth");
 const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
@@ -86,19 +87,22 @@ function normalizeRecord(record, today) {
 function normalizeSummary(summary, today) {
   const records = (summary.records || []).map((record) => normalizeRecord(record, today));
   const netCalories = toInteger(summary.netCalories ?? summary.consumedCalories);
-  const remainingCalories = toInteger(summary.remainingCalories);
+  const hasTarget = summary.targetCalories != null;
+  const remainingCalories = hasTarget && summary.remainingCalories != null ? toInteger(summary.remainingCalories) : null;
   const dailyInsight = summary.dailyInsight || {};
 
   return {
     ...summary,
-    targetCalories: toInteger(summary.targetCalories),
+    targetCalories: hasTarget ? toInteger(summary.targetCalories) : null,
     dietCalories: toInteger(summary.dietCalories),
     exerciseCalories: toInteger(summary.exerciseCalories),
     netCalories,
+    hasTarget,
     remainingCalories,
-    remainingAbs: Math.abs(remainingCalories),
+    remainingAbs: remainingCalories == null ? null : Math.abs(remainingCalories),
+    exceededTarget: hasTarget && Boolean(summary.exceededTarget),
     records,
-    summaryText: dailyInsight.summaryText || "继续记录，保持节奏。",
+    summaryText: dailyInsight.summaryText || (hasTarget ? "继续记录，保持节奏。" : "未设置每日目标热量，完善后可查看剩余热量。"),
   };
 }
 
@@ -156,12 +160,13 @@ Page({
     recommendedMealType: getRecommendedMealType(),
     recordGroups: [],
     summary: {
-      targetCalories: 0,
+      targetCalories: null,
       dietCalories: 0,
       exerciseCalories: 0,
       netCalories: 0,
-      remainingCalories: 0,
-      remainingAbs: 0,
+      hasTarget: false,
+      remainingCalories: null,
+      remainingAbs: null,
       exceededTarget: false,
       records: [],
       summaryText: "",
@@ -180,7 +185,15 @@ Page({
     }
 
     this.refreshDateMeta();
-    this.loadSummary();
+    this.maybeOpenOnboarding()
+      .then((opened) => {
+        if (!opened) {
+          this.loadSummary();
+        }
+      })
+      .catch(() => {
+        this.loadSummary();
+      });
   },
 
   onPullDownRefresh() {
@@ -224,6 +237,33 @@ Page({
         this.loadSummary();
       }
     );
+  },
+
+  maybeOpenOnboarding() {
+    const app = getApp();
+    if (!app || typeof app.ensureLogin !== "function" || typeof app.isOnboardingPending !== "function") {
+      return Promise.resolve(false);
+    }
+    if (this.openingOnboarding) {
+      return Promise.resolve(true);
+    }
+
+    return app.ensureLogin()
+      .then((authResult) => {
+        const userId = (authResult && authResult.userId) || getCurrentUserId();
+        if (!userId || !app.isOnboardingPending(userId)) {
+          return false;
+        }
+        this.openingOnboarding = true;
+        wx.navigateTo({
+          url: "/pages/onboarding-profile/index",
+          complete: () => {
+            this.openingOnboarding = false;
+          },
+        });
+        return true;
+      })
+      .catch(() => false);
   },
 
   loadSummary(stopPullDown = false) {

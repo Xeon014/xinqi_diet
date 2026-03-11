@@ -13,7 +13,7 @@ import java.time.LocalDate;
 
 @Schema(description = "创建用户请求")
 public record CreateUserRequest(
-        @Schema(description = "用户昵称，为空时后端默认填充微信用户")
+        @Schema(description = "用户昵称，可为空")
         @Size(max = 20, message = "name length must be less than or equal to 20")
         String name,
 

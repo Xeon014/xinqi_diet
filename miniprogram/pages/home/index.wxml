@@ -22,8 +22,11 @@
       <view class="hero-unit">kcal</view>
     </view>
 
-    <view class="hero-status {{summary.exceededTarget ? 'danger' : ''}}">
-      {{summary.exceededTarget ? '已超目标' : '剩余'}} {{summary.remainingAbs}} kcal
+    <view class="hero-status {{summary.hasTarget && summary.exceededTarget ? 'danger' : ''}}">
+      <block wx:if="{{summary.hasTarget}}">
+        {{summary.exceededTarget ? '已超目标' : '剩余'}} {{summary.remainingAbs}} kcal
+      </block>
+      <block wx:else>目标热量未设置</block>
     </view>
 
     <view class="hero-metrics">
@@ -37,9 +40,11 @@
       </view>
       <view class="metric-item">
         <view class="metric-label">今日目标</view>
-        <view class="metric-value">{{summary.targetCalories}}</view>
+        <view class="metric-value">{{summary.targetCalories == null ? '--' : summary.targetCalories}}</view>
       </view>
     </view>
+
+    <view class="hero-tip">{{summary.summaryText}}</view>
 
   </view>
 

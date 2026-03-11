@@ -53,9 +53,26 @@
 ```json
 {
   "extEnable": true,
+  "extAppid": "你的小程序AppID",
   "ext": {
-    "cloudEnvId": "你的云开发环境ID",
-    "cloudService": "你的云托管服务名"
+    "useCloudContainer": false,
+    "baseUrl": "http://127.0.0.1:8080",
+    "runtime": {
+      "develop": {
+        "useCloudContainer": false,
+        "baseUrl": "http://127.0.0.1:8080"
+      },
+      "trial": {
+        "useCloudContainer": true,
+        "cloudEnvId": "你的云开发环境ID",
+        "cloudService": "你的云托管服务名"
+      },
+      "release": {
+        "useCloudContainer": true,
+        "cloudEnvId": "你的云开发环境ID",
+        "cloudService": "你的云托管服务名"
+      }
+    }
   }
 }
 ```
@@ -80,4 +97,4 @@
 - 饮食记录新增/查询成功
 - 运动记录新增/查询成功
 - 健康日记：保存/查询/删除成功，首页可展示当日日记摘要
-- 个人信息页：首次出现“微信用户”时会提示完善昵称，保存后昵称正常展示
+- 首登引导：新用户首次登录会进入分步资料引导页，可跳过单项或全部

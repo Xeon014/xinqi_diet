@@ -126,6 +126,13 @@
   color: #b95e3a;
 }
 
+.hero-tip {
+  color: #74685c;
+  font-size: 22rpx;
+  line-height: 1.5;
+  margin-top: 14rpx;
+}
+
 .hero-metrics {
   display: grid;
   gap: 10rpx;

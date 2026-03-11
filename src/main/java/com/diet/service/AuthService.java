@@ -3,14 +3,10 @@ package com.diet.service;
 import com.diet.auth.AccessTokenService;
 import com.diet.auth.WechatCode2SessionClient;
 import com.diet.auth.WechatSessionResult;
-import com.diet.domain.user.ActivityLevel;
-import com.diet.domain.user.Gender;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.auth.WechatLoginRequest;
 import com.diet.dto.auth.WechatLoginResponse;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -19,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class AuthService {
-
-    private static final String DEFAULT_NAME = "微信用户";
 
     private final UserProfileRepository userProfileRepository;
 
@@ -72,14 +66,14 @@ public class AuthService {
 
     private UserProfile createDefaultUser(String openId, String unionId) {
         UserProfile user = new UserProfile(
-                DEFAULT_NAME,
-                Gender.FEMALE,
-                LocalDate.of(2000, 1, 1),
-                new BigDecimal("165.00"),
-                ActivityLevel.LIGHT,
-                1800,
-                new BigDecimal("60.00"),
-                new BigDecimal("55.00"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
         user.setOpenId(openId);

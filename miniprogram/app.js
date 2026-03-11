@@ -1,10 +1,13 @@
 const { loginByWechatCode } = require("./services/auth");
 const { clearAuthInfo, getAccessToken, getClientUserKey, getCurrentUserId, setAuthInfo } = require("./utils/auth");
-const { CLOUD_ENV_ID, CLOUD_SERVICE, RUNTIME_ENV_VERSION, USE_CLOUD_CONTAINER } = require("./utils/constants");
+const { BASE_URL, CLOUD_ENV_ID, CLOUD_SERVICE, RUNTIME_ENV_VERSION, USE_CLOUD_CONTAINER } = require("./utils/constants");
+
+const ONBOARDING_PENDING_PREFIX = "onboarding_pending_";
 
 App({
   globalData: {
     refreshHomeOnShow: false,
+    onboardingPendingUserId: null,
   },
 
   onLaunch() {
@@ -14,6 +17,7 @@ App({
 
   initCloudRuntime() {
     if (!USE_CLOUD_CONTAINER) {
+      console.info(`当前使用本地 HTTP 请求，环境：${RUNTIME_ENV_VERSION}，baseUrl：${BASE_URL}`);
       return;
     }
 
@@ -34,16 +38,18 @@ App({
       console.warn("未配置 cloudService，wx.cloud.callContainer 将无法路由到云托管服务");
     }
 
-    console.info(`云托管调用已启用，当前环境：${RUNTIME_ENV_VERSION}`);
+    console.info(`云托管调用已启用，当前环境：${RUNTIME_ENV_VERSION}，service：${CLOUD_SERVICE}`);
   },
 
   ensureLogin(forceRefresh = false) {
     const existingToken = getAccessToken();
     const existingUserId = getCurrentUserId();
     if (!forceRefresh && existingToken && existingUserId) {
+      this.syncOnboardingState(existingUserId);
       return Promise.resolve({
         accessToken: existingToken,
         userId: existingUserId,
+        isNewUser: false,
       });
     }
 
@@ -66,15 +72,24 @@ App({
           })
             .then((authResult) => {
               setAuthInfo(authResult);
+              if (authResult && authResult.userId) {
+                if (authResult.isNewUser) {
+                  this.markOnboardingPending(authResult.userId);
+                } else {
+                  this.syncOnboardingState(authResult.userId);
+                }
+              }
               resolve(authResult);
             })
             .catch((error) => {
               clearAuthInfo();
+              this.globalData.onboardingPendingUserId = null;
               reject(error);
             });
         },
         fail: (error) => {
           clearAuthInfo();
+          this.globalData.onboardingPendingUserId = null;
           reject(error);
         },
       });
@@ -83,5 +98,39 @@ App({
     });
 
     return this.loginPromise;
+  },
+
+  isOnboardingPending(userId) {
+    return this.globalData.onboardingPendingUserId != null
+      && Number(this.globalData.onboardingPendingUserId) === Number(userId);
+  },
+
+  completeOnboarding(userId) {
+    if (!userId) {
+      return;
+    }
+    wx.removeStorageSync(this.getOnboardingPendingKey(userId));
+    this.globalData.onboardingPendingUserId = null;
+  },
+
+  markOnboardingPending(userId) {
+    if (!userId) {
+      return;
+    }
+    wx.setStorageSync(this.getOnboardingPendingKey(userId), true);
+    this.globalData.onboardingPendingUserId = Number(userId);
+  },
+
+  syncOnboardingState(userId) {
+    if (!userId) {
+      this.globalData.onboardingPendingUserId = null;
+      return;
+    }
+    const pending = wx.getStorageSync(this.getOnboardingPendingKey(userId));
+    this.globalData.onboardingPendingUserId = pending ? Number(userId) : null;
+  },
+
+  getOnboardingPendingKey(userId) {
+    return `${ONBOARDING_PENDING_PREFIX}${userId}`;
   },
 });

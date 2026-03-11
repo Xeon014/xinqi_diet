@@ -14,6 +14,7 @@ import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -126,10 +127,14 @@ public class DataInitializer {
 
     private void migrateUserProfileTable(JdbcTemplate jdbcTemplate) {
         ensureNullableEmail(jdbcTemplate);
-        ensureColumn(jdbcTemplate, "user_profile", "gender", "ALTER TABLE user_profile ADD COLUMN gender VARCHAR(10) NOT NULL DEFAULT 'FEMALE'");
+        ensureColumn(jdbcTemplate, "user_profile", "name", "ALTER TABLE user_profile ADD COLUMN name VARCHAR(50) NULL");
+        ensureColumn(jdbcTemplate, "user_profile", "gender", "ALTER TABLE user_profile ADD COLUMN gender VARCHAR(10) NULL");
         ensureColumn(jdbcTemplate, "user_profile", "birth_date", "ALTER TABLE user_profile ADD COLUMN birth_date DATE NULL");
-        ensureColumn(jdbcTemplate, "user_profile", "height", "ALTER TABLE user_profile ADD COLUMN height DECIMAL(5, 2) NOT NULL DEFAULT 165.00");
-        ensureColumn(jdbcTemplate, "user_profile", "activity_level", "ALTER TABLE user_profile ADD COLUMN activity_level VARCHAR(20) NOT NULL DEFAULT 'LIGHT'");
+        ensureColumn(jdbcTemplate, "user_profile", "height", "ALTER TABLE user_profile ADD COLUMN height DECIMAL(5, 2) NULL");
+        ensureColumn(jdbcTemplate, "user_profile", "activity_level", "ALTER TABLE user_profile ADD COLUMN activity_level VARCHAR(20) NULL");
+        ensureColumn(jdbcTemplate, "user_profile", "daily_calorie_target", "ALTER TABLE user_profile ADD COLUMN daily_calorie_target INT NULL");
+        ensureColumn(jdbcTemplate, "user_profile", "current_weight", "ALTER TABLE user_profile ADD COLUMN current_weight DECIMAL(5, 2) NULL");
+        ensureColumn(jdbcTemplate, "user_profile", "target_weight", "ALTER TABLE user_profile ADD COLUMN target_weight DECIMAL(5, 2) NULL");
         ensureColumn(jdbcTemplate, "user_profile", "custom_bmr", "ALTER TABLE user_profile ADD COLUMN custom_bmr INT NULL COMMENT 'custom bmr in kcal'");
         ensureColumn(jdbcTemplate, "user_profile", "open_id", "ALTER TABLE user_profile ADD COLUMN open_id VARCHAR(64) NULL COMMENT 'wechat openid'");
         ensureColumn(jdbcTemplate, "user_profile", "union_id", "ALTER TABLE user_profile ADD COLUMN union_id VARCHAR(64) NULL COMMENT 'wechat unionid'");
@@ -142,7 +147,15 @@ public class DataInitializer {
                 "uk_user_profile_open_id",
                 "CREATE UNIQUE INDEX uk_user_profile_open_id ON user_profile(open_id)"
         );
-        backfillBirthDate(jdbcTemplate);
+        ensureNullableColumn(jdbcTemplate, "user_profile", "name", "VARCHAR(50)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "gender", "VARCHAR(10)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "birth_date", "DATE");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "height", "DECIMAL(5, 2)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "activity_level", "VARCHAR(20)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "daily_calorie_target", "INT");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "current_weight", "DECIMAL(5, 2)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "target_weight", "DECIMAL(5, 2)");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "custom_bmr", "INT");
     }
 
     private void migrateFoodTable(JdbcTemplate jdbcTemplate) {
@@ -231,21 +244,27 @@ public class DataInitializer {
         }
     }
 
-    private void backfillBirthDate(JdbcTemplate jdbcTemplate) {
-        if (!hasColumn(jdbcTemplate, "user_profile", "birth_date")) {
-            return;
-        }
-        if (hasColumn(jdbcTemplate, "user_profile", "age")) {
-            jdbcTemplate.execute("UPDATE user_profile SET birth_date = DATE_SUB(CURDATE(), INTERVAL age YEAR) WHERE birth_date IS NULL AND age IS NOT NULL");
-        }
-        jdbcTemplate.execute("UPDATE user_profile SET birth_date = '2000-01-01' WHERE birth_date IS NULL");
-        jdbcTemplate.execute("ALTER TABLE user_profile MODIFY COLUMN birth_date DATE NOT NULL");
-    }
-
     private void ensureColumn(JdbcTemplate jdbcTemplate, String tableName, String columnName, String sql) {
         if (!hasColumn(jdbcTemplate, tableName, columnName)) {
             jdbcTemplate.execute(sql);
         }
+    }
+
+    private void ensureNullableColumn(JdbcTemplate jdbcTemplate, String tableName, String columnName, String columnType) {
+        if (!hasColumn(jdbcTemplate, tableName, columnName)) {
+            return;
+        }
+        Map<String, Object> columnInfo = jdbcTemplate.queryForMap(
+                "SELECT IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                tableName,
+                columnName
+        );
+        String isNullable = String.valueOf(columnInfo.getOrDefault("IS_NULLABLE", "NO"));
+        Object columnDefault = columnInfo.get("COLUMN_DEFAULT");
+        if ("YES".equalsIgnoreCase(isNullable) && columnDefault == null) {
+            return;
+        }
+        jdbcTemplate.execute("ALTER TABLE " + tableName + " MODIFY COLUMN " + columnName + " " + columnType + " NULL");
     }
 
     private void ensureIndex(JdbcTemplate jdbcTemplate, String tableName, String indexName, String sql) {

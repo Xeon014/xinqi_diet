@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ExerciseRecordService {
 
+    private static final BigDecimal ESTIMATED_WEIGHT_KG = new BigDecimal("60.00");
+
     private final ExerciseRecordRepository exerciseRecordRepository;
 
     private final UserProfileRepository userProfileRepository;
@@ -41,10 +43,11 @@ public class ExerciseRecordService {
         UserProfile user = getUser(userId);
         Exercise exercise = getExercise(request.exerciseId());
         ExerciseIntensity intensity = normalizeIntensity(request.intensityLevel());
+        BigDecimal weightForCalculation = resolveWeightForCalculation(user);
 
         BigDecimal calories = ExerciseRecord.calculateTotalCalories(
                 exercise.getMetValue(),
-                user.getCurrentWeight(),
+                weightForCalculation,
                 request.durationMinutes(),
                 intensity.factor()
         );
@@ -55,7 +58,7 @@ public class ExerciseRecordService {
                 request.durationMinutes(),
                 intensity,
                 intensity.factor(),
-                user.getCurrentWeight(),
+                weightForCalculation,
                 calories,
                 request.recordDate()
         );
@@ -148,5 +151,12 @@ public class ExerciseRecordService {
 
     private ExerciseIntensity normalizeIntensity(ExerciseIntensity intensityLevel) {
         return intensityLevel == null ? ExerciseIntensity.MEDIUM : intensityLevel;
+    }
+
+    private BigDecimal resolveWeightForCalculation(UserProfile user) {
+        if (user.getCurrentWeight() != null && user.getCurrentWeight().compareTo(BigDecimal.ZERO) > 0) {
+            return user.getCurrentWeight();
+        }
+        return ESTIMATED_WEIGHT_KG;
     }
 }

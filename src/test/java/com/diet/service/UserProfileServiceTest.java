@@ -63,7 +63,8 @@ class UserProfileServiceTest {
                 existing.getDailyCalorieTarget(),
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
-                existing.getCustomBmr()
+                existing.getCustomBmr(),
+                null
         );
 
         UserResponse response = userProfileService.update(1L, request);
@@ -86,7 +87,8 @@ class UserProfileServiceTest {
                 existing.getDailyCalorieTarget(),
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
-                existing.getCustomBmr()
+                existing.getCustomBmr(),
+                null
         );
 
         assertThatThrownBy(() -> userProfileService.update(1L, request))
@@ -109,7 +111,8 @@ class UserProfileServiceTest {
                 existing.getDailyCalorieTarget(),
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
-                existing.getCustomBmr()
+                existing.getCustomBmr(),
+                null
         );
 
         assertThatThrownBy(() -> userProfileService.update(1L, request))
@@ -119,7 +122,7 @@ class UserProfileServiceTest {
     }
 
     @Test
-    void shouldFallbackToDefaultNameWhenCreateNameBlank() {
+    void shouldKeepNameNullWhenCreateNameBlank() {
         doAnswer(invocation -> {
             UserProfile user = invocation.getArgument(0);
             user.setId(10L);
@@ -140,7 +143,32 @@ class UserProfileServiceTest {
 
         UserResponse response = userProfileService.create(request);
 
-        assertThat(response.name()).isEqualTo("微信用户");
+        assertThat(response.name()).isNull();
+    }
+
+    @Test
+    void shouldClearCustomBmrWhenUseFormulaBmrIsTrue() {
+        UserProfile existing = buildUser("旧昵称");
+        existing.setCustomBmr(1400);
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                existing.getDailyCalorieTarget(),
+                existing.getCurrentWeight(),
+                existing.getTargetWeight(),
+                null,
+                true
+        );
+
+        UserResponse response = userProfileService.update(1L, request);
+
+        assertThat(response.customBmr()).isNull();
+        verify(userProfileRepository).update(existing);
     }
 
     private UserProfile buildUser(String name) {

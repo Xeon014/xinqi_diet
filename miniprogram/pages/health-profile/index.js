@@ -3,6 +3,7 @@ const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const ACTIVITY_OPTIONS = [
+  { label: "未设置", value: "" },
   { label: "久坐办公", value: "SEDENTARY" },
   { label: "轻量活动", value: "LIGHT" },
   { label: "中等活动", value: "MODERATE" },
@@ -17,7 +18,7 @@ function toInteger(value) {
 function toOneDecimal(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) {
-    return "0.0";
+    return "--";
   }
   return number.toFixed(1);
 }
@@ -26,17 +27,21 @@ function normalizeProfile(profile) {
   return {
     ...profile,
     bmi: toOneDecimal(profile.bmi),
-    bmr: toInteger(profile.bmr),
-    tdee: toInteger(profile.tdee)
+    bmr: profile.bmr == null ? "--" : toInteger(profile.bmr),
+    tdee: profile.tdee == null ? "--" : toInteger(profile.tdee),
+    currentWeight: profile.currentWeight == null ? "--" : profile.currentWeight
   };
 }
 
 function normalizeSummary(summary) {
+  const hasTarget = summary.targetCalories != null;
   return {
     ...summary,
     consumedCalories: toInteger(summary.consumedCalories),
-    remainingCalories: toInteger(summary.remainingCalories),
-    targetCalories: toInteger(summary.targetCalories)
+    hasTarget,
+    remainingCalories: hasTarget && summary.remainingCalories != null ? toInteger(summary.remainingCalories) : null,
+    targetCalories: hasTarget ? toInteger(summary.targetCalories) : null,
+    exceededTarget: hasTarget && Boolean(summary.exceededTarget)
   };
 }
 
@@ -49,7 +54,7 @@ Page({
     activityIndex: 0,
     settings: {
       dailyCalorieTarget: "",
-      activityLevel: "LIGHT"
+      activityLevel: ""
     }
   },
   onShow() {
@@ -103,25 +108,29 @@ Page({
     });
   },
   handleSave() {
-    const { profile, settings } = this.data;
-    const dailyCalorieTarget = Number(settings.dailyCalorieTarget);
+    const { settings } = this.data;
+    const payload = {};
+    const targetInput = String(settings.dailyCalorieTarget || "").trim();
 
-    if (!dailyCalorieTarget || dailyCalorieTarget <= 0) {
-      wx.showToast({ title: "请输入正确目标热量", icon: "none" });
+    if (settings.activityLevel) {
+      payload.activityLevel = settings.activityLevel;
+    }
+
+    if (targetInput) {
+      const dailyCalorieTarget = Number(targetInput);
+      if (!dailyCalorieTarget || dailyCalorieTarget <= 0) {
+        wx.showToast({ title: "请输入正确目标热量", icon: "none" });
+        return;
+      }
+      payload.dailyCalorieTarget = dailyCalorieTarget;
+    }
+
+    if (!Object.keys(payload).length) {
+      wx.showToast({ title: "未修改可保存项", icon: "none" });
       return;
     }
 
-    updateProfile({
-      name: profile.name,
-      gender: profile.gender,
-      birthDate: profile.birthDate,
-      height: Number(profile.height),
-      activityLevel: settings.activityLevel,
-      dailyCalorieTarget,
-      currentWeight: Number(profile.currentWeight),
-      targetWeight: Number(profile.targetWeight),
-      customBmr: Number(profile.customBmr || profile.bmr)
-    })
+    updateProfile(payload)
       .then(() => {
         wx.showToast({ title: "保存成功", icon: "success" });
         setTimeout(() => {

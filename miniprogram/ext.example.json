@@ -1,0 +1,26 @@
+{
+  "extEnable": true,
+  "extAppid": "wx0a7ca5b4f5d09a35",
+  "ext": {
+    "useCloudContainer": false,
+    "baseUrl": "http://127.0.0.1:8080",
+    "cloudEnvId": "prod-0gtze2g30e64915d",
+    "cloudService": "xinqi-diet",
+    "runtime": {
+      "develop": {
+        "useCloudContainer": false,
+        "baseUrl": "http://127.0.0.1:8080"
+      },
+      "trial": {
+        "useCloudContainer": true,
+        "cloudEnvId": "prod-0gtze2g30e64915d",
+        "cloudService": "xinqi-diet"
+      },
+      "release": {
+        "useCloudContainer": true,
+        "cloudEnvId": "prod-0gtze2g30e64915d",
+        "cloudService": "xinqi-diet"
+      }
+    }
+  }
+}

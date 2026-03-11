@@ -43,7 +43,10 @@
         </view>
       </view>
       <view class="result-pill {{summary.exceededTarget ? 'danger' : 'success'}}">
-        {{summary.exceededTarget ? '今日已超出目标热量' : '今日剩余热量 ' + summary.remainingCalories + ' kcal'}}
+        <block wx:if="{{summary.hasTarget}}">
+          {{summary.exceededTarget ? '今日已超出目标热量' : '今日剩余热量 ' + summary.remainingCalories + ' kcal'}}
+        </block>
+        <block wx:else>未设置目标热量</block>
       </view>
     </view>
 

@@ -23,7 +23,7 @@ function toInteger(value) {
 function toOneDecimal(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) {
-    return "0.0";
+    return "--";
   }
   return number.toFixed(1);
 }
@@ -34,7 +34,9 @@ function buildProfileTitle(name) {
 }
 
 function buildProfileSub(profile) {
-  return `当前 ${profile.currentWeight} kg · 目标 ${profile.targetWeight} kg`;
+  const currentWeight = profile.currentWeight == null ? "--" : `${profile.currentWeight} kg`;
+  const targetWeight = profile.targetWeight == null ? "--" : `${profile.targetWeight} kg`;
+  return `当前 ${currentWeight} · 目标 ${targetWeight}`;
 }
 
 Page({
@@ -63,7 +65,7 @@ Page({
           heroTitle: buildProfileTitle(profile.name),
           heroSubtitle: buildProfileSub(profile),
           bmiLabel: toOneDecimal(profile.bmi),
-          bmrLabel: `${toInteger(profile.bmr)} kcal/天`,
+          bmrLabel: profile.bmr == null ? "--" : `${toInteger(profile.bmr)} kcal/天`,
         });
       })
       .catch((error) => {
