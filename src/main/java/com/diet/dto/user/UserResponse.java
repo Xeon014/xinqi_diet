@@ -27,10 +27,10 @@ public record UserResponse(
         @Schema(description = "身高，单位 cm")
         BigDecimal height,
 
-        @Schema(description = "活动量等级")
+        @Schema(description = "活动量等级（兼容保留）")
         ActivityLevel activityLevel,
 
-        @Schema(description = "每日目标热量，单位 kcal")
+        @Schema(description = "当前目标热量，默认跟随当前有效 TDEE，单位 kcal")
         Integer dailyCalorieTarget,
 
         @Schema(description = "当前体重，单位 kg")
@@ -41,6 +41,9 @@ public record UserResponse(
 
         @Schema(description = "用户自定义基础代谢 BMR，单位 kcal，可为空")
         Integer customBmr,
+
+        @Schema(description = "用户自定义每日消耗热量 TDEE，单位 kcal，可为空")
+        Integer customTdee,
 
         @Schema(description = "BMI 指数")
         BigDecimal bmi,

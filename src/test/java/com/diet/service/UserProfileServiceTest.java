@@ -64,6 +64,7 @@ class UserProfileServiceTest {
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
+                existing.getCustomTdee(),
                 null
         );
 
@@ -88,6 +89,7 @@ class UserProfileServiceTest {
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
+                existing.getCustomTdee(),
                 null
         );
 
@@ -99,11 +101,11 @@ class UserProfileServiceTest {
 
     @Test
     void shouldRejectTooLongNameWhenUpdate() {
-        UserProfile existing = buildUser("旧昵称");
+        UserProfile existing = buildUser("???");
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
         UpdateUserRequest request = new UpdateUserRequest(
-                "这是一个超过二十个字符长度的昵称测试A",
+                "123456789012345678901",
                 existing.getGender(),
                 existing.getBirthDate(),
                 existing.getHeight(),
@@ -112,6 +114,7 @@ class UserProfileServiceTest {
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
+                existing.getCustomTdee(),
                 null
         );
 
@@ -138,6 +141,7 @@ class UserProfileServiceTest {
                 1800,
                 new BigDecimal("60.00"),
                 new BigDecimal("55.00"),
+                null,
                 null
         );
 
@@ -162,6 +166,7 @@ class UserProfileServiceTest {
                 existing.getCurrentWeight(),
                 existing.getTargetWeight(),
                 null,
+                existing.getCustomTdee(),
                 true
         );
 
@@ -169,6 +174,60 @@ class UserProfileServiceTest {
 
         assertThat(response.customBmr()).isNull();
         verify(userProfileRepository).update(existing);
+    }
+
+    @Test
+    void shouldUseCustomTdeeAsEffectiveTargetCalories() {
+        UserProfile existing = buildUser("旧昵称");
+        existing.setCustomBmr(1400);
+        existing.setCustomTdee(1980);
+        existing.setDailyCalorieTarget(1600);
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UserResponse response = userProfileService.findById(1L);
+
+        assertThat(response.customTdee()).isEqualTo(1980);
+        assertThat(response.tdee()).isEqualByComparingTo("1980.00");
+        assertThat(response.dailyCalorieTarget()).isEqualTo(1980);
+    }
+
+    @Test
+    void shouldEstimateTdeeFromBmrWhenCustomTdeeMissing() {
+        UserProfile existing = buildUser("旧昵称");
+        existing.setCustomBmr(1400);
+        existing.setCustomTdee(null);
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UserResponse response = userProfileService.findById(1L);
+
+        assertThat(response.tdee()).isEqualByComparingTo("2000.00");
+        assertThat(response.dailyCalorieTarget()).isEqualTo(2000);
+    }
+
+    @Test
+    void shouldSyncStoredDailyTargetWithEffectiveTdeeWhenUpdateCustomTdee() {
+        UserProfile existing = buildUser("旧昵称");
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                1500,
+                existing.getCurrentWeight(),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                2100,
+                null
+        );
+
+        UserResponse response = userProfileService.update(1L, request);
+
+        assertThat(response.tdee()).isEqualByComparingTo("2100.00");
+        assertThat(response.dailyCalorieTarget()).isEqualTo(2100);
+        assertThat(existing.getDailyCalorieTarget()).isEqualTo(2100);
     }
 
     private UserProfile buildUser(String name) {
@@ -181,6 +240,7 @@ class UserProfileServiceTest {
                 1800,
                 new BigDecimal("60.00"),
                 new BigDecimal("55.00"),
+                null,
                 null
         );
         user.setId(1L);

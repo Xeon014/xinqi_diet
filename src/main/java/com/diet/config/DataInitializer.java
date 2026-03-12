@@ -95,7 +95,8 @@ public class DataInitializer {
                 1800,
                 new BigDecimal("58.50"),
                 new BigDecimal("52.00"),
-                1350
+                1350,
+                null
         );
         userProfileRepository.save(user);
 
@@ -137,6 +138,7 @@ public class DataInitializer {
         ensureColumn(jdbcTemplate, "user_profile", "current_weight", "ALTER TABLE user_profile ADD COLUMN current_weight DECIMAL(5, 2) NULL");
         ensureColumn(jdbcTemplate, "user_profile", "target_weight", "ALTER TABLE user_profile ADD COLUMN target_weight DECIMAL(5, 2) NULL");
         ensureColumn(jdbcTemplate, "user_profile", "custom_bmr", "ALTER TABLE user_profile ADD COLUMN custom_bmr INT NULL COMMENT 'custom bmr in kcal'");
+        ensureColumn(jdbcTemplate, "user_profile", "custom_tdee", "ALTER TABLE user_profile ADD COLUMN custom_tdee INT NULL COMMENT 'custom tdee in kcal'");
         ensureColumn(jdbcTemplate, "user_profile", "open_id", "ALTER TABLE user_profile ADD COLUMN open_id VARCHAR(64) NULL COMMENT 'wechat openid'");
         ensureColumn(jdbcTemplate, "user_profile", "union_id", "ALTER TABLE user_profile ADD COLUMN union_id VARCHAR(64) NULL COMMENT 'wechat unionid'");
         ensureColumn(jdbcTemplate, "user_profile", "nickname", "ALTER TABLE user_profile ADD COLUMN nickname VARCHAR(80) NULL COMMENT 'wechat nickname'");
@@ -157,6 +159,7 @@ public class DataInitializer {
         ensureNullableColumn(jdbcTemplate, "user_profile", "current_weight", "DECIMAL(5, 2)");
         ensureNullableColumn(jdbcTemplate, "user_profile", "target_weight", "DECIMAL(5, 2)");
         ensureNullableColumn(jdbcTemplate, "user_profile", "custom_bmr", "INT");
+        ensureNullableColumn(jdbcTemplate, "user_profile", "custom_tdee", "INT");
     }
 
     private void migrateFoodTable(JdbcTemplate jdbcTemplate) {

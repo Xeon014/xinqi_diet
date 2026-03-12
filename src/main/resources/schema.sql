@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
     current_weight DECIMAL(5, 2) NULL COMMENT '当前体重 kg',
     target_weight DECIMAL(5, 2) NULL COMMENT '目标体重 kg',
     custom_bmr INT NULL COMMENT '自定义 BMR kcal',
+    custom_tdee INT NULL COMMENT '??? TDEE kcal',
     last_login_at DATETIME NULL COMMENT '最近登录时间',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     UNIQUE KEY uk_user_profile_open_id (open_id)

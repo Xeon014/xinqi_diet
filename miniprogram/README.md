@@ -8,8 +8,8 @@
 - `pages/exercise-search`：运动搜索与选择
 - `pages/health-diary-editor`：健康日记编辑（图文）
 - `pages/profile`：我的页
-- `pages/personal-info`：个人信息维护
-- `pages/health-profile`：健康档案维护
+- `pages/personal-info`：个人基础资料维护
+- `pages/health-profile`：健康档案维护（体重、BMR、TDEE）
 - `pages/meal-combo-manage`：自定义套餐管理
 - `pages/progress`：趋势页
 - `pages/onboarding-profile`：首次登录资料引导

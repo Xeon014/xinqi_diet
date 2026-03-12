@@ -13,8 +13,6 @@ import com.diet.domain.record.MealType;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
 import com.diet.domain.user.UserProfile;
-import com.diet.domain.user.Gender;
-import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.user.ActionSuggestionResponse;
 import com.diet.dto.user.CreateUserRequest;
@@ -33,9 +31,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -61,10 +56,10 @@ public class UserProfileService {
     );
 
     private static final Map<MealType, String> MEAL_LABELS = Map.of(
-            MealType.BREAKFAST, "早餐",
-            MealType.LUNCH, "午餐",
-            MealType.DINNER, "晚餐",
-            MealType.SNACK, "加餐"
+            MealType.BREAKFAST, "??",
+            MealType.LUNCH, "??",
+            MealType.DINNER, "??",
+            MealType.SNACK, "??"
     );
 
     private final UserProfileRepository userProfileRepository;
@@ -92,16 +87,26 @@ public class UserProfileService {
     }
 
     public UserResponse create(CreateUserRequest request) {
+        Integer targetCalories = calculateEffectiveTargetCaloriesFromParams(
+                request.gender(),
+                request.birthDate(),
+                request.height(),
+                request.currentWeight(),
+                request.customBmr(),
+                request.customTdee()
+        );
+
         UserProfile user = new UserProfile(
                 normalizeNameForCreate(request.name()),
                 request.gender(),
                 request.birthDate(),
                 request.height(),
                 request.activityLevel(),
-                request.dailyCalorieTarget(),
+                targetCalories,
                 request.currentWeight(),
                 request.targetWeight(),
-                request.customBmr()
+                request.customBmr(),
+                request.customTdee()
         );
         userProfileRepository.save(user);
         return toResponse(user);
@@ -127,18 +132,18 @@ public class UserProfileService {
         LocalDate nextBirthDate = resolveValue(request.birthDate(), user.getBirthDate());
         BigDecimal nextHeight = resolveValue(request.height(), user.getHeight());
         var nextActivityLevel = resolveValue(request.activityLevel(), user.getActivityLevel());
-        Integer nextDailyCalorieTarget = resolveValue(request.dailyCalorieTarget(), user.getDailyCalorieTarget());
         BigDecimal nextCurrentWeight = resolveValue(request.currentWeight(), user.getCurrentWeight());
         BigDecimal nextTargetWeight = resolveValue(request.targetWeight(), user.getTargetWeight());
         Integer nextCustomBmr = resolveCustomBmr(request, nextGender, nextBirthDate, nextHeight, nextCurrentWeight, user.getCustomBmr());
-
-        // 目标热量为空时，用 TDEE 兜底
-        if (nextDailyCalorieTarget == null) {
-            BigDecimal tdee = calculateTdeeFromParams(nextGender, nextBirthDate, nextHeight, nextCurrentWeight, nextActivityLevel, nextCustomBmr);
-            if (tdee != null) {
-                nextDailyCalorieTarget = tdee.setScale(0, RoundingMode.HALF_UP).intValue();
-            }
-        }
+        Integer nextCustomTdee = resolveCustomTdee(request.customTdee(), user.getCustomTdee());
+        Integer nextDailyCalorieTarget = calculateEffectiveTargetCaloriesFromParams(
+                nextGender,
+                nextBirthDate,
+                nextHeight,
+                nextCurrentWeight,
+                nextCustomBmr,
+                nextCustomTdee
+        );
 
         user.updateProfile(
                 nextName,
@@ -149,7 +154,8 @@ public class UserProfileService {
                 nextDailyCalorieTarget,
                 nextCurrentWeight,
                 nextTargetWeight,
-                nextCustomBmr
+                nextCustomBmr,
+                nextCustomTdee
         );
         userProfileRepository.update(user);
         return toResponse(user);
@@ -169,7 +175,7 @@ public class UserProfileService {
         BigDecimal dietCalories = sumDietCalories(mealRecords);
         BigDecimal exerciseCalories = sumExerciseCalories(exerciseRecords);
         BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
-        Integer targetCalories = user.getDailyCalorieTarget();
+        Integer targetCalories = resolveEffectiveTargetCalories(user);
         BigDecimal remaining = targetCalories == null
                 ? null
                 : BigDecimal.valueOf(targetCalories).subtract(netCalories).setScale(2, RoundingMode.HALF_UP);
@@ -258,7 +264,7 @@ public class UserProfileService {
                 .distinct()
                 .count();
 
-        MealType topExceededMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, startDate, endDate);
+        MealType topExceededMealType = resolveTopIssueMealType(resolveEffectiveTargetCalories(user), mealRecords, startDate, endDate);
 
         return new ProgressSummaryResponse(
                 userId,
@@ -291,7 +297,7 @@ public class UserProfileService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal netCalories = dietCalories.subtract(exerciseCalories).setScale(2, RoundingMode.HALF_UP);
-        Integer targetCalories = user.getDailyCalorieTarget();
+        Integer targetCalories = resolveEffectiveTargetCalories(user);
         BigDecimal gap = targetCalories == null
                 ? null
                 : BigDecimal.valueOf(targetCalories).subtract(netCalories).setScale(2, RoundingMode.HALF_UP);
@@ -400,8 +406,8 @@ public class UserProfileService {
         if (firstMissingMeal != null) {
             suggestions.add(new ActionSuggestionResponse(
                     "RECORD_MEAL",
-                    "补齐记录",
-                    "你还未记录" + firstMissingMeal.mealLabel() + "，建议及时补充。",
+                    "????",
+                    "?????" + firstMissingMeal.mealLabel() + "????????",
                     firstMissingMeal.mealType()
             ));
         }
@@ -409,8 +415,8 @@ public class UserProfileService {
         if (remainingCalories != null && remainingCalories.compareTo(BigDecimal.ZERO) < 0 && topIssueMealType != null) {
             suggestions.add(new ActionSuggestionResponse(
                     "CONTROL_MEAL",
-                    "重点控制餐次",
-                    MEAL_LABELS.get(topIssueMealType) + "是今日超标主因，下一餐建议清淡一些。",
+                    "??????",
+                    MEAL_LABELS.get(topIssueMealType) + "??????????????????",
                     topIssueMealType
             ));
         }
@@ -418,19 +424,19 @@ public class UserProfileService {
         if (proteinIntake.compareTo(BigDecimal.valueOf(60)) < 0 && suggestions.size() < 2) {
             suggestions.add(new ActionSuggestionResponse(
                     "PROTEIN",
-                    "补充蛋白质",
-                    "今日蛋白质摄入偏低，可适量增加鸡蛋、牛奶或豆制品。",
+                    "?????",
+                    "?????????????????????????",
                     null
             ));
         }
 
         String summaryText = "";
         if (remainingCalories == null) {
-            summaryText = "设置目标热量后，可查看剩余热量。";
+            summaryText = "????????????????";
         } else if (remainingCalories.compareTo(BigDecimal.ZERO) < 0) {
-            summaryText = "今日已超目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString() + " kcal。";
+            summaryText = "?????? " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString() + " kcal?";
         } else if (completeness >= 0.75) {
-            summaryText = "今日热量控制不错，继续保持。";
+            summaryText = "??????????????";
         }
 
         return new DailyInsightResponse(summaryText, topIssueMealType, completeness, suggestions.stream().limit(2).toList());
@@ -455,7 +461,7 @@ public class UserProfileService {
                 .distinct()
                 .count();
 
-        MealType topExceededMealType = resolveTopIssueMealType(user.getDailyCalorieTarget(), mealRecords, startDate, date);
+        MealType topExceededMealType = resolveTopIssueMealType(resolveEffectiveTargetCalories(user), mealRecords, startDate, date);
 
         return new TrendInsightResponse(averageNetCalories, exerciseDays, topExceededMealType);
     }
@@ -562,10 +568,11 @@ public class UserProfileService {
                 user.calculateAge(),
                 user.getHeight(),
                 user.getActivityLevel(),
-                user.getDailyCalorieTarget(),
+                resolveEffectiveTargetCalories(user),
                 user.getCurrentWeight(),
                 user.getTargetWeight(),
                 user.getCustomBmr(),
+                user.getCustomTdee(),
                 user.calculateBmi(),
                 user.calculateBmr(),
                 user.calculateTdee(),
@@ -602,24 +609,54 @@ public class UserProfileService {
         return requested != null ? requested : currentValue;
     }
 
-    private BigDecimal calculateTdeeFromParams(
+    private Integer resolveEffectiveTargetCalories(UserProfile user) {
+        return calculateEffectiveTargetCaloriesFromParams(
+                user.getGender(),
+                user.getBirthDate(),
+                user.getHeight(),
+                user.getCurrentWeight(),
+                user.getCustomBmr(),
+                user.getCustomTdee()
+        );
+    }
+
+    private Integer calculateEffectiveTargetCaloriesFromParams(
             Gender gender,
             LocalDate birthDate,
             BigDecimal height,
             BigDecimal currentWeight,
-            ActivityLevel activityLevel,
-            Integer customBmr
+            Integer customBmr,
+            Integer customTdee
     ) {
+        BigDecimal tdee = calculateEffectiveTdeeFromParams(gender, birthDate, height, currentWeight, customBmr, customTdee);
+        if (tdee == null) {
+            return null;
+        }
+        return tdee.setScale(0, RoundingMode.HALF_UP).intValue();
+    }
+
+    private BigDecimal calculateEffectiveTdeeFromParams(
+            Gender gender,
+            LocalDate birthDate,
+            BigDecimal height,
+            BigDecimal currentWeight,
+            Integer customBmr,
+            Integer customTdee
+    ) {
+        if (customTdee != null && customTdee > 0) {
+            return BigDecimal.valueOf(customTdee).setScale(2, RoundingMode.HALF_UP);
+        }
+
         BigDecimal bmr;
         if (customBmr != null && customBmr > 0) {
-            bmr = BigDecimal.valueOf(customBmr);
+            bmr = BigDecimal.valueOf(customBmr).setScale(2, RoundingMode.HALF_UP);
         } else {
             bmr = calculateFormulaBmrFromParams(gender, birthDate, height, currentWeight);
         }
-        if (bmr == null || activityLevel == null) {
+        if (bmr == null) {
             return null;
         }
-        return bmr.multiply(activityLevel.getMultiplier()).setScale(2, RoundingMode.HALF_UP);
+        return bmr.divide(new BigDecimal("0.70"), 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateFormulaBmrFromParams(
@@ -642,6 +679,10 @@ public class UserProfileService {
         return base.add(offset).setScale(2, RoundingMode.HALF_UP);
     }
 
+
+    private Integer resolveCustomTdee(Integer requestedCustomTdee, Integer currentCustomTdee) {
+        return requestedCustomTdee != null ? requestedCustomTdee : currentCustomTdee;
+    }
 
     private Integer resolveCustomBmr(
             UpdateUserRequest request,

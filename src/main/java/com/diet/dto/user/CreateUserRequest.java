@@ -3,8 +3,8 @@ package com.diet.dto.user;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -31,12 +31,10 @@ public record CreateUserRequest(
         @DecimalMin(value = "50.0", message = "height must be at least 50cm")
         BigDecimal height,
 
-        @Schema(description = "活动量等级")
-        @NotNull(message = "activityLevel must not be null")
+        @Schema(description = "活动量等级（兼容保留）")
         ActivityLevel activityLevel,
 
-        @Schema(description = "每日目标热量，单位 kcal")
-        @NotNull(message = "dailyCalorieTarget must not be null")
+        @Schema(description = "每日目标热量（兼容保留），单位 kcal")
         @Positive(message = "dailyCalorieTarget must be greater than 0")
         Integer dailyCalorieTarget,
 
@@ -52,6 +50,10 @@ public record CreateUserRequest(
 
         @Schema(description = "用户自定义基础代谢 BMR，单位 kcal，可为空")
         @Positive(message = "customBmr must be greater than 0")
-        Integer customBmr
+        Integer customBmr,
+
+        @Schema(description = "用户自定义每日消耗热量 TDEE，单位 kcal，可为空")
+        @Positive(message = "customTdee must be greater than 0")
+        Integer customTdee
 ) {
 }

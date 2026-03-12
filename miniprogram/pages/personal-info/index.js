@@ -10,10 +10,6 @@ const GENDER_OPTIONS = [
   { label: "男", value: "MALE" }
 ];
 
-function toInteger(value) {
-  return Math.round(Number(value || 0));
-}
-
 function toPositiveNumber(rawValue) {
   const text = String(rawValue == null ? "" : rawValue).trim();
   if (!text) {
@@ -23,63 +19,28 @@ function toPositiveNumber(rawValue) {
   return Number.isFinite(number) ? number : NaN;
 }
 
-function parseAge(birthDate) {
-  if (!birthDate) {
-    return null;
-  }
-  const today = new Date();
-  const birth = new Date(`${birthDate}T00:00:00`);
-  if (Number.isNaN(birth.getTime()) || birth.getTime() > today.getTime()) {
-    return null;
-  }
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age -= 1;
-  }
-  return age < 0 ? null : age;
-}
-
-function calculateFormulaBmr(form) {
-  if (!form || !form.gender || !form.birthDate) {
-    return null;
-  }
-  const height = toPositiveNumber(form.height);
-  const weight = toPositiveNumber(form.currentWeight);
-  const age = parseAge(form.birthDate);
-  if (!Number.isFinite(height) || height <= 0 || !Number.isFinite(weight) || weight <= 0 || age == null) {
-    return null;
-  }
-  const base = (weight * 10) + (height * 6.25) - (age * 5);
-  const offset = form.gender === "MALE" ? 5 : -161;
-  return toInteger(base + offset);
-}
-
 Page({
   data: {
     maxBirthDate: getToday(),
     genderOptions: GENDER_OPTIONS,
     genderIndex: 0,
     profile: null,
-    formulaBmrPreview: "--",
-    formulaAvailable: false,
     form: {
       name: "",
       gender: "",
       birthDate: "",
       height: "",
-      currentWeight: "",
-      targetWeight: "",
-      customBmr: "",
-      bmrMode: "FORMULA",
     }
   },
+
   onShow() {
     this.loadProfile();
   },
+
   onPullDownRefresh() {
     this.loadProfile(true);
   },
+
   loadProfile(stopPullDown = false) {
     getCurrentUser()
       .then((profile) => {
@@ -88,18 +49,11 @@ Page({
           gender: profile.gender || "",
           birthDate: profile.birthDate || "",
           height: profile.height == null ? "" : String(profile.height),
-          currentWeight: profile.currentWeight == null ? "" : String(profile.currentWeight),
-          targetWeight: profile.targetWeight == null ? "" : String(profile.targetWeight),
-          customBmr: profile.customBmr == null ? "" : String(profile.customBmr),
-          bmrMode: profile.customBmr == null ? "FORMULA" : "MANUAL",
         };
-        const formulaBmr = calculateFormulaBmr(form);
         this.setData({
           profile,
           genderIndex: this.findOptionIndex(form.gender),
           form,
-          formulaBmrPreview: formulaBmr == null ? "--" : String(formulaBmr),
-          formulaAvailable: formulaBmr != null,
         });
       })
       .catch((error) => {
@@ -111,54 +65,36 @@ Page({
         }
       });
   },
+
   findOptionIndex(value) {
     const index = GENDER_OPTIONS.findIndex((item) => item.value === value);
     return index >= 0 ? index : 0;
   },
-  refreshFormulaMeta() {
-    const formulaBmr = calculateFormulaBmr(this.data.form);
-    this.setData({
-      formulaBmrPreview: formulaBmr == null ? "--" : String(formulaBmr),
-      formulaAvailable: formulaBmr != null,
-    });
-  },
+
   handleInput(event) {
-    const { field } = event.currentTarget.dataset;
-    this.setData({ [`form.${field}`]: event.detail.value }, () => {
-      this.refreshFormulaMeta();
-    });
+    const field = event.currentTarget.dataset.field;
+    this.setData({ ["form." + field]: event.detail.value });
   },
+
   handleGenderChange(event) {
     const genderIndex = Number(event.detail.value);
     this.setData({
       genderIndex,
       "form.gender": GENDER_OPTIONS[genderIndex].value
-    }, () => {
-      this.refreshFormulaMeta();
     });
   },
+
   handleBirthDateChange(event) {
-    this.setData({ "form.birthDate": event.detail.value }, () => {
-      this.refreshFormulaMeta();
-    });
+    this.setData({ "form.birthDate": event.detail.value });
   },
-  handleBmrModeChange(event) {
-    const { mode } = event.currentTarget.dataset;
-    if (mode === "FORMULA" && !this.data.formulaAvailable) {
-      wx.showToast({ title: "请先补齐性别、生日、身高和体重", icon: "none" });
-      return;
-    }
-    this.setData({
-      "form.bmrMode": mode,
-    });
-  },
+
   handleSave() {
-    const { form, profile } = this.data;
+    const form = this.data.form;
     const payload = {};
     const name = String(form.name || "").trim();
 
     if (name.length > MAX_NICKNAME_LENGTH) {
-      wx.showToast({ title: "昵称最多 20 个字符", icon: "none" });
+      wx.showToast({ title: "昵称最多 20 个字", icon: "none" });
       return;
     }
     if (name) {
@@ -181,43 +117,8 @@ Page({
       payload.height = height;
     }
 
-    const currentWeight = toPositiveNumber(form.currentWeight);
-    if (currentWeight != null && (!Number.isFinite(currentWeight) || currentWeight <= 0)) {
-      wx.showToast({ title: "请输入正确当前体重", icon: "none" });
-      return;
-    }
-    if (currentWeight != null) {
-      payload.currentWeight = currentWeight;
-    }
-
-    const targetWeight = toPositiveNumber(form.targetWeight);
-    if (targetWeight != null && (!Number.isFinite(targetWeight) || targetWeight <= 0)) {
-      wx.showToast({ title: "请输入正确目标体重", icon: "none" });
-      return;
-    }
-    if (targetWeight != null) {
-      payload.targetWeight = targetWeight;
-    }
-
-    const hadCustomBmr = profile && profile.customBmr != null;
-    if (form.bmrMode === "MANUAL") {
-      const customBmr = toPositiveNumber(form.customBmr);
-      if (customBmr != null && (!Number.isFinite(customBmr) || customBmr <= 0)) {
-        wx.showToast({ title: "请输入正确基础代谢", icon: "none" });
-        return;
-      }
-      if (customBmr != null) {
-        payload.customBmr = toInteger(customBmr);
-      }
-    } else if (hadCustomBmr && this.data.formulaAvailable) {
-      payload.useFormulaBmr = true;
-    } else if (hadCustomBmr) {
-      wx.showToast({ title: "公式计算条件不足", icon: "none" });
-      return;
-    }
-
     if (!Object.keys(payload).length) {
-      wx.showToast({ title: "未修改可保存项", icon: "none" });
+      wx.showToast({ title: "没有可保存的修改", icon: "none" });
       return;
     }
 

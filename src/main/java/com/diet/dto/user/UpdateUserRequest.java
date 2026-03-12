@@ -27,10 +27,10 @@ public record UpdateUserRequest(
         @DecimalMin(value = "50.0", message = "height must be at least 50cm")
         BigDecimal height,
 
-        @Schema(description = "活动量等级")
+        @Schema(description = "活动量等级（兼容保留）")
         ActivityLevel activityLevel,
 
-        @Schema(description = "每日目标热量，单位 kcal")
+        @Schema(description = "每日目标热量（兼容保留），单位 kcal")
         @Positive(message = "dailyCalorieTarget must be greater than 0")
         Integer dailyCalorieTarget,
 
@@ -45,6 +45,10 @@ public record UpdateUserRequest(
         @Schema(description = "用户自定义基础代谢 BMR，单位 kcal，可为空")
         @Positive(message = "customBmr must be greater than 0")
         Integer customBmr,
+
+        @Schema(description = "用户自定义每日消耗热量 TDEE，单位 kcal，可为空")
+        @Positive(message = "customTdee must be greater than 0")
+        Integer customTdee,
 
         @Schema(description = "是否切换为公式计算 BMR，true 时清空 customBmr")
         Boolean useFormulaBmr
