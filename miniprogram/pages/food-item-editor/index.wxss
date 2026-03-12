@@ -1,0 +1,147 @@
+.food-item-editor-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.overlay {
+  background: rgba(38, 29, 22, 0.36);
+  inset: 0;
+  position: fixed;
+}
+
+.sheet {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 36rpx;
+  border-top-right-radius: 36rpx;
+  bottom: 0;
+  left: 0;
+  padding: 26rpx 26rpx calc(26rpx + env(safe-area-inset-bottom));
+  position: fixed;
+  right: 0;
+  z-index: 20;
+}
+
+.sheet-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sheet-title {
+  color: #2f2a24;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.sheet-close {
+  color: #7d7062;
+  font-size: 24rpx;
+  padding: 8rpx 0;
+}
+
+.food-name {
+  color: #2f2a24;
+  font-size: 36rpx;
+  font-weight: 700;
+  margin-top: 18rpx;
+}
+
+.food-meta {
+  color: #75695d;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.editor-row {
+  margin-top: 20rpx;
+}
+
+.quantity-wrap {
+  align-items: center;
+  display: flex;
+}
+
+.quantity-input {
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.14);
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  height: 84rpx;
+  padding: 0 20rpx;
+  text-align: right;
+  width: 220rpx;
+}
+
+.quantity-unit {
+  color: #6f6255;
+  font-size: 25rpx;
+  margin-left: 12rpx;
+}
+
+.nutrition-grid {
+  display: grid;
+  gap: 10rpx;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18rpx;
+}
+
+.nutrition-item {
+  background: rgba(255, 255, 255, 0.76);
+  border-radius: 16rpx;
+  padding: 12rpx;
+}
+
+.nutrition-label {
+  color: #74685c;
+  font-size: 22rpx;
+}
+
+.nutrition-value {
+  color: #1e5a4f;
+  font-size: 26rpx;
+  font-weight: 700;
+  margin-top: 8rpx;
+}
+
+.delete-row {
+  color: #b95e3a;
+  font-size: 25rpx;
+  font-weight: 600;
+  margin-top: 20rpx;
+  padding: 10rpx 0;
+  text-align: center;
+}
+
+.action-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.action-btn {
+  align-items: center;
+  border-radius: 999rpx;
+  display: flex;
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 700;
+  height: 88rpx;
+  justify-content: center;
+}
+
+.action-btn.primary {
+  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
+  border: 1rpx solid rgba(19, 62, 54, 0.22);
+  color: #fffef8;
+}
+
+.action-btn.secondary {
+  background: rgba(30, 90, 79, 0.1);
+  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  color: #1e5a4f;
+}
+
+.action-btn.disabled {
+  opacity: 0.6;
+}

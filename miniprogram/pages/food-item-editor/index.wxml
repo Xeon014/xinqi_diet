@@ -1,0 +1,47 @@
+<view class="food-item-editor-page">
+  <view class="overlay"></view>
+
+  <view class="sheet panel">
+    <view class="sheet-head">
+      <view class="sheet-title">食物编辑</view>
+      <view class="sheet-close" bindtap="handleClose">关闭</view>
+    </view>
+
+    <view class="food-name">{{foodName || '食物'}}</view>
+    <view class="food-meta">{{mealTypeLabel}} · {{caloriesPer100g}} kcal / 100g</view>
+
+    <view class="editor-row">
+      <view class="field-label">重量</view>
+      <view class="quantity-wrap">
+        <input class="quantity-input" type="digit" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
+        <view class="quantity-unit">g</view>
+      </view>
+    </view>
+
+    <view class="nutrition-grid">
+      <view class="nutrition-item">
+        <view class="nutrition-label">热量</view>
+        <view class="nutrition-value">{{totalCalories}} kcal</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">蛋白</view>
+        <view class="nutrition-value">{{totalProtein}} g</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">碳水</view>
+        <view class="nutrition-value">{{totalCarbs}} g</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">脂肪</view>
+        <view class="nutrition-value">{{totalFat}} g</view>
+      </view>
+    </view>
+
+    <view wx:if="{{canDelete}}" class="delete-row" bindtap="handleDelete">删除食物记录</view>
+
+    <view class="action-row">
+      <view class="action-btn secondary {{loading ? 'disabled' : ''}}" bindtap="handleAddAndContinue">添加并继续</view>
+      <view class="action-btn primary {{loading ? 'disabled' : ''}}" bindtap="handleAdd">添加</view>
+    </view>
+  </view>
+</view>

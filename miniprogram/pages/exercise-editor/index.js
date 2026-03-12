@@ -92,8 +92,8 @@ function resolveDateFromEvent(event) {
   return event.detail.recordDate || event.detail.value || "";
 }
 
-function buildMealEditorUrl({ mode, recordDate, mealType }) {
-  return `/pages/meal-editor/index?mode=${encodeURIComponent(mode)}&recordDate=${encodeURIComponent(recordDate)}&mealType=${encodeURIComponent(mealType)}`;
+function buildFoodSearchUrl({ recordDate, mealType, source }) {
+  return `/pages/food-search/index?recordDate=${encodeURIComponent(recordDate)}&mealType=${encodeURIComponent(mealType)}&source=${encodeURIComponent(source)}`;
 }
 
 Page({
@@ -143,10 +143,10 @@ Page({
 
     const navigate = () => {
       wx.redirectTo({
-        url: buildMealEditorUrl({
-          mode: this.data.mode,
+        url: buildFoodSearchUrl({
           recordDate: this.data.recordDate,
           mealType: this.data.mealType,
+          source: "exercise",
         }),
       });
     };

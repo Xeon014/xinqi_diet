@@ -1,11 +1,17 @@
 <view class="page-shell food-search-page">
   <view class="search-bar panel">
-    <input class="search-input" placeholder="搜索食物" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
-    <view class="custom-entry" bindtap="handleOpenCustomFood">自定义食物</view>
+    <input
+      class="search-input"
+      placeholder="搜索食物"
+      value="{{keyword}}"
+      bindinput="handleInput"
+      bindconfirm="handleSearchConfirm"
+      confirm-type="search"
+    />
   </view>
 
   <view class="food-layout">
-    <view class="category-sidebar panel">
+    <view wx:if="{{!isSearching}}" class="category-sidebar panel">
       <view
         wx:for="{{systemFilters}}"
         wx:key="key"
@@ -27,10 +33,31 @@
       </view>
     </view>
 
-    <view class="food-content">
-      <view wx:if="{{displayedFoods.length}}" class="panel section-panel">
-        <view class="section-title-small">{{currentCategoryLabel}}</view>
-        <view class="food-list compact-list">
+    <view class="food-content {{isSearching ? 'full' : ''}}">
+      <view wx:if="{{showRecentSearchList && recentSearches.length}}" class="panel section-panel">
+        <view class="section-head-row">
+          <view class="section-title-small">最近搜索</view>
+          <view class="clear-btn" bindtap="handleClearRecentSearches">清空</view>
+        </view>
+        <view class="history-list">
+          <view
+            wx:for="{{recentSearches}}"
+            wx:key="*this"
+            class="history-chip"
+            data-keyword="{{item}}"
+            bindtap="handleTapRecentSearch"
+          >
+            {{item}}
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{showFoodSection}}" class="panel section-panel">
+        <view class="section-title-row">
+          <view class="section-title-tag">{{currentCategoryLabel}}</view>
+          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">添加</view>
+        </view>
+        <view wx:if="{{displayedFoods.length}}" class="food-list compact-list">
           <view
             wx:for="{{displayedFoods}}"
             wx:key="id"
@@ -42,12 +69,73 @@
               <view class="food-name">{{item.name}}</view>
               <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
             </view>
-            <view class="food-bottom">{{item.categoryLabel}} · 蛋白 {{item.proteinPer100g}}g · 碳水 {{item.carbsPer100g}}g · 脂肪 {{item.fatPer100g}}g</view>
           </view>
         </view>
       </view>
 
-      <empty-state wx:if="{{!displayedFoods.length}}" title="{{emptyTitle}}" description="{{emptyDescription}}" />
+      <empty-state
+        wx:if="{{!displayedFoods.length && !(showRecentSearchList && recentSearches.length)}}"
+        title="{{emptyTitle}}"
+        description="{{emptyDescription}}"
+      />
+    </view>
+  </view>
+
+  <view wx:if="{{editorVisible}}" class="editor-overlay" bindtap="handleEditorClose"></view>
+
+  <view wx:if="{{editorVisible}}" class="editor-sheet panel" catchtouchmove="noop">
+    <view class="editor-head">
+      <view class="editor-title">食物编辑</view>
+      <view class="editor-head-actions">
+        <view
+          wx:if="{{editorCanDelete}}"
+          class="icon-action danger {{editorLoading ? 'disabled' : ''}}"
+          bindtap="handleEditorDelete"
+        >🗑</view>
+        <view
+          class="icon-action {{editorLoading ? 'disabled' : ''}}"
+          bindtap="handleEditorClose"
+        >✕</view>
+      </view>
+    </view>
+
+    <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
+    <view class="editor-food-meta">{{mealTypeLabel}} · {{editorCaloriesPer100g}} kcal / 100g</view>
+
+    <view class="editor-row">
+      <view class="field-label">重量</view>
+      <view class="quantity-wrap">
+        <input class="quantity-input" type="digit" value="{{editorQuantityInGram}}" bindinput="handleEditorQuantityInput" />
+        <view class="quantity-unit">g</view>
+      </view>
+    </view>
+
+    <view class="nutrition-grid">
+      <view class="nutrition-item">
+        <view class="nutrition-label">热量</view>
+        <view class="nutrition-value">{{editorTotalCalories}} kcal</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">蛋白</view>
+        <view class="nutrition-value">{{editorTotalProtein}} g</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">碳水</view>
+        <view class="nutrition-value">{{editorTotalCarbs}} g</view>
+      </view>
+      <view class="nutrition-item">
+        <view class="nutrition-label">脂肪</view>
+        <view class="nutrition-value">{{editorTotalFat}} g</view>
+      </view>
+    </view>
+
+    <view class="editor-action-row">
+      <view
+        class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}"
+        bindtap="handleEditorSubmit"
+      >
+        {{editorMode === 'edit' ? '完成编辑' : '添加'}}
+      </view>
     </view>
   </view>
 </view>

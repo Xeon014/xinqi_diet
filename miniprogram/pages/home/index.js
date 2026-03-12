@@ -153,6 +153,21 @@ function buildRecordGroups(records) {
     .filter((group) => group.records.length);
 }
 
+function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
+  const params = [
+    `recordDate=${encodeURIComponent(recordDate)}`,
+    `mealType=${encodeURIComponent(mealType)}`,
+    `source=${encodeURIComponent(source)}`,
+  ];
+  if (mode) {
+    params.push(`mode=${encodeURIComponent(mode)}`);
+  }
+  if (recordId != null) {
+    params.push(`recordId=${encodeURIComponent(recordId)}`);
+  }
+  return `/pages/food-search/index?${params.join("&")}`;
+}
+
 Page({
   data: {
     recordDate: getToday(),
@@ -297,15 +312,25 @@ Page({
 
   handleQuickAddDiet() {
     wx.navigateTo({
-      url: `/pages/meal-editor/index?mealType=${encodeURIComponent(this.data.recommendedMealType)}&recordDate=${encodeURIComponent(this.data.recordDate)}`,
+      url: buildFoodSearchUrl({
+        mealType: this.data.recommendedMealType,
+        recordDate: this.data.recordDate,
+        source: "home",
+      }),
     });
   },
 
   handleOpenRecord(event) {
-    const { recordType, mealType, recordDate } = event.currentTarget.dataset;
+    const { recordType, mealType, recordDate, recordId } = event.currentTarget.dataset;
     if (recordType === "DIET") {
       wx.navigateTo({
-        url: `/pages/meal-editor/index?mode=edit&mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(recordDate)}`,
+        url: buildFoodSearchUrl({
+          mode: "edit",
+          recordId,
+          mealType,
+          recordDate,
+          source: "home",
+        }),
       });
       return;
     }

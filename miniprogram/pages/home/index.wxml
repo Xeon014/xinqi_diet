@@ -74,6 +74,7 @@
           wx:for-item="record"
           class="stream-item"
           data-record-type="{{record.recordType}}"
+          data-record-id="{{record.recordId}}"
           data-meal-type="{{record.mealType}}"
           data-record-date="{{record.recordDate}}"
           bindtap="handleOpenRecord"
