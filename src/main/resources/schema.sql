@@ -92,6 +92,19 @@ CREATE TABLE IF NOT EXISTS health_diary (
     KEY idx_health_diary_user_date (user_id, record_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='健康日记表';
 
+CREATE TABLE IF NOT EXISTS body_metric_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '身体指标记录主键 ID',
+    user_id BIGINT NOT NULL COMMENT '用户 ID',
+    metric_type VARCHAR(20) NOT NULL COMMENT '指标类型',
+    metric_value DECIMAL(10, 2) NOT NULL COMMENT '指标数值',
+    unit VARCHAR(20) NOT NULL COMMENT '指标单位',
+    record_date DATE NOT NULL COMMENT '记录日期',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+    KEY idx_body_metric_user_type_date (user_id, metric_type, record_date, id),
+    KEY idx_body_metric_user_created (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='身体指标历史记录表';
+
 CREATE TABLE IF NOT EXISTS meal_combo (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '套餐主键 ID',
     user_id BIGINT NOT NULL COMMENT '用户 ID',

@@ -91,3 +91,26 @@
 - 后续待办:
   - 继续优化首页分组记录区的视觉一致性与信息密度。
   - 评估右下角悬浮入口在小屏设备与安全区下的遮挡风险。
+
+### [2026-03-12] 饮食记录链路文档对齐与文档结构整理
+- 变更范围:
+  - 页面/模块: `README.md`, `miniprogram/README.md`, `docs/README.md`, `docs/page-entry-map.md`, `docs/feature-inventory.md`, `docs/change-log-next.md`
+  - 后端接口: 无
+  - 数据结构: 无
+- 做了什么:
+  - 新增 `docs/README.md` 文档导航，统一文档阅读入口与推荐阅读顺序。
+  - 同步饮食记录当前实现口径：`home -> food-search -> 底部弹窗编辑`，并明确 `新建=添加`、`编辑=完成编辑`。
+  - 更新 `page-entry-map` 与 `feature-inventory`，修正旧链路描述（`meal-editor` 主链路）与实际实现不一致的问题。
+  - 在小程序说明文档中补充“自定义食物入口位置”“食物列表展示口径（名称+热量）”和“无可见入口历史页面”说明。
+  - 根 README 补充文档导航入口，去除本地绝对路径链接，统一为仓库相对路径描述。
+- 为什么做:
+  - 解决文档与当前代码实现不一致导致的协作误导。
+  - 让新成员能快速定位“入口地图 -> 功能清单 -> 接口说明 -> 协作流程”。
+- 验证方式:
+  - 命令: `node scripts/verify-miniprogram-files.js`
+  - 手动回归页面: 无（本次为文档整理）
+- 风险与回滚点:
+  - 风险低，主要为文档口径调整；如需回滚，恢复上述文档文件即可。
+- 后续待办:
+  - 后续每次调整页面入口或记录链路时，同步更新 `docs/page-entry-map.md` 与 `docs/feature-inventory.md`。
+  - 视清理计划补充历史页面 (`meal-editor`, `food-item-editor`) 下线记录与迁移说明。

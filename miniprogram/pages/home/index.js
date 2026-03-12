@@ -1,5 +1,7 @@
 const { getDailySummary } = require("../../services/user");
 const { getDailyHealthDiary } = require("../../services/health-diary");
+const { createBodyMetricRecord } = require("../../services/body-metric");
+const { getRecords } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
@@ -12,13 +14,14 @@ const MEAL_TYPE_LABELS = {
   SNACK: "加餐",
 };
 
-const RECORD_GROUPS = [
+const DIET_GROUPS = [
   { key: "BREAKFAST", label: "早餐", type: "DIET", mealType: "BREAKFAST" },
   { key: "LUNCH", label: "午餐", type: "DIET", mealType: "LUNCH" },
   { key: "DINNER", label: "晚餐", type: "DIET", mealType: "DINNER" },
   { key: "SNACK", label: "加餐", type: "DIET", mealType: "SNACK" },
-  { key: "EXERCISE", label: "运动", type: "EXERCISE", mealType: "" },
 ];
+
+const EXERCISE_GROUP = { key: "EXERCISE", label: "运动", type: "EXERCISE", mealType: "" };
 
 function toNumber(value) {
   const number = Number(value);
@@ -145,12 +148,16 @@ function buildRecordGroups(records) {
     groupedRecords.EXERCISE.push(record);
   });
 
-  return RECORD_GROUPS
-    .map((group) => ({
+  return [
+    ...DIET_GROUPS.map((group) => ({
       ...group,
       records: groupedRecords[group.key] || [],
-    }))
-    .filter((group) => group.records.length);
+    })),
+    {
+      ...EXERCISE_GROUP,
+      records: groupedRecords.EXERCISE,
+    },
+  ].filter((group) => group.records.length > 0);
 }
 
 function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
@@ -166,6 +173,30 @@ function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
     params.push(`recordId=${encodeURIComponent(recordId)}`);
   }
   return `/pages/food-search/index?${params.join("&")}`;
+}
+
+function buildExerciseEditorUrl(recordDate) {
+  return `/pages/exercise-editor/index?recordDate=${encodeURIComponent(recordDate)}`;
+}
+
+function resolveMealNutrition(records) {
+  return (records || []).reduce((acc, record) => {
+    const quantity = toNumber(record.quantityInGram);
+    const ratio = quantity > 0 ? quantity / 100 : 0;
+    const totalCalories = toNumber(record.totalCalories);
+
+    return {
+      totalCalories: acc.totalCalories + totalCalories,
+      totalProtein: acc.totalProtein + (toNumber(record.proteinPer100g) * ratio),
+      totalCarbs: acc.totalCarbs + (toNumber(record.carbsPer100g) * ratio),
+      totalFat: acc.totalFat + (toNumber(record.fatPer100g) * ratio),
+    };
+  }, {
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+  });
 }
 
 Page({
@@ -187,6 +218,19 @@ Page({
       summaryText: "",
     },
     healthDiary: null,
+    mealNutritionVisible: false,
+    mealNutritionLoading: false,
+    selectedMealLabel: "早餐",
+    mealNutrition: {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+    },
+    weightEditorVisible: false,
+    weightEditorLoading: false,
+    weightValue: "",
+    quickMenuVisible: false,
   },
 
   onLoad() {
@@ -310,6 +354,41 @@ Page({
     });
   },
 
+  handleQuickEntry() {
+    this.setData({
+      quickMenuVisible: true,
+    });
+  },
+
+  handleCloseQuickMenu() {
+    this.setData({
+      quickMenuVisible: false,
+    });
+  },
+
+  handleQuickMenuAction(event) {
+    const { action } = event.currentTarget.dataset;
+    this.setData({
+      quickMenuVisible: false,
+    });
+
+    if (action === "weight") {
+      this.handleOpenWeightEditor();
+      return;
+    }
+    if (action === "diet") {
+      this.handleQuickAddDiet();
+      return;
+    }
+    if (action === "exercise") {
+      this.handleQuickAddExercise();
+      return;
+    }
+    if (action === "diary") {
+      this.handleOpenHealthDiary();
+    }
+  },
+
   handleQuickAddDiet() {
     wx.navigateTo({
       url: buildFoodSearchUrl({
@@ -318,6 +397,131 @@ Page({
         source: "home",
       }),
     });
+  },
+
+  handleQuickAddExercise() {
+    wx.navigateTo({
+      url: buildExerciseEditorUrl(this.data.recordDate),
+    });
+  },
+
+  handleQuickAddMeal(event) {
+    const { mealType } = event.currentTarget.dataset;
+    if (!mealType) {
+      return;
+    }
+    wx.navigateTo({
+      url: buildFoodSearchUrl({
+        mealType,
+        recordDate: this.data.recordDate,
+        source: "home",
+      }),
+    });
+  },
+
+  handleOpenMealNutrition(event) {
+    const { mealType } = event.currentTarget.dataset;
+    if (!mealType) {
+      return;
+    }
+
+    this.setData({
+      mealNutritionVisible: true,
+      mealNutritionLoading: true,
+      selectedMealLabel: MEAL_TYPE_LABELS[mealType] || "餐次",
+      mealNutrition: {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+      },
+    });
+
+    getRecords({
+      date: this.data.recordDate,
+      mealType,
+    })
+      .then((result) => {
+        const records = Array.isArray(result.records) ? result.records : [];
+        const nutrition = resolveMealNutrition(records);
+        this.setData({
+          mealNutrition: {
+            totalCalories: toInteger(nutrition.totalCalories),
+            totalProtein: toInteger(nutrition.totalProtein),
+            totalCarbs: toInteger(nutrition.totalCarbs),
+            totalFat: toInteger(nutrition.totalFat),
+          },
+        });
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      })
+      .finally(() => {
+        this.setData({ mealNutritionLoading: false });
+      });
+  },
+
+  handleCloseMealNutrition() {
+    this.setData({
+      mealNutritionVisible: false,
+      mealNutritionLoading: false,
+    });
+  },
+
+  handleOpenWeightEditor() {
+    this.setData({
+      weightEditorVisible: true,
+      weightEditorLoading: false,
+      weightValue: "",
+    });
+  },
+
+  handleCloseWeightEditor() {
+    if (this.data.weightEditorLoading) {
+      return;
+    }
+    this.setData({
+      weightEditorVisible: false,
+      weightValue: "",
+    });
+  },
+
+  handleWeightInput(event) {
+    this.setData({
+      weightValue: event.detail.value,
+    });
+  },
+
+  handleSubmitWeight() {
+    if (this.data.weightEditorLoading) {
+      return;
+    }
+    const metricValue = toNumber(this.data.weightValue);
+    if (metricValue <= 0) {
+      wx.showToast({ title: "请输入正确体重", icon: "none" });
+      return;
+    }
+
+    this.setData({ weightEditorLoading: true });
+    createBodyMetricRecord({
+      metricType: "WEIGHT",
+      metricValue,
+      unit: "KG",
+      recordDate: this.data.recordDate,
+    })
+      .then(() => {
+        wx.showToast({ title: "已保存", icon: "success" });
+        this.setData({
+          weightEditorVisible: false,
+          weightValue: "",
+        });
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      })
+      .finally(() => {
+        this.setData({ weightEditorLoading: false });
+      });
   },
 
   handleOpenRecord(event) {
@@ -338,5 +542,8 @@ Page({
     wx.navigateTo({
       url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
     });
+  },
+
+  noop() {
   },
 });

@@ -44,6 +44,7 @@ public class DataInitializer {
             migrateFoodTable(jdbcTemplate);
             migrateExerciseTable(jdbcTemplate);
             migrateHealthDiaryTable(jdbcTemplate);
+            migrateBodyMetricRecordTable(jdbcTemplate);
             seedBuiltinFoodsIfNeeded(foodRepository, jdbcTemplate);
             seedBuiltinExercisesIfNeeded(exerciseRepository, jdbcTemplate);
             backfillFoodSortOrder(jdbcTemplate);
@@ -220,6 +221,23 @@ public class DataInitializer {
                     updated_at DATETIME NOT NULL,
                     UNIQUE KEY uk_health_diary_user_date (user_id, record_date),
                     KEY idx_health_diary_user_date (user_id, record_date)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """);
+    }
+
+    private void migrateBodyMetricRecordTable(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS body_metric_record (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    user_id BIGINT NOT NULL,
+                    metric_type VARCHAR(20) NOT NULL,
+                    metric_value DECIMAL(10, 2) NOT NULL,
+                    unit VARCHAR(20) NOT NULL,
+                    record_date DATE NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    KEY idx_body_metric_user_type_date (user_id, metric_type, record_date, id),
+                    KEY idx_body_metric_user_created (user_id, created_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                 """);
     }
