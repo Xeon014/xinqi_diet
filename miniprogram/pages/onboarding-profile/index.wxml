@@ -5,25 +5,14 @@
         <view class="section-title">首次登录引导</view>
         <view class="step-meta">第 {{currentStep + 1}} / {{steps.length}} 步</view>
       </view>
-      <view class="skip-all" bindtap="handleSkipAll">全部跳过</view>
     </view>
   </view>
 
   <view class="panel content-panel">
     <view class="step-title">{{steps[currentStep].title}}</view>
-    <view class="step-desc">{{steps[currentStep].description}}</view>
+    <view wx:if="{{steps[currentStep].description}}" class="step-desc">{{steps[currentStep].description}}</view>
 
-    <view wx:if="{{steps[currentStep].key === 'name'}}" class="field-wrap">
-      <input
-        class="field-input"
-        value="{{form.name}}"
-        data-field="name"
-        bindinput="handleInput"
-        maxlength="20"
-        placeholder="请输入昵称"
-      />
-    </view>
-
+    <!-- 性别 -->
     <view wx:if="{{steps[currentStep].key === 'gender'}}" class="gender-list">
       <view
         wx:for="{{genderOptions}}"
@@ -37,12 +26,20 @@
       </view>
     </view>
 
+    <!-- 生日 -->
     <view wx:if="{{steps[currentStep].key === 'birthDate'}}" class="field-wrap">
-      <picker mode="date" value="{{form.birthDate}}" end="{{maxBirthDate}}" bindchange="handleBirthDateChange">
-        <view class="field-picker">{{form.birthDate || '请选择生日'}}</view>
+      <picker 
+        mode="multiSelector" 
+        range="{{birthDateColumns}}" 
+        value="{{birthDateColumnIndex}}" 
+        bindcolumnchange="handleBirthDateColumnChange"
+        bindchange="handleBirthDateConfirm"
+      >
+        <view class="field-picker">{{birthDateDisplay || '请选择生日'}}</view>
       </picker>
     </view>
 
+    <!-- 身高 -->
     <view wx:if="{{steps[currentStep].key === 'height'}}" class="field-wrap">
       <input
         class="field-input"
@@ -54,6 +51,7 @@
       />
     </view>
 
+    <!-- 体重 -->
     <view wx:if="{{steps[currentStep].key === 'currentWeight'}}" class="field-wrap">
       <input
         class="field-input"
@@ -65,49 +63,52 @@
       />
     </view>
 
-    <view wx:if="{{steps[currentStep].key === 'bmr'}}">
-      <view class="mode-row">
-        <view
-          class="mode-chip {{form.bmrMode === 'FORMULA' ? 'active' : ''}}"
-          data-mode="FORMULA"
-          bindtap="handleBmrModeChange"
-        >
-          公式计算
-        </view>
-        <view
-          class="mode-chip {{form.bmrMode === 'MANUAL' ? 'active' : ''}}"
-          data-mode="MANUAL"
-          bindtap="handleBmrModeChange"
-        >
-          手动填写
-        </view>
+    <!-- 活动水平 -->
+    <view wx:if="{{steps[currentStep].key === 'activityLevel'}}" class="activity-list">
+      <view
+        wx:for="{{activityLevelOptions}}"
+        wx:key="value"
+        wx:for-item="option"
+        class="activity-chip {{form.activityLevel === option.value ? 'active' : ''}}"
+        data-value="{{option.value}}"
+        bindtap="handleActivityLevelSelect"
+      >
+        <view class="activity-label">{{option.label}}</view>
+        <view class="activity-sub">{{option.subLabel}}</view>
       </view>
+    </view>
 
-      <view wx:if="{{form.bmrMode === 'FORMULA'}}" class="formula-tip {{formulaAvailable ? '' : 'disabled'}}">
-        <view wx:if="{{formulaAvailable}}">预计基础代谢 {{formulaBmrPreview}} kcal/天</view>
-        <view wx:else>需先填写性别、生日、身高和体重</view>
-      </view>
+    <!-- BMR -->
+    <view wx:if="{{steps[currentStep].key === 'bmr'}}" class="field-wrap">
+      <input
+        class="field-input"
+        type="number"
+        value="{{form.bmr}}"
+        data-field="bmr"
+        bindinput="handleInput"
+        placeholder="请输入基础代谢(kcal/天)"
+      />
+      <view class="recommend-btn" bindtap="handleUseRecommendedBmr">使用推荐值 {{formulaBmrPreview}}</view>
+    </view>
 
-      <view wx:if="{{form.bmrMode === 'MANUAL'}}" class="field-wrap">
-        <input
-          class="field-input"
-          type="number"
-          value="{{form.customBmr}}"
-          data-field="customBmr"
-          bindinput="handleInput"
-          placeholder="请输入基础代谢(kcal/天)"
-        />
-      </view>
+    <!-- 目标热量 -->
+    <view wx:if="{{steps[currentStep].key === 'targetCalories'}}" class="field-wrap">
+      <input
+        class="field-input"
+        type="number"
+        value="{{form.targetCalories}}"
+        data-field="targetCalories"
+        bindinput="handleInput"
+        placeholder="请输入每日目标热量(kcal)"
+      />
+      <view class="recommend-btn" bindtap="handleUseRecommendedTdee">使用推荐值 {{tdeePreview}}</view>
     </view>
   </view>
 
   <view class="action-row">
     <view wx:if="{{currentStep > 0}}" class="ghost-button" bindtap="handlePrevStep">上一步</view>
-    <view class="ghost-button" bindtap="handleSkipCurrent">
-      {{currentStep === steps.length - 1 ? '跳过并完成' : '跳过此项'}}
-    </view>
     <view class="primary-button action-primary" bindtap="handleNextStep">
-      {{currentStep === steps.length - 1 ? (submitting ? '保存中...' : '完成') : '下一项'}}
+      {{currentStep === steps.length - 1 ? (submitting ? '保存中...' : '完成') : '下一步'}}
     </view>
   </view>
 </view>

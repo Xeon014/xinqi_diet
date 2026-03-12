@@ -58,6 +58,41 @@
   margin-top: 28rpx;
 }
 
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-top: 28rpx;
+}
+
+.activity-chip {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2rpx solid rgba(30, 90, 79, 0.16);
+  border-radius: 18rpx;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx 24rpx;
+}
+
+.activity-chip.active {
+  background: rgba(30, 90, 79, 0.12);
+  border-color: rgba(30, 90, 79, 0.3);
+}
+
+.activity-label {
+  color: #2f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.activity-sub {
+  color: #6f6559;
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+
+
 .gender-chip {
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
@@ -153,3 +188,18 @@
   flex: 1;
   margin-top: 0;
 }
+.recommend-btn {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(30, 90, 79, 0.08) 100%);
+  border: 2rpx solid rgba(30, 90, 79, 0.24);
+  border-radius: 16rpx;
+  color: #1e5a4f;
+  display: flex;
+  font-size: 26rpx;
+  font-weight: 600;
+  justify-content: center;
+  margin-top: 20rpx;
+  padding: 22rpx 24rpx;
+}
+
+

@@ -44,7 +44,7 @@
       </view>
     </view>
 
-    <view class="hero-tip">{{summary.summaryText}}</view>
+    <view wx:if="{{summary.summaryText}}" class="hero-tip">{{summary.summaryText}}</view>
 
   </view>
 
@@ -126,7 +126,7 @@
           src="{{imageFileId}}"
         />
       </view>
-      <view class="diary-meta">已记录</view>
+
     </view>
     <view wx:else class="diary-empty">点击记录今天状态</view>
   </view>

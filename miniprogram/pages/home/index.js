@@ -105,7 +105,7 @@ function normalizeSummary(summary, today) {
     remainingAbs: remainingCalories == null ? null : Math.abs(remainingCalories),
     exceededTarget: hasTarget && Boolean(summary.exceededTarget),
     records,
-    summaryText: dailyInsight.summaryText || (hasTarget ? "继续记录，保持节奏。" : "未设置每日目标热量，完善后可查看剩余热量。"),
+    summaryText: dailyInsight.summaryText || "",
   };
 }
 

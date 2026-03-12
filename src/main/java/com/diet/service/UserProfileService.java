@@ -10,6 +10,9 @@ import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
+import com.diet.domain.user.ActivityLevel;
+import com.diet.domain.user.Gender;
+import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.Gender;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
@@ -26,6 +29,10 @@ import com.diet.dto.user.TrendInsightResponse;
 import com.diet.dto.user.UpdateUserRequest;
 import com.diet.dto.user.UserResponse;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -125,6 +132,14 @@ public class UserProfileService {
         BigDecimal nextTargetWeight = resolveValue(request.targetWeight(), user.getTargetWeight());
         Integer nextCustomBmr = resolveCustomBmr(request, nextGender, nextBirthDate, nextHeight, nextCurrentWeight, user.getCustomBmr());
 
+        // 目标热量为空时，用 TDEE 兜底
+        if (nextDailyCalorieTarget == null) {
+            BigDecimal tdee = calculateTdeeFromParams(nextGender, nextBirthDate, nextHeight, nextCurrentWeight, nextActivityLevel, nextCustomBmr);
+            if (tdee != null) {
+                nextDailyCalorieTarget = tdee.setScale(0, RoundingMode.HALF_UP).intValue();
+            }
+        }
+
         user.updateProfile(
                 nextName,
                 nextGender,
@@ -139,6 +154,7 @@ public class UserProfileService {
         userProfileRepository.update(user);
         return toResponse(user);
     }
+
 
     @Transactional(readOnly = true)
     public DailySummaryResponse getDailySummary(Long userId, LocalDate date) {
@@ -408,19 +424,13 @@ public class UserProfileService {
             ));
         }
 
-        String summaryText;
-        if (noRecords) {
-            summaryText = "今天还没有记录，先从当前这一餐开始吧。";
-        } else if (remainingCalories == null) {
-            summaryText = "你还未设置目标热量，完善后可获得更准确建议。";
+        String summaryText = "";
+        if (remainingCalories == null) {
+            summaryText = "设置目标热量后，可查看剩余热量。";
         } else if (remainingCalories.compareTo(BigDecimal.ZERO) < 0) {
-            String mealTip = topIssueMealType == null ? "" : ("，主要来自" + MEAL_LABELS.get(topIssueMealType));
-            summaryText = "今日已超目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString()
-                    + " kcal" + mealTip + "。";
+            summaryText = "今日已超目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString() + " kcal。";
         } else if (completeness >= 0.75) {
-            summaryText = "今日热量控制稳定，记录完成度较高，继续保持。";
-        } else {
-            summaryText = "今日已记录 " + totalRecords + " 条，继续补齐剩余餐次会更准确。";
+            summaryText = "今日热量控制不错，继续保持。";
         }
 
         return new DailyInsightResponse(summaryText, topIssueMealType, completeness, suggestions.stream().limit(2).toList());
@@ -591,6 +601,47 @@ public class UserProfileService {
     private <T> T resolveValue(T requested, T currentValue) {
         return requested != null ? requested : currentValue;
     }
+
+    private BigDecimal calculateTdeeFromParams(
+            Gender gender,
+            LocalDate birthDate,
+            BigDecimal height,
+            BigDecimal currentWeight,
+            ActivityLevel activityLevel,
+            Integer customBmr
+    ) {
+        BigDecimal bmr;
+        if (customBmr != null && customBmr > 0) {
+            bmr = BigDecimal.valueOf(customBmr);
+        } else {
+            bmr = calculateFormulaBmrFromParams(gender, birthDate, height, currentWeight);
+        }
+        if (bmr == null || activityLevel == null) {
+            return null;
+        }
+        return bmr.multiply(activityLevel.getMultiplier()).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateFormulaBmrFromParams(
+            Gender gender,
+            LocalDate birthDate,
+            BigDecimal height,
+            BigDecimal currentWeight
+    ) {
+        if (gender == null || birthDate == null || height == null || currentWeight == null) {
+            return null;
+        }
+        int age = Period.between(birthDate, LocalDate.now()).getYears();
+        if (age < 0) {
+            return null;
+        }
+        BigDecimal base = currentWeight.multiply(BigDecimal.TEN)
+                .add(height.multiply(BigDecimal.valueOf(6.25)))
+                .subtract(BigDecimal.valueOf(age).multiply(BigDecimal.valueOf(5)));
+        BigDecimal offset = gender == Gender.MALE ? BigDecimal.valueOf(5) : BigDecimal.valueOf(-161);
+        return base.add(offset).setScale(2, RoundingMode.HALF_UP);
+    }
+
 
     private Integer resolveCustomBmr(
             UpdateUserRequest request,
