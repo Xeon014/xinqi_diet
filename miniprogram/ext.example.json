@@ -1,6 +1,6 @@
 {
   "extEnable": true,
-  "extAppid": "wx0a7ca5b4f5d09a35",
+  "extAppid": "3rdMiniProgramAppid",
   "ext": {
     "useCloudContainer": false,
     "baseUrl": "http://127.0.0.1:8080",

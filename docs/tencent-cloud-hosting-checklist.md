@@ -46,42 +46,11 @@
 
 ## 6. 小程序云托管配置
 
-当前小程序主链路已切换为 `wx.cloud.callContainer`，优先从 `ext.json` 读取云托管配置。
+当前小程序主链路已切换为 `wx.cloud.callContainer`，普通小程序运行时配置以 `miniprogram/utils/constants.js` 为准：
 
-`ext.json` 推荐示例：
-
-```json
-{
-  "extEnable": true,
-  "extAppid": "你的小程序AppID",
-  "ext": {
-    "useCloudContainer": false,
-    "baseUrl": "http://127.0.0.1:8080",
-    "runtime": {
-      "develop": {
-        "useCloudContainer": false,
-        "baseUrl": "http://127.0.0.1:8080"
-      },
-      "trial": {
-        "useCloudContainer": true,
-        "cloudEnvId": "你的云开发环境ID",
-        "cloudService": "你的云托管服务名"
-      },
-      "release": {
-        "useCloudContainer": true,
-        "cloudEnvId": "你的云开发环境ID",
-        "cloudService": "你的云托管服务名"
-      }
-    }
-  }
-}
-```
-
-发布前请确保：
-
-- `cloudEnvId` 与云托管服务实际环境一致
-- `cloudService` 与云托管服务名一致
-- 小程序已启用云开发能力，并具备调用云托管权限
+- `develop` 默认走本地 `http://127.0.0.1:8080`
+- `trial/release` 默认走微信云托管
+- 如后续接入第三方平台代开发，再考虑使用 `ext.json` / `wx.getExtConfigSync()`
 
 补充说明（微信云托管特性）：
 

@@ -42,9 +42,12 @@ function parseBoolean(value) {
   return null;
 }
 
-function getExtConfig() {
+function getThirdPartyExtConfig() {
   if (typeof wx !== "undefined" && typeof wx.getExtConfigSync === "function") {
-    return wx.getExtConfigSync() || {};
+    const config = wx.getExtConfigSync() || {};
+    if (config && typeof config === "object" && Object.keys(config).length > 0) {
+      return config;
+    }
   }
   return {};
 }
@@ -126,7 +129,7 @@ function resolveUseCloudContainer(extConfig, runtimeExtConfig, envVersion) {
   return envVersion !== "develop";
 }
 
-const EXT_CONFIG = getExtConfig();
+const EXT_CONFIG = getThirdPartyExtConfig();
 const RUNTIME_ENV_VERSION = resolveEnvVersion();
 const RUNTIME_EXT_CONFIG = getRuntimeExtConfig(EXT_CONFIG, RUNTIME_ENV_VERSION);
 const RUNTIME_CONFIG = {
