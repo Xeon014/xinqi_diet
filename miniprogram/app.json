@@ -23,6 +23,7 @@
                    "backgroundTextStyle":  "light"
                },
     "style":  "v2",
+    "lazyCodeLoading":  "requiredComponents",
     "sitemapLocation":  "sitemap.json",
     "tabBar":  {
                    "color":  "#75695d",
