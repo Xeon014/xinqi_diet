@@ -1,17 +1,24 @@
-const { deleteMealCombo, getMealComboDetail, getMealComboList, updateMealCombo } = require("../../services/meal-combo");
+const { createMealCombo, deleteMealCombo, getMealComboDetail, getMealComboList, updateMealCombo } = require("../../services/meal-combo");
 const { pickErrorMessage } = require("../../utils/request");
 
-const MEAL_TYPES = [
-  { value: "BREAKFAST", label: "早餐" },
-  { value: "LUNCH", label: "午餐" },
-  { value: "DINNER", label: "晚餐" },
-  { value: "SNACK", label: "加餐" },
-];
+function buildEmptyForm() {
+  return {
+    id: null,
+    name: "",
+    description: "",
+    items: [],
+  };
+}
 
-const MEAL_TYPE_LABELS = MEAL_TYPES.reduce((result, item) => {
-  result[item.value] = item.label;
-  return result;
-}, {});
+function buildEmptySummary() {
+  return {
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    foodCount: 0,
+  };
+}
 
 function toNumber(value) {
   const number = Number(value);
@@ -22,33 +29,80 @@ function toInteger(value) {
   return Math.round(toNumber(value));
 }
 
+function toMacro(value) {
+  return Math.round(toNumber(value) * 10) / 10;
+}
+
+function buildItemTotal(per100g, quantityInGram) {
+  return toInteger((toNumber(per100g) * toNumber(quantityInGram)) / 100);
+}
+
 function normalizeItem(item) {
   const quantityInGram = toNumber(item.quantityInGram);
   return {
     foodId: item.foodId,
     foodName: item.foodName,
-    caloriesPer100g: toInteger(item.caloriesPer100g),
-    proteinPer100g: toInteger(item.proteinPer100g),
-    carbsPer100g: toInteger(item.carbsPer100g),
-    fatPer100g: toInteger(item.fatPer100g),
+    caloriesPer100g: toNumber(item.caloriesPer100g),
+    proteinPer100g: toNumber(item.proteinPer100g),
+    carbsPer100g: toNumber(item.carbsPer100g),
+    fatPer100g: toNumber(item.fatPer100g),
+    caloriesPer100gDisplay: toInteger(item.caloriesPer100g),
     quantityInGram: String(quantityInGram),
-    totalCalories: toInteger((toNumber(item.caloriesPer100g) * quantityInGram) / 100),
+    totalCalories: buildItemTotal(item.caloriesPer100g, quantityInGram),
   };
+}
+
+function buildSummary(items = []) {
+  return items.reduce(
+    (result, item) => {
+      const quantityInGram = toNumber(item.quantityInGram);
+      result.totalCalories += buildItemTotal(item.caloriesPer100g, quantityInGram);
+      result.totalProtein += (toNumber(item.proteinPer100g) * quantityInGram) / 100;
+      result.totalCarbs += (toNumber(item.carbsPer100g) * quantityInGram) / 100;
+      result.totalFat += (toNumber(item.fatPer100g) * quantityInGram) / 100;
+      result.foodCount += 1;
+      return result;
+    },
+    buildEmptySummary()
+  );
+}
+
+function decorateCombo(combo) {
+  const items = (combo.items || []).map(normalizeItem);
+  const summary = buildSummary(items);
+  return {
+    ...combo,
+    items,
+    totalCalories: summary.totalCalories,
+    totalProtein: toMacro(summary.totalProtein),
+    totalCarbs: toMacro(summary.totalCarbs),
+    totalFat: toMacro(summary.totalFat),
+    foodCount: summary.foodCount,
+  };
+}
+
+function syncNavigationTitle(editing, editMode) {
+  let title = "常用套餐";
+  if (editing) {
+    title = editMode === "edit" ? "编辑套餐" : "新建套餐";
+  }
+  wx.setNavigationBarTitle({ title });
 }
 
 Page({
   data: {
     combos: [],
-    mealTypeLabels: MEAL_TYPE_LABELS,
-    mealTypes: MEAL_TYPES,
     editing: false,
-    editForm: {
-      id: null,
-      name: "",
-      description: "",
-      mealType: "BREAKFAST",
-      items: [],
-    },
+    editMode: "create",
+    editForm: buildEmptyForm(),
+    editSummary: buildEmptySummary(),
+  },
+
+  onLoad(options = {}) {
+    syncNavigationTitle(false, "create");
+    if (options.mode === "create") {
+      this.handleStartCreate();
+    }
   },
 
   onShow() {
@@ -60,26 +114,64 @@ Page({
   loadCombos() {
     getMealComboList()
       .then((result) => {
-        this.setData({ combos: result.combos || [] });
+        const combos = (result.combos || []).map(decorateCombo);
+        this.setData({ combos });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       });
   },
 
+  startEditing(mode, form) {
+    const items = (form.items || []).map(normalizeItem);
+    const summary = buildSummary(items);
+    this.setData({
+      editing: true,
+      editMode: mode,
+      editForm: {
+        ...buildEmptyForm(),
+        ...form,
+        items,
+      },
+      editSummary: {
+        totalCalories: summary.totalCalories,
+        totalProtein: toMacro(summary.totalProtein),
+        totalCarbs: toMacro(summary.totalCarbs),
+        totalFat: toMacro(summary.totalFat),
+        foodCount: summary.foodCount,
+      },
+    }, () => {
+      syncNavigationTitle(true, mode);
+    });
+  },
+
+  updateEditItems(items) {
+    const summary = buildSummary(items);
+    this.setData({
+      "editForm.items": items,
+      editSummary: {
+        totalCalories: summary.totalCalories,
+        totalProtein: toMacro(summary.totalProtein),
+        totalCarbs: toMacro(summary.totalCarbs),
+        totalFat: toMacro(summary.totalFat),
+        foodCount: summary.foodCount,
+      },
+    });
+  },
+
+  handleStartCreate() {
+    this.startEditing("create", buildEmptyForm());
+  },
+
   handleEdit(event) {
     const comboId = Number(event.currentTarget.dataset.id);
     getMealComboDetail(comboId)
       .then((combo) => {
-        this.setData({
-          editing: true,
-          editForm: {
-            id: combo.id,
-            name: combo.name || "",
-            description: combo.description || "",
-            mealType: combo.mealType || "BREAKFAST",
-            items: (combo.items || []).map(normalizeItem),
-          },
+        this.startEditing("edit", {
+          id: combo.id,
+          name: combo.name || "",
+          description: combo.description || "",
+          items: combo.items || [],
         });
       })
       .catch((error) => {
@@ -88,10 +180,11 @@ Page({
   },
 
   handleDelete(event) {
-    const comboId = Number(event.currentTarget.dataset.id);
+    const comboId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
+    const target = this.data.combos.find((item) => Number(item.id) === comboId);
     wx.showModal({
       title: "删除套餐",
-      content: "删除后不可恢复，是否继续？",
+      content: target ? `确认删除“${target.name}”吗？` : "删除后不可恢复，是否继续？",
       success: (result) => {
         if (!result.confirm) {
           return;
@@ -99,6 +192,7 @@ Page({
         deleteMealCombo(comboId)
           .then(() => {
             wx.showToast({ title: "删除成功", icon: "success" });
+            this.handleCancelEdit(false);
             this.loadCombos();
           })
           .catch((error) => {
@@ -110,10 +204,6 @@ Page({
 
   handleEditName(event) {
     this.setData({ "editForm.name": event.detail.value });
-  },
-
-  handleMealTypeTap(event) {
-    this.setData({ "editForm.mealType": event.currentTarget.dataset.mealType });
   },
 
   handleAddFood() {
@@ -132,8 +222,11 @@ Page({
     const targetIndex = items.findIndex((item) => item.foodId === food.id);
     if (targetIndex >= 0) {
       const nextQuantity = toNumber(items[targetIndex].quantityInGram) + 100;
-      items[targetIndex].quantityInGram = String(nextQuantity);
-      items[targetIndex].totalCalories = toInteger((toNumber(items[targetIndex].caloriesPer100g) * nextQuantity) / 100);
+      items[targetIndex] = {
+        ...items[targetIndex],
+        quantityInGram: String(nextQuantity),
+        totalCalories: buildItemTotal(items[targetIndex].caloriesPer100g, nextQuantity),
+      };
     } else {
       items.push(normalizeItem({
         foodId: food.id,
@@ -145,7 +238,7 @@ Page({
         quantityInGram: 100,
       }));
     }
-    this.setData({ "editForm.items": items });
+    this.updateEditItems(items);
   },
 
   handleQuantityInput(event) {
@@ -156,40 +249,39 @@ Page({
     items[index] = {
       ...items[index],
       quantityInGram: value,
-      totalCalories: toInteger((toNumber(items[index].caloriesPer100g) * quantity) / 100),
+      totalCalories: buildItemTotal(items[index].caloriesPer100g, quantity),
     };
-    this.setData({ "editForm.items": items });
+    this.updateEditItems(items);
   },
 
   handleRemoveFood(event) {
     const index = Number(event.currentTarget.dataset.index);
     const items = this.data.editForm.items.filter((_, itemIndex) => itemIndex !== index);
-    this.setData({ "editForm.items": items });
+    this.updateEditItems(items);
   },
 
-  handleCancelEdit() {
+  handleCancelEdit(shouldReload = true) {
     this.setData({
       editing: false,
-      editForm: {
-        id: null,
-        name: "",
-        description: "",
-        mealType: "BREAKFAST",
-        items: [],
-      },
+      editMode: "create",
+      editForm: buildEmptyForm(),
+      editSummary: buildEmptySummary(),
+    }, () => {
+      syncNavigationTitle(false, "create");
+      if (shouldReload) {
+        this.loadCombos();
+      }
     });
-    this.loadCombos();
   },
 
   handleSaveEdit() {
-    const { id, name, description, mealType, items } = this.data.editForm;
-    const comboName = (name || "").trim();
+    const { id, name, description, items } = this.data.editForm;
+    const comboName = String(name || "").trim();
 
     if (!comboName) {
       wx.showToast({ title: "请输入套餐名称", icon: "none" });
       return;
     }
-
     if (!items.length) {
       wx.showToast({ title: "请至少保留一种食物", icon: "none" });
       return;
@@ -201,17 +293,19 @@ Page({
       return;
     }
 
-    updateMealCombo(id, {
+    const payload = {
       name: comboName,
       description,
-      mealType,
       items: items.map((item) => ({
         foodId: item.foodId,
         quantityInGram: toNumber(item.quantityInGram),
       })),
-    })
+    };
+
+    const task = id ? updateMealCombo(id, payload) : createMealCombo(payload);
+    task
       .then(() => {
-        wx.showToast({ title: "保存成功", icon: "success" });
+        wx.showToast({ title: id ? "保存成功" : "创建成功", icon: "success" });
         this.handleCancelEdit();
       })
       .catch((error) => {

@@ -175,8 +175,18 @@ function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
   return `/pages/food-search/index?${params.join("&")}`;
 }
 
-function buildExerciseEditorUrl(recordDate) {
-  return `/pages/exercise-editor/index?recordDate=${encodeURIComponent(recordDate)}`;
+function buildExerciseSearchUrl({ recordDate, source, mode, recordId }) {
+  const params = [
+    `recordDate=${encodeURIComponent(recordDate)}`,
+    `source=${encodeURIComponent(source)}`,
+  ];
+  if (mode) {
+    params.push(`mode=${encodeURIComponent(mode)}`);
+  }
+  if (recordId != null) {
+    params.push(`recordId=${encodeURIComponent(recordId)}`);
+  }
+  return `/pages/exercise-search/index?${params.join("&")}`;
 }
 
 function resolveMealNutrition(records) {
@@ -239,20 +249,31 @@ Page({
 
   onShow() {
     const app = getApp();
+    const pendingHomeRecordDate = app.globalData.pendingHomeRecordDate || "";
+    app.globalData.pendingHomeRecordDate = "";
     if (app.globalData.refreshHomeOnShow) {
       app.globalData.refreshHomeOnShow = false;
     }
 
-    this.refreshDateMeta();
-    this.maybeOpenOnboarding()
-      .then((opened) => {
-        if (!opened) {
+    const continueShowFlow = () => {
+      this.refreshDateMeta();
+      this.maybeOpenOnboarding()
+        .then((opened) => {
+          if (!opened) {
+            this.loadSummary();
+          }
+        })
+        .catch(() => {
           this.loadSummary();
-        }
-      })
-      .catch(() => {
-        this.loadSummary();
-      });
+        });
+    };
+
+    if (pendingHomeRecordDate && pendingHomeRecordDate !== this.data.recordDate) {
+      this.setData({ recordDate: pendingHomeRecordDate }, continueShowFlow);
+      return;
+    }
+
+    continueShowFlow();
   },
 
   onPullDownRefresh() {
@@ -401,7 +422,11 @@ Page({
 
   handleQuickAddExercise() {
     wx.navigateTo({
-      url: buildExerciseEditorUrl(this.data.recordDate),
+      url: buildExerciseSearchUrl({
+        recordDate: this.data.recordDate,
+        source: "home",
+        mode: "create",
+      }),
     });
   },
 
@@ -540,7 +565,12 @@ Page({
     }
 
     wx.navigateTo({
-      url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
+      url: buildExerciseSearchUrl({
+        recordDate,
+        source: "home",
+        mode: "edit",
+        recordId,
+      }),
     });
   },
 

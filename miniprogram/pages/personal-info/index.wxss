@@ -16,7 +16,7 @@
   display: inline-flex;
   font-size: 22rpx;
   font-weight: 700;
-  margin-top: 22rpx;
+  margin-top: 0;
   padding: 10rpx 20rpx;
 }
 
@@ -24,105 +24,14 @@
   margin-top: 28rpx;
 }
 
-.two-column {
-  display: flex;
-  gap: 16rpx;
-}
-
-.field-half {
-  flex: 1;
-}
-
 .field-picker {
+  align-items: center;
   background: #fffef9;
   border: 2rpx solid rgba(70, 57, 47, 0.12);
   border-radius: 22rpx;
   color: #2f2a24;
+  display: flex;
   font-size: 28rpx;
   min-height: 88rpx;
-  padding: 24rpx;
-}
-
-.bmr-panel {
-  background: linear-gradient(130deg, rgba(30, 90, 79, 0.14) 0%, rgba(255, 253, 248, 0.95) 58%);
-  padding: 28rpx;
-}
-
-.bmr-head {
-  align-items: flex-start;
-  display: flex;
-  gap: 16rpx;
-  justify-content: space-between;
-}
-
-.bmr-subtitle {
-  color: #6c766f;
-  font-size: 24rpx;
-  margin-top: 10rpx;
-}
-
-.bmr-badge {
-  background: rgba(30, 90, 79, 0.14);
-  border-radius: 999rpx;
-  color: #1e5a4f;
-  font-size: 22rpx;
-  font-weight: 700;
-  padding: 8rpx 16rpx;
-}
-
-.bmr-input-row {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 24rpx;
-}
-
-.bmr-input {
-  flex: 1;
-}
-
-.mode-chip {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.86);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
-  border-radius: 999rpx;
-  color: #1e5a4f;
-  display: inline-flex;
-  font-size: 24rpx;
-  font-weight: 600;
-  height: 72rpx;
-  justify-content: center;
-  min-width: 188rpx;
-  padding: 0 20rpx;
-}
-
-.mode-chip.active {
-  background: rgba(30, 90, 79, 0.16);
-  border-color: rgba(30, 90, 79, 0.28);
-}
-
-.formula-hint {
-  background: rgba(255, 255, 255, 0.84);
-  border-radius: 18rpx;
-  color: #2f2a24;
-  font-size: 24rpx;
-  margin-top: 16rpx;
-  padding: 18rpx 20rpx;
-}
-
-.formula-hint.disabled {
-  color: #8f877d;
-}
-
-.bmr-unit {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.86);
-  border-radius: 22rpx;
-  color: #46655e;
-  display: flex;
-  font-size: 24rpx;
-  height: 88rpx;
-  padding: 0 18rpx;
-  white-space: nowrap;
+  padding: 0 24rpx;
 }

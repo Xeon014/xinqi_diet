@@ -4,110 +4,210 @@
   gap: 18rpx;
 }
 
-.combo-list,
-.combo-editor {
-  padding: 12rpx 22rpx;
+.combo-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
 }
 
-.combo-item {
+.manage-head,
+.combo-editor-head,
+.combo-section,
+.editor-footer,
+.combo-item,
+.list-head,
+.editor-head-top,
+.food-head {
   align-items: center;
-  border-bottom: 1rpx solid rgba(70, 57, 47, 0.12);
+  display: flex;
+  justify-content: space-between;
+}
+
+.manage-head,
+.combo-editor-head,
+.combo-section {
+  padding: 24rpx;
+}
+
+.combo-list {
+  padding: 24rpx;
+}
+
+.combo-editor-head,
+.combo-section {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.combo-section.compact-row {
+  align-items: center;
+  flex-direction: row;
+  gap: 18rpx;
+}
+
+.editor-head-top {
+  align-items: center;
+}
+
+.editor-head-actions {
   display: flex;
   gap: 12rpx;
-  justify-content: space-between;
-  min-height: 110rpx;
-  padding: 14rpx 0;
+  justify-content: flex-end;
 }
 
-.combo-item:last-child {
-  border-bottom: 0;
-}
-
-.combo-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.combo-name {
-  color: #2f2a24;
-  font-size: 30rpx;
-  font-weight: 700;
-}
-
-.combo-meta {
-  color: #74685c;
-  font-size: 22rpx;
-  margin-top: 6rpx;
-}
-
-.combo-actions {
+.icon-action {
+  align-items: center;
+  background: rgba(70, 57, 47, 0.08);
+  border-radius: 999rpx;
+  color: #46392f;
   display: flex;
-  gap: 10rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  height: 64rpx;
+  justify-content: center;
+  width: 64rpx;
 }
 
-.action-btn {
+.action-btn,
+.mini-action {
   align-items: center;
   background: rgba(30, 90, 79, 0.1);
-  border-radius: 12rpx;
+  border-radius: 999rpx;
   color: #1e5a4f;
   display: flex;
   font-size: 22rpx;
   font-weight: 700;
-  height: 56rpx;
   justify-content: center;
-  padding: 0 16rpx;
 }
 
-.action-btn.danger {
+.action-btn {
+  min-width: 104rpx;
+  padding: 16rpx 22rpx;
+}
+
+.action-btn.small {
+  min-width: 120rpx;
+  padding: 12rpx 20rpx;
+}
+
+.mini-action {
+  min-width: 88rpx;
+  padding: 12rpx 18rpx;
+}
+
+.action-btn.danger,
+.mini-action.danger {
   background: rgba(185, 94, 58, 0.12);
   color: #b95e3a;
 }
 
-.meal-types {
-  display: flex;
-  gap: 10rpx;
-  margin-top: 8rpx;
-}
-
-.meal-chip {
-  background: rgba(70, 57, 47, 0.08);
-  border-radius: 999rpx;
-  color: #665b50;
+.list-count {
+  color: #74685c;
   font-size: 22rpx;
-  padding: 8rpx 14rpx;
 }
 
-.meal-chip.active {
-  background: rgba(30, 90, 79, 0.14);
-  color: #1e5a4f;
+.field-label {
+  color: #46392f;
+  font-size: 24rpx;
+  font-weight: 700;
 }
 
-.list-head {
+.field-input {
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.14);
+  border-radius: 18rpx;
+  box-sizing: border-box;
+  color: #2f2a24;
+  font-size: 28rpx;
+  height: 88rpx;
+  margin-top: 16rpx;
+  padding: 0 24rpx;
+  width: 100%;
+}
+
+.inline-label {
+  flex-shrink: 0;
+}
+
+.inline-input {
+  flex: 1;
+  height: 72rpx;
+  margin-top: 0;
+  min-width: 0;
+}
+
+.summary-card {
+  gap: 14rpx;
+}
+
+.summary-head {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-top: 8rpx;
 }
 
-.add-food-btn {
+.summary-brief {
   color: #1e5a4f;
   font-size: 24rpx;
   font-weight: 700;
 }
 
-.food-list {
+.summary-grid {
+  display: grid;
+  gap: 10rpx;
+  grid-template-columns: 1.15fr 1fr 1fr 1fr;
+}
+
+.summary-item {
+  background: #fffaf0;
+  border: 1rpx solid rgba(70, 57, 47, 0.08);
+  border-radius: 16rpx;
+  min-height: 96rpx;
+  padding: 16rpx 18rpx;
+}
+
+.summary-item.primary {
+  background: linear-gradient(180deg, #f4efe4 0%, #efe4d4 100%);
+}
+
+.summary-label {
+  color: #7a6d61;
+  font-size: 20rpx;
+}
+
+.summary-value {
+  color: #2f2a24;
+  font-size: 30rpx;
+  font-weight: 700;
   margin-top: 10rpx;
+}
+
+.summary-unit {
+  color: #1e5a4f;
+  font-size: 20rpx;
+  margin-top: 4rpx;
+}
+
+.combo-food-section {
+  gap: 12rpx;
+}
+
+.food-list {
+  margin-top: 4rpx;
 }
 
 .food-item {
   border-top: 1rpx solid rgba(70, 57, 47, 0.12);
-  padding: 14rpx 0;
+  padding: 16rpx 0;
+}
+
+.food-item:first-child {
+  border-top: 0;
+  padding-top: 0;
 }
 
 .food-head {
   align-items: center;
-  display: flex;
-  justify-content: space-between;
 }
 
 .food-name {
@@ -124,14 +224,14 @@
 .food-meta {
   color: #74685c;
   font-size: 21rpx;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
 }
 
 .food-row {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-top: 10rpx;
+  margin-top: 14rpx;
 }
 
 .quantity-box {
@@ -162,15 +262,78 @@
   font-weight: 700;
 }
 
-.empty-tip {
+.empty-box {
+  align-items: center;
+  background: rgba(70, 57, 47, 0.04);
+  border-radius: 18rpx;
   color: #74685c;
+  display: flex;
   font-size: 22rpx;
-  margin-top: 12rpx;
+  height: 120rpx;
+  justify-content: center;
+  margin-top: 4rpx;
 }
 
-.editor-actions {
+.danger-link {
+  color: #b95e3a;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 4rpx 6rpx 0;
+  text-align: center;
+}
+
+.combo-item {
+  border-top: 1rpx solid rgba(70, 57, 47, 0.12);
+  box-sizing: border-box;
+  gap: 12rpx;
+  min-height: 110rpx;
+  padding: 18rpx 0;
+  width: 100%;
+}
+
+.combo-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.combo-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.combo-name {
+  color: #2f2a24;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.combo-meta {
+  color: #74685c;
+  font-size: 22rpx;
+  margin-top: 8rpx;
+}
+
+.combo-actions {
+  display: flex;
+  gap: 10rpx;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.editor-footer-placeholder {
+  height: 140rpx;
+}
+
+.editor-footer {
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  box-shadow: 0 18rpx 48rpx rgba(47, 42, 36, 0.12);
   display: grid;
   gap: 12rpx;
   grid-template-columns: 1fr 1fr;
-  margin-top: 16rpx;
+  left: 24rpx;
+  padding: 20rpx;
+  position: fixed;
+  right: 24rpx;
+  z-index: 10;
 }

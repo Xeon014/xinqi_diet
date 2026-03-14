@@ -41,7 +41,7 @@ public class ExerciseRecordService {
 
     public ExerciseRecordResponse create(Long userId, CreateExerciseRecordRequest request) {
         UserProfile user = getUser(userId);
-        Exercise exercise = getExercise(request.exerciseId());
+        Exercise exercise = getAccessibleExercise(userId, request.exerciseId());
         ExerciseIntensity intensity = normalizeIntensity(request.intensityLevel());
         BigDecimal weightForCalculation = resolveWeightForCalculation(user);
 
@@ -76,6 +76,7 @@ public class ExerciseRecordService {
         record.setDurationMinutes(request.durationMinutes());
         record.setIntensityLevel(intensity);
         record.setIntensityFactor(intensity.factor());
+        record.setRecordDate(request.recordDate());
         record.setTotalCalories(ExerciseRecord.calculateTotalCalories(
                 exercise.getMetValue(),
                 record.getWeightKgSnapshot(),
@@ -146,6 +147,11 @@ public class ExerciseRecordService {
 
     private Exercise getExercise(Long exerciseId) {
         return exerciseRepository.findById(exerciseId)
+                .orElseThrow(() -> new NotFoundException("exercise not found, id=" + exerciseId));
+    }
+
+    private Exercise getAccessibleExercise(Long userId, Long exerciseId) {
+        return exerciseRepository.findAccessibleById(userId, exerciseId)
                 .orElseThrow(() -> new NotFoundException("exercise not found, id=" + exerciseId));
     }
 

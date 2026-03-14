@@ -52,7 +52,7 @@ public class ExerciseRecordController {
                 .body(ApiResponse.created(exerciseRecordService.create(userId, request)));
     }
 
-    @Operation(summary = "更新运动记录", description = "按记录 ID 更新时长和强度")
+    @Operation(summary = "更新运动记录", description = "按记录 ID 更新时长、强度和日期")
     @PutMapping("/{id}")
     public ApiResponse<ExerciseRecordResponse> update(
             @Parameter(description = "运动记录 ID") @PathVariable Long id,

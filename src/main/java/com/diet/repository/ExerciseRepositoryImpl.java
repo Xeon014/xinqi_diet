@@ -31,17 +31,37 @@ public class ExerciseRepositoryImpl implements ExerciseRepository {
     }
 
     @Override
+    public void deleteById(Long id) {
+        exerciseMapper.deleteById(id);
+    }
+
+    @Override
     public Optional<Exercise> findById(Long id) {
         return Optional.ofNullable(exerciseMapper.selectById(id));
     }
 
     @Override
-    public Optional<Exercise> findByNameIgnoreCase(String name) {
-        return Optional.ofNullable(exerciseMapper.findByNameIgnoreCase(name));
+    public Optional<Exercise> findAccessibleById(Long userId, Long id) {
+        return Optional.ofNullable(exerciseMapper.findAccessibleById(userId, id));
     }
 
     @Override
-    public List<Exercise> findAll(String keyword, String category) {
-        return exerciseMapper.findAll(keyword, category);
+    public Optional<Exercise> findOwnedCustomById(Long userId, Long id) {
+        return Optional.ofNullable(exerciseMapper.findOwnedCustomById(userId, id));
+    }
+
+    @Override
+    public Optional<Exercise> findByAccessibleNameIgnoreCase(Long userId, String name) {
+        return Optional.ofNullable(exerciseMapper.findByAccessibleNameIgnoreCase(userId, name));
+    }
+
+    @Override
+    public List<Exercise> findAll(Long userId, String keyword, String category) {
+        return exerciseMapper.findAll(userId, keyword, category);
+    }
+
+    @Override
+    public List<Exercise> findCustomByUser(Long userId, String keyword, String category) {
+        return exerciseMapper.findCustomByUser(userId, keyword, category);
     }
 }

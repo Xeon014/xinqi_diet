@@ -7,6 +7,7 @@ const ONBOARDING_PENDING_PREFIX = "onboarding_pending_";
 App({
   globalData: {
     refreshHomeOnShow: false,
+    pendingHomeRecordDate: "",
     onboardingPendingUserId: null,
   },
 

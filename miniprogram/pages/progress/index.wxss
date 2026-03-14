@@ -1,31 +1,62 @@
 .progress-page {
   display: flex;
   flex-direction: column;
+  gap: 20rpx;
   min-height: 100vh;
 }
 
 .coming-soon {
   align-items: center;
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, 0.8), rgba(248, 240, 230, 0.88)),
+    rgba(255, 252, 246, 0.92);
+  border: 1rpx solid rgba(70, 57, 47, 0.12);
+  border-radius: 30rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-top: 200rpx;
+  min-height: 520rpx;
+  padding: 40rpx 32rpx;
   text-align: center;
 }
 
-.coming-soon-icon {
-  font-size: 120rpx;
-  margin-bottom: 32rpx;
+.trend-mark {
+  align-items: flex-end;
+  display: flex;
+  gap: 18rpx;
+  height: 132rpx;
+  margin-bottom: 28rpx;
+}
+
+.trend-bar {
+  border-radius: 999rpx 999rpx 18rpx 18rpx;
+  width: 32rpx;
+}
+
+.trend-bar-1 {
+  background: rgba(30, 90, 79, 0.2);
+  height: 70rpx;
+}
+
+.trend-bar-2 {
+  background: rgba(30, 90, 79, 0.46);
+  height: 104rpx;
+}
+
+.trend-bar-3 {
+  background: rgba(185, 94, 58, 0.28);
+  height: 132rpx;
 }
 
 .coming-soon-title {
   color: #2f2a24;
   font-size: 36rpx;
-  font-weight: 600;
-  margin-bottom: 16rpx;
+  font-weight: 700;
+  margin-bottom: 12rpx;
 }
 
 .coming-soon-desc {
   color: #8f8373;
-  font-size: 28rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
 }

@@ -31,17 +31,37 @@ public class FoodRepositoryImpl implements FoodRepository {
     }
 
     @Override
+    public void deleteById(Long id) {
+        foodMapper.deleteById(id);
+    }
+
+    @Override
     public Optional<Food> findById(Long id) {
         return Optional.ofNullable(foodMapper.selectById(id));
     }
 
     @Override
-    public Optional<Food> findByNameIgnoreCase(String name) {
-        return Optional.ofNullable(foodMapper.findByNameIgnoreCase(name));
+    public Optional<Food> findAccessibleById(Long userId, Long id) {
+        return Optional.ofNullable(foodMapper.findAccessibleById(userId, id));
     }
 
     @Override
-    public List<Food> findAll(String keyword) {
-        return foodMapper.findAll(keyword);
+    public Optional<Food> findOwnedCustomById(Long userId, Long id) {
+        return Optional.ofNullable(foodMapper.findOwnedCustomById(userId, id));
+    }
+
+    @Override
+    public Optional<Food> findByAccessibleNameIgnoreCase(Long userId, String name) {
+        return Optional.ofNullable(foodMapper.findByAccessibleNameIgnoreCase(userId, name));
+    }
+
+    @Override
+    public List<Food> findAll(Long userId, String keyword) {
+        return foodMapper.findAll(userId, keyword);
+    }
+
+    @Override
+    public List<Food> findCustomByUser(Long userId, String keyword) {
+        return foodMapper.findCustomByUser(userId, keyword);
     }
 }

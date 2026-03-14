@@ -27,6 +27,8 @@ public class UserProfile {
 
     private static final BigDecimal FEMALE_OFFSET = new BigDecimal("-161");
 
+    private static final BigDecimal DAILY_CONSUMPTION_BASE_RATIO = new BigDecimal("0.70");
+
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -65,6 +67,15 @@ public class UserProfile {
     @TableField("custom_bmr")
     private Integer customBmr;
 
+    @TableField("custom_tdee")
+    private Integer customTdee;
+
+    @TableField("goal_mode")
+    private GoalMode goalMode;
+
+    @TableField("goal_calorie_delta")
+    private Integer goalCalorieDelta;
+
     @TableField("last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -80,7 +91,10 @@ public class UserProfile {
             Integer dailyCalorieTarget,
             BigDecimal currentWeight,
             BigDecimal targetWeight,
-            Integer customBmr
+            Integer customBmr,
+            Integer customTdee,
+            GoalMode goalMode,
+            Integer goalCalorieDelta
     ) {
         this.name = name;
         this.gender = gender;
@@ -91,6 +105,9 @@ public class UserProfile {
         this.currentWeight = currentWeight;
         this.targetWeight = targetWeight;
         this.customBmr = customBmr;
+        this.customTdee = customTdee;
+        this.goalMode = goalMode;
+        this.goalCalorieDelta = goalCalorieDelta;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -103,7 +120,10 @@ public class UserProfile {
             Integer dailyCalorieTarget,
             BigDecimal currentWeight,
             BigDecimal targetWeight,
-            Integer customBmr
+            Integer customBmr,
+            Integer customTdee,
+            GoalMode goalMode,
+            Integer goalCalorieDelta
     ) {
         this.name = name;
         this.gender = gender;
@@ -114,6 +134,9 @@ public class UserProfile {
         this.currentWeight = currentWeight;
         this.targetWeight = targetWeight;
         this.customBmr = customBmr;
+        this.customTdee = customTdee;
+        this.goalMode = goalMode;
+        this.goalCalorieDelta = goalCalorieDelta;
     }
 
     public Integer calculateAge() {
@@ -153,12 +176,38 @@ public class UserProfile {
         return calculateFormulaBmr();
     }
 
-    public BigDecimal calculateTdee() {
+    public BigDecimal calculateEstimatedTdee() {
         BigDecimal bmr = calculateBmr();
-        if (bmr == null || activityLevel == null) {
+        if (bmr == null) {
             return null;
         }
-        return bmr.multiply(activityLevel.getMultiplier()).setScale(2, RoundingMode.HALF_UP);
+        return bmr.divide(DAILY_CONSUMPTION_BASE_RATIO, 2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calculateTdee() {
+        if (customTdee != null && customTdee > 0) {
+            return BigDecimal.valueOf(customTdee).setScale(2, RoundingMode.HALF_UP);
+        }
+        return calculateEstimatedTdee();
+    }
+
+    public GoalMode resolveGoalMode() {
+        return goalMode != null ? goalMode : GoalMode.MAINTAIN;
+    }
+
+    public int resolveGoalCalorieDelta() {
+        if (goalCalorieDelta != null) {
+            return goalCalorieDelta;
+        }
+        return resolveGoalMode().getDefaultDelta();
+    }
+
+    public Integer calculateTargetCalories() {
+        BigDecimal tdee = calculateTdee();
+        if (tdee == null) {
+            return null;
+        }
+        return tdee.setScale(0, RoundingMode.HALF_UP).intValue() + resolveGoalCalorieDelta();
     }
 
     public BigDecimal weightToLose() {

@@ -43,8 +43,6 @@ class HealthDiaryServiceTest {
     @Test
     void shouldCreateDiaryForFirstUpsert() {
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(new UserProfile()));
-        when(healthDiaryRepository.findByUserAndDate(1L, LocalDate.of(2026, 3, 11)))
-                .thenReturn(Optional.empty());
         doAnswer(invocation -> {
             HealthDiary diary = invocation.getArgument(0);
             diary.setId(10L);
@@ -98,8 +96,6 @@ class HealthDiaryServiceTest {
     @Test
     void shouldRejectWhenContentAndImagesAreBothEmpty() {
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(new UserProfile()));
-        when(healthDiaryRepository.findByUserAndDate(1L, LocalDate.of(2026, 3, 11)))
-                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> healthDiaryService.upsert(
                 1L,
@@ -113,8 +109,6 @@ class HealthDiaryServiceTest {
     @Test
     void shouldRejectWhenImageCountExceedsLimit() {
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(new UserProfile()));
-        when(healthDiaryRepository.findByUserAndDate(1L, LocalDate.of(2026, 3, 11)))
-                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> healthDiaryService.upsert(
                 1L,

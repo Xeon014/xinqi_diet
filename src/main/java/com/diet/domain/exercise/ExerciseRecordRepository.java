@@ -14,6 +14,8 @@ public interface ExerciseRecordRepository {
 
     void deleteById(Long id);
 
+    long countByExerciseId(Long exerciseId);
+
     List<ExerciseRecord> findByUserAndDate(Long userId, LocalDate date);
 
     List<ExerciseRecord> findByUserAndDateRange(Long userId, LocalDate startDate, LocalDate endDate);

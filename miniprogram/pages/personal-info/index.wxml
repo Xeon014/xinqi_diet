@@ -1,6 +1,5 @@
 <view class="page-shell personal-page" wx:if="{{profile}}">
   <view class="panel personal-panel">
-    <view class="section-title">个人信息</view>
     <view class="age-chip">{{profile.age == null ? '年龄未设置' : profile.age + ' 岁'}}</view>
 
     <view class="field-group">
@@ -29,57 +28,16 @@
       </picker>
     </view>
 
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">身高(cm)</view>
-        <input class="field-input" type="digit" value="{{form.height}}" data-field="height" bindinput="handleInput" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">当前体重(kg)</view>
-        <input class="field-input" type="digit" value="{{form.currentWeight}}" data-field="currentWeight" bindinput="handleInput" />
-      </view>
-    </view>
-
     <view class="field-group">
-      <view class="field-label">目标体重(kg)</view>
-      <input class="field-input" type="digit" value="{{form.targetWeight}}" data-field="targetWeight" bindinput="handleInput" />
-    </view>
-  </view>
-
-  <view class="panel bmr-panel">
-    <view class="bmr-head">
-      <view>
-        <view class="section-title">基础代谢</view>
-        <view class="bmr-subtitle">可填写你更认可的日常代谢值</view>
-      </view>
-      <view class="bmr-badge">BMR</view>
-    </view>
-
-    <view class="bmr-input-row">
-      <view
-        class="mode-chip {{form.bmrMode === 'FORMULA' ? 'active' : ''}}"
-        data-mode="FORMULA"
-        bindtap="handleBmrModeChange"
-      >
-        公式计算
-      </view>
-      <view
-        class="mode-chip {{form.bmrMode === 'MANUAL' ? 'active' : ''}}"
-        data-mode="MANUAL"
-        bindtap="handleBmrModeChange"
-      >
-        手动填写
-      </view>
-    </view>
-
-    <view wx:if="{{form.bmrMode === 'FORMULA'}}" class="formula-hint {{formulaAvailable ? '' : 'disabled'}}">
-      <view wx:if="{{formulaAvailable}}">预计基础代谢 {{formulaBmrPreview}} kcal/天</view>
-      <view wx:else>需先填写性别、生日、身高和体重</view>
-    </view>
-
-    <view wx:if="{{form.bmrMode === 'MANUAL'}}" class="bmr-input-row">
-      <input class="field-input bmr-input" type="number" value="{{form.customBmr}}" data-field="customBmr" bindinput="handleInput" placeholder="请输入基础代谢" />
-      <view class="bmr-unit">kcal/天</view>
+      <view class="field-label">身高(cm)</view>
+      <input
+        class="field-input"
+        type="digit"
+        value="{{form.height}}"
+        data-field="height"
+        bindinput="handleInput"
+        placeholder="请输入身高"
+      />
     </view>
   </view>
 

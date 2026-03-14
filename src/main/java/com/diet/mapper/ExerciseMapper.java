@@ -9,7 +9,17 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface ExerciseMapper extends BaseMapper<Exercise> {
 
-    Exercise findByNameIgnoreCase(String name);
+    Exercise findAccessibleById(@Param("userId") Long userId, @Param("id") Long id);
 
-    List<Exercise> findAll(@Param("keyword") String keyword, @Param("category") String category);
+    Exercise findOwnedCustomById(@Param("userId") Long userId, @Param("id") Long id);
+
+    Exercise findByAccessibleNameIgnoreCase(@Param("userId") Long userId, @Param("name") String name);
+
+    List<Exercise> findAll(@Param("userId") Long userId, @Param("keyword") String keyword, @Param("category") String category);
+
+    List<Exercise> findCustomByUser(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("category") String category
+    );
 }

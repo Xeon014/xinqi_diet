@@ -1,89 +1,123 @@
-<view class="page-shell health-page" wx:if="{{profile && summary}}">
+<view class="page-shell health-page" wx:if="{{profile}}">
   <view class="panel module-panel">
-    <view class="section-title">核心指标</view>
+    <view class="section-title">今日概览</view>
 
     <view class="metrics-grid">
       <view class="metric-card green">
-        <view class="metric-label">体重</view>
-        <view class="metric-value">{{profile.currentWeight}}</view>
+        <view class="metric-label">当前体重</view>
+        <view class="metric-value">{{metrics.currentWeightLabel}}</view>
         <view class="metric-unit">kg</view>
       </view>
       <view class="metric-card sand">
         <view class="metric-label">BMI</view>
-        <view class="metric-value">{{profile.bmi}}</view>
+        <view class="metric-value">{{metrics.bmiLabel}}</view>
         <view class="metric-unit">指数</view>
       </view>
       <view class="metric-card teal">
         <view class="metric-label">基础代谢(BMR)</view>
-        <view class="metric-value">{{profile.bmr}}</view>
+        <view class="metric-value">{{metrics.bmrLabel}}</view>
         <view class="metric-unit">kcal/天</view>
       </view>
-      <view class="metric-card orange">
-        <view class="metric-label">每日消耗(TDEE)</view>
-        <view class="metric-value">{{profile.tdee}}</view>
+      <view class="metric-card plum">
+        <view class="metric-label">目标热量</view>
+        <view class="metric-value">{{metrics.targetCaloriesLabel}}</view>
         <view class="metric-unit">kcal/天</view>
       </view>
     </view>
   </view>
 
   <view class="panel module-panel">
-    <view class="section-title">饮食管理</view>
+    <view class="section-title">目标设置</view>
 
-    <view class="sub-module">
-      <view class="sub-title">热量摄入</view>
-      <view class="calorie-row">
-        <view class="calorie-box">
-          <view class="calorie-label">今日摄入</view>
-          <view class="calorie-value">{{summary.consumedCalories}}</view>
-          <view class="calorie-unit">kcal</view>
-        </view>
-        <view class="calorie-box">
-          <view class="calorie-label">目标热量</view>
-          <input class="field-input compact-input" type="number" value="{{settings.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" />
-        </view>
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">当前体重(kg)</view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{settings.currentWeight}}"
+          data-field="currentWeight"
+          bindinput="handleInput"
+          placeholder="请输入当前体重"
+        />
       </view>
-      <view class="result-pill {{summary.exceededTarget ? 'danger' : 'success'}}">
-        <block wx:if="{{summary.hasTarget}}">
-          {{summary.exceededTarget ? '今日已超出目标热量' : '今日剩余热量 ' + summary.remainingCalories + ' kcal'}}
-        </block>
-        <block wx:else>未设置目标热量</block>
-      </view>
-    </view>
-
-    <view class="sub-module nutrient-module">
-      <view class="sub-title">营养均衡度</view>
-      <view class="nutrient-grid">
-        <view class="nutrient-card">
-          <view class="nutrient-label">蛋白质</view>
-          <view class="nutrient-value">{{summary.proteinIntake}}</view>
-          <view class="nutrient-unit">g</view>
-        </view>
-        <view class="nutrient-card">
-          <view class="nutrient-label">碳水</view>
-          <view class="nutrient-value">{{summary.carbsIntake}}</view>
-          <view class="nutrient-unit">g</view>
-        </view>
-        <view class="nutrient-card">
-          <view class="nutrient-label">脂肪</view>
-          <view class="nutrient-value">{{summary.fatIntake}}</view>
-          <view class="nutrient-unit">g</view>
-        </view>
+      <view class="field-half">
+        <view class="field-label">目标体重(kg)</view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{settings.targetWeight}}"
+          data-field="targetWeight"
+          bindinput="handleInput"
+          placeholder="请输入目标体重"
+        />
       </view>
     </view>
-  </view>
 
-  <view class="panel module-panel">
-    <view class="section-title">运动燃脂</view>
+    <view class="setting-entry-card" bindtap="handleOpenBmrSheet">
+      <view class="setting-entry-main">
+        <view class="setting-entry-title">基础代谢</view>
+        <view class="setting-entry-sub">当前 {{metrics.bmrLabel}} kcal/天</view>
+      </view>
+      <view class="setting-entry-action">去设置</view>
+    </view>
 
-    <view class="field-group">
-      <view class="field-label">活动量</view>
-      <picker mode="selector" range="{{activityOptions}}" range-key="label" value="{{activityIndex}}" bindchange="handleActivityChange">
-        <view class="field-picker">{{activityOptions[activityIndex].label}}</view>
-      </picker>
+    <view class="setting-entry-card" bindtap="handleOpenGoalSheet">
+      <view class="setting-entry-main">
+        <view class="setting-entry-title">目标热量</view>
+        <view class="setting-entry-sub">{{metrics.targetCaloriesHint}}</view>
+      </view>
+      <view class="setting-entry-action">去设置</view>
     </view>
   </view>
 
   <view class="primary-button" bindtap="handleSave">保存</view>
+
+  <view wx:if="{{sheet.visible}}" class="sheet-overlay" bindtap="handleCloseSheet"></view>
+  <view wx:if="{{sheet.visible}}" class="editor-sheet panel" catchtouchmove="noop">
+    <view class="sheet-head">
+      <view>
+        <view class="sheet-title">{{sheet.title}}</view>
+      </view>
+      <view class="sheet-close" bindtap="handleCloseSheet">✕</view>
+    </view>
+
+    <view wx:if="{{sheet.type === 'GOAL'}}">
+      <view class="field-group sheet-field-group">
+        <view class="field-label">{{sheet.fieldLabel}}</view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{sheet.inputValue}}"
+          bindinput="handleSheetInput"
+          placeholder="请输入目标热量"
+        />
+      </view>
+      <view class="sheet-hint">{{sheet.hint}}</view>
+    </view>
+
+    <view wx:else>
+      <view class="field-group sheet-field-group">
+        <view class="field-label">{{sheet.fieldLabel}}</view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{sheet.inputValue}}"
+          bindinput="handleSheetInput"
+          placeholder="请输入数值"
+        />
+      </view>
+
+      <view class="estimate-btn {{sheet.smartAvailable ? '' : 'disabled'}}" bindtap="handleUseSmartValue">
+        使用智能预估值：{{sheet.smartValue}}
+      </view>
+      <view class="sheet-hint">{{sheet.hint}}</view>
+    </view>
+
+    <view class="primary-button sheet-primary" bindtap="handleSaveSheet">
+      {{sheet.saving ? '保存中...' : '保存'}}
+    </view>
+  </view>
 </view>
 
 <empty-state wx:else title="健康档案加载失败" description="下拉刷新后重试。" />

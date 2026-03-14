@@ -6,7 +6,6 @@
                   "pages/food-search/index",
                   "pages/food-item-editor/index",
                   "pages/custom-food/index",
-                  "pages/exercise-editor/index",
                   "pages/exercise-search/index",
                   "pages/custom-exercise/index",
                   "pages/profile/index",

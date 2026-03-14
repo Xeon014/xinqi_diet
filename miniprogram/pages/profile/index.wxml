@@ -21,7 +21,7 @@
 
   <view class="panel card-item" bindtap="handleOpenPersonalInfo">
     <view class="card-main">
-      <view class="card-title">个人信息</view>
+      <view class="card-title">个人资料</view>
     </view>
     <view class="card-arrow">></view>
   </view>

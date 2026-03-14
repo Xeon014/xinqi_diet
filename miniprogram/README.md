@@ -3,18 +3,17 @@
 ## 目录（核心页面）
 
 - `pages/home`：首页（日期切换、净热量总览、分组记录、健康日记入口）
-- `pages/food-search`：食物选择页（搜索、分类、最近搜索、食物编辑底部弹窗）
-- `pages/exercise-editor`：运动记录编辑
-- `pages/exercise-search`：运动搜索与选择
+- `pages/food-search`：食物选择页（搜索、分类、最近搜索、套餐、食物编辑底部弹窗）
+- `pages/exercise-search`：运动选择页（搜索、分类、最近搜索、运动编辑底部弹窗）
 - `pages/health-diary-editor`：健康日记编辑（图文）
 - `pages/profile`：我的页
-- `pages/personal-info`：个人信息维护
-- `pages/health-profile`：健康档案维护
+- `pages/personal-info`：个人基础资料维护
+- `pages/health-profile`：健康档案维护（体重、BMR、TDEE）
 - `pages/meal-combo-manage`：自定义套餐管理
 - `pages/progress`：趋势页
 - `pages/onboarding-profile`：首次登录资料引导
-- `pages/custom-food`：自定义食物创建
-- `pages/custom-exercise`：自定义运动创建
+- `pages/custom-food`：自定义食物管理
+- `pages/custom-exercise`：自定义运动管理
 
 ## 饮食记录链路（当前实现）
 
@@ -23,12 +22,25 @@
 - 在 `food-search` 选中食物后，不再跳转独立页面，而是从底部弹出食物编辑弹窗：
   - 新建场景按钮：`添加`
   - 编辑场景按钮：`完成编辑`
+- 食物选择页左侧筛选：`最近记录 / 最近搜索 / 自定义 / 套餐 / 内置分类`
+- 自定义套餐页不再设置默认餐次，列表显示整套热量，编辑页显示整套热量和三大营养素汇总。
 - 自定义食物入口位于“自定义”列表标题右侧的 `添加` 按钮。
+- “我的 -> 自定义食物”进入独立管理页，支持新建、编辑、删除。
 - 食物列表仅展示名称与热量（`kcal`），不展示蛋白/碳水/脂肪明细。
 
-## 当前无可见业务入口的页面（待后续清理）
+## 运动记录链路（当前实现）
 
-- `pages/meal-editor`
+- 首页右下角加号：进入 `exercise-search`（携带日期）。
+- 首页已有运动记录：进入 `exercise-search` 的编辑模式（携带 `mode=edit&recordId`）。
+- 在 `exercise-search` 选中运动后，从同页底部弹出运动编辑弹窗：
+  - 新建场景按钮：`添加`
+  - 编辑场景按钮：`保存`
+- 运动选择页左侧筛选：`最近运动 / 最近搜索 / 自定义 / 内置分类`
+- 自定义运动入口位于“自定义”筛选标题右侧的 `添加` 按钮。
+- “我的 -> 自定义运动”进入独立管理页，支持新建、编辑、删除。
+
+## 当前无可见业务入口的页面
+
 - `pages/food-item-editor`
 
 ## 联调方式
@@ -36,21 +48,86 @@
 1. 启动后端服务：`mvn spring-boot:run`
 2. 用微信开发者工具打开 `miniprogram` 目录
 3. 在项目配置中确认 `miniprogramRoot` 指向当前目录 `./`
-4. 通过脚本写入 `ext.json` 切换请求通道：
-   - 推荐（一次配置）：`node scripts/switch-ext-config.js local`
-     - `develop` 走本地 `127.0.0.1:8080`
-     - `trial/release` 仍走云托管（发布无需再切）
-   - 如需在开发工具直接联调云托管：`node scripts/switch-ext-config.js trial`
-5. 在微信开发者工具里“清缓存并编译”后生效
+4. 用微信开发者工具以 `develop` 环境联调时，默认直连本地 `127.0.0.1:8080`
+5. `trial/release` 默认走微信云托管，切换逻辑定义在 `utils/constants.js`
+6. 如修改了运行时配置映射，在微信开发者工具里“清缓存并编译”后生效
+
+## 微信开发者工具控制台调试命令
+
+以下命令可直接在微信开发者工具的 Console 中执行。
+
+### 查看当前登录态
+
+```js
+wx.getStorageSync("xinqi_access_token")
+wx.getStorageSync("xinqi_user_id")
+wx.getStorageSync("xinqi_client_user_key")
+getApp().globalData.onboardingPendingUserId
+```
+
+### 让当前账号重新进入首次登录引导
+
+适合调试引导页样式、步骤切换、保存逻辑，不会新建用户。
+
+```js
+const userId = wx.getStorageSync("xinqi_user_id");
+wx.setStorageSync(`onboarding_pending_${userId}`, true);
+getApp().globalData.onboardingPendingUserId = Number(userId);
+wx.reLaunch({ url: "/pages/home/index" });
+```
+
+### 完全模拟“首次登录的新用户”
+
+当前后端 `dev` 环境开启了微信登录 mock，mock 用户身份由 `xinqi_client_user_key` 决定。  
+因此要模拟一个全新的首次登录用户，需要同时清掉登录态和 `clientUserKey`。
+
+```js
+wx.removeStorageSync("xinqi_access_token");
+wx.removeStorageSync("xinqi_user_id");
+wx.removeStorageSync("xinqi_client_user_key");
+getApp().globalData.onboardingPendingUserId = null;
+getApp().ensureLogin(true).then((res) => {
+  console.log("新的登录结果", res);
+  wx.reLaunch({ url: "/pages/home/index" });
+});
+```
+
+### 强制当前账号重新登录
+
+适合排查 token、登录接口、自动鉴权问题，不会清掉 `clientUserKey`。
+
+```js
+wx.removeStorageSync("xinqi_access_token");
+wx.removeStorageSync("xinqi_user_id");
+getApp().ensureLogin(true).then(console.log);
+```
+
+### 标记当前引导已完成
+
+适合测试“非新用户进入首页”的路径。
+
+```js
+const userId = wx.getStorageSync("xinqi_user_id");
+wx.removeStorageSync(`onboarding_pending_${userId}`);
+getApp().globalData.onboardingPendingUserId = null;
+wx.reLaunch({ url: "/pages/home/index" });
+```
+
+### 清空全部本地缓存
+
+```js
+wx.clearStorageSync();
+getApp().globalData.onboardingPendingUserId = null;
+```
 
 ## 关键约定
 
 - 小程序启动时会自动执行 `wx.login`，并调用 `/api/auth/wechat/login`。
 - 登录成功后会本地缓存 `accessToken` 与 `userId`，请求层自动附带 `Authorization`。
 - 新用户首次登录会进入资料引导页，可逐项跳过或全部跳过。
-- 云托管与本地直连开关、环境参数都从 `ext.json` 读取（支持 `ext.runtime.develop/trial/release`）。
-- `utils/constants.js` 中的映射为兜底值，优先级低于 `ext.json`。
 - `app.json` 已启用组件按需注入：`"lazyCodeLoading": "requiredComponents"`。
+- 普通小程序运行时配置以 `utils/constants.js` 为准：`develop` 默认本地直连，`trial/release` 默认走云托管。
+- `ext.json` 仅适用于第三方平台代开发场景，本项目当前 `appid` 不使用该方案。
 
 ## 必跑校验
 

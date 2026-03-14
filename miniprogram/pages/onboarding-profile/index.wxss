@@ -58,41 +58,6 @@
   margin-top: 28rpx;
 }
 
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-top: 28rpx;
-}
-
-.activity-chip {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
-  border-radius: 18rpx;
-  display: flex;
-  flex-direction: column;
-  padding: 20rpx 24rpx;
-}
-
-.activity-chip.active {
-  background: rgba(30, 90, 79, 0.12);
-  border-color: rgba(30, 90, 79, 0.3);
-}
-
-.activity-label {
-  color: #2f2a24;
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.activity-sub {
-  color: #6f6559;
-  font-size: 22rpx;
-  margin-top: 4rpx;
-}
-
-
 .gender-chip {
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
@@ -123,33 +88,6 @@
   padding: 24rpx;
 }
 
-.mode-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 28rpx;
-}
-
-.mode-chip {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.86);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
-  border-radius: 999rpx;
-  color: #1e5a4f;
-  display: inline-flex;
-  font-size: 24rpx;
-  font-weight: 600;
-  height: 72rpx;
-  justify-content: center;
-  min-width: 188rpx;
-  padding: 0 20rpx;
-}
-
-.mode-chip.active {
-  background: rgba(30, 90, 79, 0.16);
-  border-color: rgba(30, 90, 79, 0.28);
-}
-
 .formula-tip {
   background: rgba(255, 255, 255, 0.84);
   border-radius: 18rpx;
@@ -161,6 +99,10 @@
 
 .formula-tip.disabled {
   color: #8f877d;
+}
+
+.goal-input-wrap {
+  margin-top: 28rpx;
 }
 
 .action-row {
@@ -201,5 +143,3 @@
   margin-top: 20rpx;
   padding: 22rpx 24rpx;
 }
-
-

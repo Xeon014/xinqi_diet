@@ -4,15 +4,15 @@ const { pickErrorMessage } = require("../../utils/request");
 const TOOL_ENTRIES = [
   {
     key: "custom-food",
-    title: "自定义食物",
+    title: "我的食物",
   },
   {
     key: "custom-combo",
-    title: "自定义套餐",
+    title: "常用套餐",
   },
   {
     key: "custom-exercise",
-    title: "自定义运动",
+    title: "我的运动",
   },
 ];
 
@@ -30,7 +30,7 @@ function toOneDecimal(value) {
 
 function buildProfileTitle(name) {
   const trimmedName = String(name || "").trim();
-  return trimmedName || "我的资料";
+  return trimmedName ? `你好，${trimmedName}` : "我的身体档案";
 }
 
 function buildProfileSub(profile) {
@@ -89,7 +89,7 @@ Page({
   handleOpenTool(event) {
     const { key } = event.currentTarget.dataset;
     if (key === "custom-food") {
-      wx.navigateTo({ url: "/pages/food-search/index" });
+      wx.navigateTo({ url: "/pages/custom-food/index" });
       return;
     }
     if (key === "custom-combo") {
@@ -97,7 +97,7 @@ Page({
       return;
     }
     if (key === "custom-exercise") {
-      wx.navigateTo({ url: "/pages/exercise-search/index" });
+      wx.navigateTo({ url: "/pages/custom-exercise/index" });
     }
   },
 });

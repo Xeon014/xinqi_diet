@@ -1,16 +1,49 @@
 <view class="page-shell custom-exercise-page">
-  <view class="panel form-panel">
-    <view class="section-title">新增自定义运动</view>
-    <view class="section-subtitle">填写名称、MET 值与分类后保存到运动库</view>
+  <view class="panel manage-head">
+    <view class="list-count">{{displayedExercises.length}} 项常用运动</view>
+    <view class="action-btn" bindtap="handleStartCreate">新建</view>
+  </view>
 
-    <view class="field-group">
-      <view class="field-label">运动名称</view>
-      <input class="field-input" placeholder="例如：室内骑行" data-field="name" value="{{form.name}}" bindinput="handleInput" />
+  <view class="panel search-bar">
+    <input class="search-input" placeholder="搜索自定义运动" value="{{keyword}}" bindinput="handleKeywordInput" />
+  </view>
+
+  <view wx:if="{{displayedExercises.length}}" class="panel list-panel">
+    <view class="list-head">
+      <view class="list-count">共 {{displayedExercises.length}} 项</view>
+    </view>
+    <view wx:for="{{displayedExercises}}" wx:key="id" class="item-row">
+      <view class="item-main">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-meta">{{item.categoryLabel}} · MET {{item.metValue}}</view>
+      </view>
+      <view class="item-actions">
+        <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+        <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state wx:else title="暂无自定义运动" description="先添加你的常用运动" />
+
+  <view wx:if="{{sheetVisible}}" class="sheet-overlay" bindtap="handleCancelEdit"></view>
+  <view wx:if="{{sheetVisible}}" class="bottom-sheet panel" catchtap="noop" catchtouchmove="noop">
+    <view class="sheet-head">
+      <view class="sheet-title">{{editMode === 'edit' ? '编辑运动' : '新建运动'}}</view>
+      <view class="sheet-actions">
+        <view wx:if="{{editMode === 'edit'}}" class="mini-action danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
+        <view class="sheet-close" bindtap="handleCancelEdit">✕</view>
+      </view>
     </view>
 
     <view class="field-group">
-      <view class="field-label">MET 值</view>
-      <input class="field-input" type="digit" placeholder="例如：6.8" data-field="metValue" value="{{form.metValue}}" bindinput="handleInput" />
+      <view class="field-label">运动名称</view>
+      <input class="field-input" data-field="name" value="{{editForm.name}}" bindinput="handleInput" />
+    </view>
+
+    <view class="field-group">
+      <view class="field-label">MET（代谢当量）</view>
+      <input class="field-input" type="digit" data-field="metValue" value="{{editForm.metValue}}" bindinput="handleInput" />
     </view>
 
     <view class="field-group">
@@ -27,7 +60,10 @@
         </view>
       </view>
     </view>
-  </view>
 
-  <view class="primary-button" bindtap="handleSubmit">保存</view>
+    <view class="editor-actions">
+      <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
+      <view class="primary-button {{saving ? 'disabled' : ''}}" bindtap="handleSubmit">{{editMode === 'edit' ? '保存' : '创建'}}</view>
+    </view>
+  </view>
 </view>

@@ -4,9 +4,10 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.diet.mapper.ExerciseMapper">
 
-    <select id="findByNameIgnoreCase" resultType="com.diet.domain.exercise.Exercise">
+    <select id="findAccessibleById" resultType="com.diet.domain.exercise.Exercise">
         SELECT
             id,
+            user_id,
             name,
             met_value,
             category,
@@ -17,13 +18,42 @@
             sort_order,
             created_at
         FROM exercise
-        WHERE LOWER(name) = LOWER(#{name})
+        WHERE id = #{id}
+        <choose>
+            <when test="userId != null">
+                AND (is_builtin = 1 OR user_id = #{userId})
+            </when>
+            <otherwise>
+                AND is_builtin = 1
+            </otherwise>
+        </choose>
         LIMIT 1
     </select>
 
-    <select id="findAll" resultType="com.diet.domain.exercise.Exercise">
+    <select id="findOwnedCustomById" resultType="com.diet.domain.exercise.Exercise">
         SELECT
             id,
+            user_id,
+            name,
+            met_value,
+            category,
+            source,
+            source_ref,
+            aliases,
+            is_builtin,
+            sort_order,
+            created_at
+        FROM exercise
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND is_builtin = 0
+        LIMIT 1
+    </select>
+
+    <select id="findByAccessibleNameIgnoreCase" resultType="com.diet.domain.exercise.Exercise">
+        SELECT
+            id,
+            user_id,
             name,
             met_value,
             category,
@@ -35,8 +65,84 @@
             created_at
         FROM exercise
         <where>
+            LOWER(name) = LOWER(#{name})
+            <choose>
+                <when test="userId != null">
+                    AND (is_builtin = 1 OR user_id = #{userId})
+                </when>
+                <otherwise>
+                    AND is_builtin = 1
+                </otherwise>
+            </choose>
+        </where>
+        LIMIT 1
+    </select>
+
+    <select id="findAll" resultType="com.diet.domain.exercise.Exercise">
+        SELECT
+            id,
+            user_id,
+            name,
+            met_value,
+            category,
+            source,
+            source_ref,
+            aliases,
+            is_builtin,
+            sort_order,
+            created_at
+        FROM exercise
+        <where>
+            <choose>
+                <when test="userId != null">
+                    (is_builtin = 1 OR user_id = #{userId})
+                </when>
+                <otherwise>
+                    is_builtin = 1
+                </otherwise>
+            </choose>
             <if test="keyword != null and keyword != ''">
-                (name LIKE CONCAT('%', #{keyword}, '%') OR aliases LIKE CONCAT('%', #{keyword}, '%'))
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR aliases LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+        ORDER BY
+            CASE
+                WHEN is_builtin = 0 THEN 0
+                WHEN category = 'CARDIO' THEN 1
+                WHEN category = 'STRENGTH' THEN 2
+                WHEN category = 'BALL' THEN 3
+                WHEN category = 'FLEXIBILITY' THEN 4
+                WHEN category = 'DAILY' THEN 5
+                WHEN category = 'OTHER' THEN 6
+                ELSE 99
+            END ASC,
+            sort_order ASC,
+            name ASC,
+            id ASC
+    </select>
+
+    <select id="findCustomByUser" resultType="com.diet.domain.exercise.Exercise">
+        SELECT
+            id,
+            user_id,
+            name,
+            met_value,
+            category,
+            source,
+            source_ref,
+            aliases,
+            is_builtin,
+            sort_order,
+            created_at
+        FROM exercise
+        <where>
+            user_id = #{userId}
+            AND is_builtin = 0
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR aliases LIKE CONCAT('%', #{keyword}, '%'))
             </if>
             <if test="category != null and category != ''">
                 AND category = #{category}

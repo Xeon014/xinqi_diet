@@ -12,6 +12,7 @@ import com.diet.dto.record.CreateMealRecordBatchRequest;
 import com.diet.dto.record.CreateMealRecordItemRequest;
 import com.diet.dto.record.CreateMealRecordRequest;
 import com.diet.dto.record.MealRecordResponse;
+import com.diet.dto.record.UpdateMealRecordRequest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class MealRecordService {
 
     public MealRecordResponse create(Long userId, CreateMealRecordRequest request) {
         UserProfile user = getUser(userId);
-        Food food = getFood(request.foodId());
+        Food food = getAccessibleFood(userId, request.foodId());
         MealRecord record = buildRecord(
                 user.getId(),
                 food,
@@ -58,7 +59,7 @@ public class MealRecordService {
     public List<MealRecordResponse> createBatch(Long userId, CreateMealRecordBatchRequest request) {
         UserProfile user = getUser(userId);
         Map<Long, BigDecimal> mergedItems = mergeItems(request.items());
-        Map<Long, Food> foods = loadFoodsByIds(mergedItems.keySet());
+        Map<Long, Food> foods = loadFoodsByIds(userId, mergedItems.keySet());
         List<MealRecordResponse> responses = new ArrayList<>();
 
         for (Map.Entry<Long, BigDecimal> entry : mergedItems.entrySet()) {
@@ -77,12 +78,14 @@ public class MealRecordService {
         return responses;
     }
 
-    public MealRecordResponse updateQuantity(Long userId, Long recordId, BigDecimal quantityInGram) {
+    public MealRecordResponse updateRecord(Long userId, Long recordId, UpdateMealRecordRequest request) {
         getUser(userId);
         MealRecord record = getOwnedRecord(userId, recordId);
-        Food food = getFood(record.getFoodId());
-        record.setQuantityInGram(quantityInGram);
-        record.setTotalCalories(MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram));
+        Food food = getAccessibleFood(userId, record.getFoodId());
+        record.setQuantityInGram(request.quantityInGram());
+        record.setMealType(request.mealType());
+        record.setRecordDate(request.recordDate());
+        record.setTotalCalories(MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), request.quantityInGram()));
         mealRecordRepository.save(record);
         return toResponse(record, food);
     }
@@ -107,7 +110,7 @@ public class MealRecordService {
 
         return records.stream()
                 .map(record -> {
-                    Food food = getFood(record.getFoodId());
+                    Food food = getAccessibleFood(userId, record.getFoodId());
                     return toResponse(record, food);
                 })
                 .toList();
@@ -154,10 +157,10 @@ public class MealRecordService {
         return merged;
     }
 
-    private Map<Long, Food> loadFoodsByIds(Iterable<Long> foodIds) {
+    private Map<Long, Food> loadFoodsByIds(Long userId, Iterable<Long> foodIds) {
         LinkedHashMap<Long, Food> foods = new LinkedHashMap<>();
         for (Long foodId : foodIds) {
-            foods.put(foodId, getFood(foodId));
+            foods.put(foodId, getAccessibleFood(userId, foodId));
         }
         return foods;
     }
@@ -176,7 +179,11 @@ public class MealRecordService {
                 .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
     }
 
-    private Food getFood(Long id) {
+    private Food getAccessibleFood(Long userId, Long id) {
+        if (userId != null) {
+            return foodRepository.findAccessibleById(userId, id)
+                    .orElseThrow(() -> new NotFoundException("food not found, id=" + id));
+        }
         return foodRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("food not found, id=" + id));
     }

@@ -1,17 +1,56 @@
 <view class="page-shell custom-food-page">
-  <view class="panel custom-panel">
-    <view class="section-title">自定义食物</view>
-    <view class="section-subtitle">补充食物后会直接回到本次记录</view>
+  <view class="panel manage-head">
+    <view class="list-count">{{displayedFoods.length}} 项常用食物</view>
+    <view class="action-btn" bindtap="handleStartCreate">新建</view>
+  </view>
+
+  <view class="panel search-bar">
+    <input class="search-input" placeholder="搜索自定义食物" value="{{keyword}}" bindinput="handleKeywordInput" />
+  </view>
+
+  <view wx:if="{{displayedFoods.length}}" class="panel list-panel">
+    <view class="list-head">
+      <view class="list-count">共 {{displayedFoods.length}} 项</view>
+    </view>
+    <view wx:for="{{displayedFoods}}" wx:key="id" class="item-row">
+      <view class="item-main">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-meta">{{item.categoryLabel}} · {{item.caloriesPer100g}} kcal / 100g</view>
+      </view>
+      <view class="item-actions">
+        <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+        <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state wx:else title="暂无自定义食物" description="先添加你的常用食物" />
+
+  <view wx:if="{{sheetVisible}}" class="sheet-overlay" bindtap="handleCancelEdit"></view>
+  <view wx:if="{{sheetVisible}}" class="bottom-sheet panel" catchtap="noop" catchtouchmove="noop">
+    <view class="sheet-head">
+      <view class="sheet-title">{{editMode === 'edit' ? '编辑食物' : '新建食物'}}</view>
+      <view class="sheet-actions">
+        <view wx:if="{{editMode === 'edit'}}" class="mini-action danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
+        <view class="sheet-close" bindtap="handleCancelEdit">✕</view>
+      </view>
+    </view>
 
     <view class="field-group">
       <view class="field-label">食物名称</view>
-      <input class="field-input" value="{{form.name}}" data-field="name" bindinput="handleInput" />
+      <input class="field-input" value="{{editForm.name}}" data-field="name" bindinput="handleInput" />
     </view>
 
     <view class="field-group">
       <view class="field-label">分类</view>
       <view class="category-grid">
-        <view wx:for="{{categories}}" wx:key="key" class="category-chip {{selectedCategoryKey === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="handleCategoryTap">
+        <view
+          wx:for="{{categories}}"
+          wx:key="key"
+          class="category-chip {{selectedCategoryKey === item.key ? 'active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="handleCategoryTap"
+        >
           {{item.label}}
         </view>
       </view>
@@ -20,25 +59,28 @@
     <view class="field-group two-column">
       <view class="field-half">
         <view class="field-label">热量(kcal/100g)</view>
-        <input class="field-input" type="digit" value="{{form.caloriesPer100g}}" data-field="caloriesPer100g" bindinput="handleInput" />
+        <input class="field-input" type="digit" value="{{editForm.caloriesPer100g}}" data-field="caloriesPer100g" bindinput="handleInput" />
       </view>
       <view class="field-half">
         <view class="field-label">蛋白质(g)</view>
-        <input class="field-input" type="digit" value="{{form.proteinPer100g}}" data-field="proteinPer100g" bindinput="handleInput" />
+        <input class="field-input" type="digit" value="{{editForm.proteinPer100g}}" data-field="proteinPer100g" bindinput="handleInput" />
       </view>
     </view>
 
     <view class="field-group two-column">
       <view class="field-half">
         <view class="field-label">碳水(g)</view>
-        <input class="field-input" type="digit" value="{{form.carbsPer100g}}" data-field="carbsPer100g" bindinput="handleInput" />
+        <input class="field-input" type="digit" value="{{editForm.carbsPer100g}}" data-field="carbsPer100g" bindinput="handleInput" />
       </view>
       <view class="field-half">
         <view class="field-label">脂肪(g)</view>
-        <input class="field-input" type="digit" value="{{form.fatPer100g}}" data-field="fatPer100g" bindinput="handleInput" />
+        <input class="field-input" type="digit" value="{{editForm.fatPer100g}}" data-field="fatPer100g" bindinput="handleInput" />
       </view>
     </view>
-  </view>
 
-  <view class="primary-button" bindtap="handleSubmit">保存并使用</view>
+    <view class="editor-actions">
+      <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
+      <view class="primary-button {{saving ? 'disabled' : ''}}" bindtap="handleSubmit">{{editMode === 'edit' ? '保存' : '创建'}}</view>
+    </view>
+  </view>
 </view>

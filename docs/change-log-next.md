@@ -114,3 +114,29 @@
 - 后续待办:
   - 后续每次调整页面入口或记录链路时，同步更新 `docs/page-entry-map.md` 与 `docs/feature-inventory.md`。
   - 视清理计划补充历史页面 (`meal-editor`, `food-item-editor`) 下线记录与迁移说明。
+
+
+### [2026-03-14] 自定义食物/运动管理与运动记录链路收口
+- 变更范围:
+  - 页面/模块: `miniprogram/pages/home/*`, `miniprogram/pages/custom-food/*`, `miniprogram/pages/custom-exercise/*`, `miniprogram/pages/food-search/*`, `miniprogram/pages/exercise-search/*`, `miniprogram/pages/meal-combo-manage/*`
+  - 文档: `miniprogram/README.md`, `docs/README.md`, `docs/page-entry-map.md`, `docs/feature-inventory.md`
+  - 清理页面: `miniprogram/pages/meal-editor/*`, `miniprogram/pages/exercise-editor/*`
+- 做了什么:
+  - 自定义食物、自定义运动入口改为进入独立管理页，统一支持新建、编辑、删除。
+  - 食物选择页左侧新增 `套餐` 筛选，并支持直接把套餐加入当前餐次。
+  - 运动记录主链路改为 `home -> exercise-search`，新增和编辑都在运动选择页内通过底部弹窗完成。
+  - 首页运动分组头部去掉记录数，改为右上角小图标直达运动选择页。
+  - 清理无业务入口的历史页面 `meal-editor` 与 `exercise-editor`，同步移除注册项与过期文档描述。
+- 为什么做:
+  - 把高频记录链路统一收敛到“选择页内完成”，减少页面切换和重复交互。
+  - 把“管理自定义数据”和“选择记录数据”职责拆开，降低页面混杂度。
+  - 清理无入口历史页面，减少后续维护噪音和文档误导。
+- 验证方式:
+  - 命令: `node scripts/verify-miniprogram-files.js`
+  - 手动回归页面: 首页、食物选择页、运动选择页、自定义食物页、自定义运动页、套餐管理页
+- 风险与回滚点:
+  - 风险集中在首页运动记录编辑和自定义回流链路；如需回滚，优先恢复 `home/*` 与 `exercise-search/*`。
+  - 页面清理回滚时，需要同时恢复 `app.json` 注册与对应文档口径。
+- 后续待办:
+  - 继续评估 `food-item-editor` 是否也可以彻底清理。
+  - 如后续运动记录需要批量编辑同一天多项，再单独设计新交互，不回退到旧 `exercise-editor`。

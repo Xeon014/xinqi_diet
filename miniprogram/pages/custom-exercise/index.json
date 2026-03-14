@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "自定义运动"
+  "navigationBarTitleText": "我的运动",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }

@@ -17,6 +17,9 @@ public class Exercise {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @TableField("user_id")
+    private Long userId;
+
     private String name;
 
     @TableField("met_value")
@@ -40,7 +43,8 @@ public class Exercise {
     @TableField("created_at")
     private LocalDateTime createdAt;
 
-    public Exercise(String name, BigDecimal metValue, String category) {
+    public Exercise(Long userId, String name, BigDecimal metValue, String category) {
+        this.userId = userId;
         this.name = name;
         this.metValue = metValue;
         this.category = category;

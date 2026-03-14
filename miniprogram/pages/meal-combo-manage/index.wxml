@@ -1,69 +1,91 @@
 <view class="page-shell combo-manage-page">
-  <view wx:if="{{editing}}" class="panel combo-editor">
-    <view class="section-title">编辑套餐</view>
-
-    <view class="field-group">
-      <view class="field-label">套餐名称</view>
-      <input class="field-input" value="{{editForm.name}}" bindinput="handleEditName" placeholder="请输入套餐名称" />
+  <view wx:if="{{editing}}" class="combo-editor-page">
+    <view class="panel combo-section compact-row">
+      <view class="field-label inline-label">套餐名称</view>
+      <input class="field-input inline-input" value="{{editForm.name}}" bindinput="handleEditName" placeholder="请输入套餐名称" />
     </view>
 
-    <view class="field-group">
-      <view class="field-label">默认餐次</view>
-      <view class="meal-types">
-        <view
-          wx:for="{{mealTypes}}"
-          wx:key="value"
-          class="meal-chip {{editForm.mealType === item.value ? 'active' : ''}}"
-          data-meal-type="{{item.value}}"
-          bindtap="handleMealTypeTap"
-        >
-          {{item.label}}
+    <view class="panel combo-section summary-card">
+      <view class="summary-head">
+        <view class="field-label">套餐汇总</view>
+        <view class="summary-brief">{{editSummary.totalCalories}} kcal</view>
+      </view>
+      <view class="summary-grid">
+        <view class="summary-item primary">
+          <view class="summary-label">总热量</view>
+          <view class="summary-value">{{editSummary.totalCalories}}</view>
+          <view class="summary-unit">kcal</view>
+        </view>
+        <view class="summary-item">
+          <view class="summary-label">蛋白质</view>
+          <view class="summary-value">{{editSummary.totalProtein}}</view>
+          <view class="summary-unit">g</view>
+        </view>
+        <view class="summary-item">
+          <view class="summary-label">碳水</view>
+          <view class="summary-value">{{editSummary.totalCarbs}}</view>
+          <view class="summary-unit">g</view>
+        </view>
+        <view class="summary-item">
+          <view class="summary-label">脂肪</view>
+          <view class="summary-value">{{editSummary.totalFat}}</view>
+          <view class="summary-unit">g</view>
         </view>
       </view>
     </view>
 
-    <view class="list-head">
-      <view class="field-label">食物明细</view>
-      <view class="add-food-btn" bindtap="handleAddFood">+ 添加食物</view>
-    </view>
+    <view class="panel combo-section combo-food-section">
+      <view class="list-head">
+        <view class="field-label">套餐食物</view>
+        <view class="action-btn small" bindtap="handleAddFood">添加食物</view>
+      </view>
 
-    <view wx:if="{{editForm.items.length}}" class="food-list">
-      <view wx:for="{{editForm.items}}" wx:key="foodId" class="food-item">
-        <view class="food-head">
-          <view class="food-name">{{item.foodName}}</view>
-          <view class="food-remove" data-index="{{index}}" bindtap="handleRemoveFood">删除</view>
-        </view>
-        <view class="food-meta">{{item.caloriesPer100g}} kcal / 100g</view>
-        <view class="food-row">
-          <view class="quantity-box">
-            <input class="quantity-input" type="digit" value="{{item.quantityInGram}}" data-index="{{index}}" bindinput="handleQuantityInput" />
-            <view class="unit">g</view>
+      <view wx:if="{{editForm.items.length}}" class="food-list">
+        <view wx:for="{{editForm.items}}" wx:key="foodId" class="food-item">
+          <view class="food-head">
+            <view class="food-name">{{item.foodName}}</view>
+            <view class="food-remove" data-index="{{index}}" bindtap="handleRemoveFood">删除</view>
           </view>
-          <view class="kcal">{{item.totalCalories}} kcal</view>
+          <view class="food-row">
+            <view class="quantity-box">
+              <input class="quantity-input" type="digit" value="{{item.quantityInGram}}" data-index="{{index}}" bindinput="handleQuantityInput" />
+              <view class="unit">g</view>
+            </view>
+            <view class="kcal">{{item.totalCalories}} kcal</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:else class="empty-box">暂无食物</view>
+    </view>
+
+    <view wx:if="{{editMode === 'edit'}}" class="danger-link" bindtap="handleDelete">删除套餐</view>
+    <view class="editor-footer-placeholder"></view>
+    <view class="panel editor-footer">
+      <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
+      <view class="primary-button" bindtap="handleSaveEdit">{{editMode === 'edit' ? '保存' : '创建'}}</view>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="panel manage-head">
+      <view class="list-count">{{combos.length}} 套常用套餐</view>
+      <view class="action-btn" bindtap="handleStartCreate">新建</view>
+    </view>
+
+    <view wx:if="{{combos.length}}" class="panel combo-list">
+      <view wx:for="{{combos}}" wx:key="id" class="combo-item">
+        <view class="combo-main">
+          <view class="combo-name">{{item.name}}</view>
+          <view class="combo-meta">{{item.totalCalories}} kcal · {{item.foodCount}} 种食物</view>
+        </view>
+        <view class="combo-actions">
+          <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+          <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
         </view>
       </view>
     </view>
 
-    <view wx:else class="empty-tip">请先添加食物</view>
-
-    <view class="editor-actions">
-      <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
-      <view class="primary-button" bindtap="handleSaveEdit">保存</view>
-    </view>
-  </view>
-
-  <view wx:elif="{{combos.length}}" class="panel combo-list">
-    <view wx:for="{{combos}}" wx:key="id" class="combo-item">
-      <view class="combo-main">
-        <view class="combo-name">{{item.name}}</view>
-        <view class="combo-meta">{{mealTypeLabels[item.mealType] || '餐次'}} · {{item.items.length}} 种食物</view>
-      </view>
-      <view class="combo-actions">
-        <view class="action-btn" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
-        <view class="action-btn danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
-      </view>
-    </view>
-  </view>
-
-  <empty-state wx:else title="暂无自定义套餐" description="先去记录页把常用食物保存为套餐" />
+    <empty-state wx:else title="暂无自定义套餐" description="先创建一个套餐" />
+  </block>
 </view>

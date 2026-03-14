@@ -9,9 +9,17 @@ public interface ExerciseRepository {
 
     void save(Exercise exercise);
 
+    void deleteById(Long id);
+
     Optional<Exercise> findById(Long id);
 
-    Optional<Exercise> findByNameIgnoreCase(String name);
+    Optional<Exercise> findAccessibleById(Long userId, Long id);
 
-    List<Exercise> findAll(String keyword, String category);
+    Optional<Exercise> findOwnedCustomById(Long userId, Long id);
+
+    Optional<Exercise> findByAccessibleNameIgnoreCase(Long userId, String name);
+
+    List<Exercise> findAll(Long userId, String keyword, String category);
+
+    List<Exercise> findCustomByUser(Long userId, String keyword, String category);
 }
