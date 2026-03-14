@@ -42,7 +42,7 @@ public class MealComboService {
 
     public MealComboResponse create(Long userId, CreateMealComboRequest request) {
         ensureUserExists(userId);
-        MealCombo combo = new MealCombo(userId, request.name().trim(), request.description(), request.mealType());
+        MealCombo combo = new MealCombo(userId, request.name().trim(), request.description());
         combo.setUpdatedAt(LocalDateTime.now());
         mealComboRepository.save(combo);
 
@@ -57,7 +57,6 @@ public class MealComboService {
         MealCombo combo = getOwnedCombo(userId, comboId);
         combo.setName(request.name().trim());
         combo.setDescription(request.description());
-        combo.setMealType(request.mealType());
         combo.setUpdatedAt(LocalDateTime.now());
         mealComboRepository.save(combo);
 
@@ -129,7 +128,6 @@ public class MealComboService {
                 combo.getUserId(),
                 combo.getName(),
                 combo.getDescription(),
-                combo.getMealType(),
                 responses,
                 combo.getCreatedAt()
         );

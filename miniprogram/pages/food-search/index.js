@@ -96,6 +96,27 @@ function resolveTotalNutrients({ quantityInGram, caloriesPer100g, proteinPer100g
   };
 }
 
+function buildComboSummary(items = []) {
+  return items.reduce(
+    (result, item) => {
+      const quantityInGram = Math.max(toNumber(item.quantityInGram), 0);
+      result.totalCalories += toInteger((toNumber(item.caloriesPer100g) * quantityInGram) / 100);
+      result.foodCount += 1;
+      return result;
+    },
+    { totalCalories: 0, foodCount: 0 }
+  );
+}
+
+function decorateCombo(combo) {
+  const summary = buildComboSummary(combo.items || []);
+  return {
+    ...combo,
+    totalCalories: summary.totalCalories,
+    foodCount: summary.foodCount,
+  };
+}
+
 Page({
   data: {
     keyword: "",
@@ -222,7 +243,7 @@ Page({
   loadCombos() {
     getMealComboList()
       .then((result) => {
-        this.setData({ combos: result.combos || [] }, () => {
+        this.setData({ combos: (result.combos || []).map(decorateCombo) }, () => {
           this.refreshView();
         });
       })

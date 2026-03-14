@@ -23,6 +23,7 @@
   - 新建场景按钮：`添加`
   - 编辑场景按钮：`完成编辑`
 - 食物选择页左侧筛选：`最近记录 / 最近搜索 / 自定义 / 套餐 / 内置分类`
+- 自定义套餐页不再设置默认餐次，列表显示整套热量，编辑页显示整套热量和三大营养素汇总。
 - 自定义食物入口位于“自定义”列表标题右侧的 `添加` 按钮。
 - “我的 -> 自定义食物”进入独立管理页，支持新建、编辑、删除。
 - 食物列表仅展示名称与热量（`kcal`），不展示蛋白/碳水/脂肪明细。
@@ -50,6 +51,74 @@
 4. 用微信开发者工具以 `develop` 环境联调时，默认直连本地 `127.0.0.1:8080`
 5. `trial/release` 默认走微信云托管，切换逻辑定义在 `utils/constants.js`
 6. 如修改了运行时配置映射，在微信开发者工具里“清缓存并编译”后生效
+
+## 微信开发者工具控制台调试命令
+
+以下命令可直接在微信开发者工具的 Console 中执行。
+
+### 查看当前登录态
+
+```js
+wx.getStorageSync("xinqi_access_token")
+wx.getStorageSync("xinqi_user_id")
+wx.getStorageSync("xinqi_client_user_key")
+getApp().globalData.onboardingPendingUserId
+```
+
+### 让当前账号重新进入首次登录引导
+
+适合调试引导页样式、步骤切换、保存逻辑，不会新建用户。
+
+```js
+const userId = wx.getStorageSync("xinqi_user_id");
+wx.setStorageSync(`onboarding_pending_${userId}`, true);
+getApp().globalData.onboardingPendingUserId = Number(userId);
+wx.reLaunch({ url: "/pages/home/index" });
+```
+
+### 完全模拟“首次登录的新用户”
+
+当前后端 `dev` 环境开启了微信登录 mock，mock 用户身份由 `xinqi_client_user_key` 决定。  
+因此要模拟一个全新的首次登录用户，需要同时清掉登录态和 `clientUserKey`。
+
+```js
+wx.removeStorageSync("xinqi_access_token");
+wx.removeStorageSync("xinqi_user_id");
+wx.removeStorageSync("xinqi_client_user_key");
+getApp().globalData.onboardingPendingUserId = null;
+getApp().ensureLogin(true).then((res) => {
+  console.log("新的登录结果", res);
+  wx.reLaunch({ url: "/pages/home/index" });
+});
+```
+
+### 强制当前账号重新登录
+
+适合排查 token、登录接口、自动鉴权问题，不会清掉 `clientUserKey`。
+
+```js
+wx.removeStorageSync("xinqi_access_token");
+wx.removeStorageSync("xinqi_user_id");
+getApp().ensureLogin(true).then(console.log);
+```
+
+### 标记当前引导已完成
+
+适合测试“非新用户进入首页”的路径。
+
+```js
+const userId = wx.getStorageSync("xinqi_user_id");
+wx.removeStorageSync(`onboarding_pending_${userId}`);
+getApp().globalData.onboardingPendingUserId = null;
+wx.reLaunch({ url: "/pages/home/index" });
+```
+
+### 清空全部本地缓存
+
+```js
+wx.clearStorageSync();
+getApp().globalData.onboardingPendingUserId = null;
+```
 
 ## 关键约定
 

@@ -86,7 +86,7 @@
             bindtap="handleSelectCombo"
           >
             <view class="combo-name">{{item.name}}</view>
-            <view class="combo-meta">{{mealTypeLabel}} · {{item.items.length}} 种食物</view>
+            <view class="combo-meta">{{item.totalCalories}} kcal · {{item.foodCount}} 种食物</view>
           </view>
         </view>
       </view>

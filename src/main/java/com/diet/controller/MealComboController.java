@@ -50,7 +50,7 @@ public class MealComboController {
                 .body(ApiResponse.created(mealComboService.create(userId, request)));
     }
 
-    @Operation(summary = "编辑套餐", description = "编辑套餐名称、餐次和食物明细")
+    @Operation(summary = "编辑套餐", description = "编辑套餐名称和食物明细")
     @PutMapping("/{id}")
     public ApiResponse<MealComboResponse> update(
             @Parameter(description = "套餐 ID") @PathVariable Long id,

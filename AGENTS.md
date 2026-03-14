@@ -54,7 +54,8 @@
 
 - 请求和响应对象优先独立定义，不直接暴露实体类给前端。
 - 列表接口返回对象，不返回裸数组。
-- 表结构调整时，同步检查 `schema.sql`、初始化数据和前端调用。
+- 表结构调整时，同步检查 `schema.sql`、Flyway migration、初始化数据和前端调用。
+- 表结构变更一律通过 Flyway 版本化迁移实现，禁止把建表、改表、补列、删列逻辑写到 `DataInitializer` 或其他运行时代码里。
 
 ## README 规范
 
@@ -89,3 +90,4 @@
 - 设计 MySQL 相关功能时，禁止使用外键（`FOREIGN KEY`）。
 - 禁止使用存储过程/存储函数（`PROCEDURE` / `FUNCTION` / `DELIMITER`）。
 - 关联完整性通过应用层校验与必要索引保证，不依赖数据库外键约束。
+- 新增或调整表结构时，优先新增 `src/main/resources/db/migration/V*.sql`，并保持 `schema.sql` 与最新基线一致。
