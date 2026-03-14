@@ -14,6 +14,7 @@ import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.user.CreateUserRequest;
@@ -65,6 +66,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null
         );
 
@@ -90,6 +93,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null
         );
 
@@ -115,6 +120,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null
         );
 
@@ -142,6 +149,8 @@ class UserProfileServiceTest {
                 new BigDecimal("60.00"),
                 new BigDecimal("55.00"),
                 null,
+                null,
+                null,
                 null
         );
 
@@ -167,6 +176,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 null,
                 existing.getCustomTdee(),
+                null,
+                null,
                 true
         );
 
@@ -181,6 +192,8 @@ class UserProfileServiceTest {
         UserProfile existing = buildUser("旧昵称");
         existing.setCustomBmr(1400);
         existing.setCustomTdee(1980);
+        existing.setGoalMode(GoalMode.MAINTAIN);
+        existing.setGoalCalorieDelta(0);
         existing.setDailyCalorieTarget(1600);
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
@@ -196,6 +209,8 @@ class UserProfileServiceTest {
         UserProfile existing = buildUser("旧昵称");
         existing.setCustomBmr(1400);
         existing.setCustomTdee(null);
+        existing.setGoalMode(GoalMode.MAINTAIN);
+        existing.setGoalCalorieDelta(0);
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
         UserResponse response = userProfileService.findById(1L);
@@ -205,7 +220,7 @@ class UserProfileServiceTest {
     }
 
     @Test
-    void shouldSyncStoredDailyTargetWithEffectiveTdeeWhenUpdateCustomTdee() {
+    void shouldDeriveGoalDeltaFromCompatibleDailyTargetWhenUpdateCustomTdee() {
         UserProfile existing = buildUser("旧昵称");
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
@@ -220,14 +235,75 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 2100,
+                null,
+                null,
                 null
         );
 
         UserResponse response = userProfileService.update(1L, request);
 
         assertThat(response.tdee()).isEqualByComparingTo("2100.00");
-        assertThat(response.dailyCalorieTarget()).isEqualTo(2100);
-        assertThat(existing.getDailyCalorieTarget()).isEqualTo(2100);
+        assertThat(response.dailyCalorieTarget()).isEqualTo(1500);
+        assertThat(response.goalCalorieDelta()).isEqualTo(-600);
+        assertThat(existing.getDailyCalorieTarget()).isEqualTo(1500);
+        assertThat(existing.getGoalCalorieDelta()).isEqualTo(-600);
+    }
+
+    @Test
+    void shouldApplyGoalDeltaToCalculatedTargetCalories() {
+        UserProfile existing = buildUser("旧昵称");
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                null,
+                existing.getCurrentWeight(),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                2100,
+                GoalMode.LOSE,
+                -300,
+                null
+        );
+
+        UserResponse response = userProfileService.update(1L, request);
+
+        assertThat(response.tdee()).isEqualByComparingTo("2100.00");
+        assertThat(response.goalMode()).isEqualTo(GoalMode.LOSE);
+        assertThat(response.goalCalorieDelta()).isEqualTo(-300);
+        assertThat(response.dailyCalorieTarget()).isEqualTo(1800);
+    }
+
+    @Test
+    void shouldUseGoalModeDefaultDeltaWhenGoalModeProvidedWithoutDelta() {
+        UserProfile existing = buildUser("旧昵称");
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                null,
+                existing.getCurrentWeight(),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                2100,
+                GoalMode.GAIN,
+                null,
+                null
+        );
+
+        UserResponse response = userProfileService.update(1L, request);
+
+        assertThat(response.goalMode()).isEqualTo(GoalMode.GAIN);
+        assertThat(response.goalCalorieDelta()).isEqualTo(300);
+        assertThat(response.dailyCalorieTarget()).isEqualTo(2400);
     }
 
     private UserProfile buildUser(String name) {
@@ -240,6 +316,8 @@ class UserProfileServiceTest {
                 1800,
                 new BigDecimal("60.00"),
                 new BigDecimal("55.00"),
+                null,
+                null,
                 null,
                 null
         );

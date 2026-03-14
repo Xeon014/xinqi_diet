@@ -89,6 +89,8 @@ public class DataInitializer {
                 new BigDecimal("58.50"),
                 new BigDecimal("52.00"),
                 1350,
+                null,
+                null,
                 null
         );
         userProfileRepository.save(user);

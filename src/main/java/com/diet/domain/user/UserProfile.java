@@ -70,6 +70,12 @@ public class UserProfile {
     @TableField("custom_tdee")
     private Integer customTdee;
 
+    @TableField("goal_mode")
+    private GoalMode goalMode;
+
+    @TableField("goal_calorie_delta")
+    private Integer goalCalorieDelta;
+
     @TableField("last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -86,7 +92,9 @@ public class UserProfile {
             BigDecimal currentWeight,
             BigDecimal targetWeight,
             Integer customBmr,
-            Integer customTdee
+            Integer customTdee,
+            GoalMode goalMode,
+            Integer goalCalorieDelta
     ) {
         this.name = name;
         this.gender = gender;
@@ -98,6 +106,8 @@ public class UserProfile {
         this.targetWeight = targetWeight;
         this.customBmr = customBmr;
         this.customTdee = customTdee;
+        this.goalMode = goalMode;
+        this.goalCalorieDelta = goalCalorieDelta;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -111,7 +121,9 @@ public class UserProfile {
             BigDecimal currentWeight,
             BigDecimal targetWeight,
             Integer customBmr,
-            Integer customTdee
+            Integer customTdee,
+            GoalMode goalMode,
+            Integer goalCalorieDelta
     ) {
         this.name = name;
         this.gender = gender;
@@ -123,6 +135,8 @@ public class UserProfile {
         this.targetWeight = targetWeight;
         this.customBmr = customBmr;
         this.customTdee = customTdee;
+        this.goalMode = goalMode;
+        this.goalCalorieDelta = goalCalorieDelta;
     }
 
     public Integer calculateAge() {
@@ -177,12 +191,23 @@ public class UserProfile {
         return calculateEstimatedTdee();
     }
 
+    public GoalMode resolveGoalMode() {
+        return goalMode != null ? goalMode : GoalMode.MAINTAIN;
+    }
+
+    public int resolveGoalCalorieDelta() {
+        if (goalCalorieDelta != null) {
+            return goalCalorieDelta;
+        }
+        return resolveGoalMode().getDefaultDelta();
+    }
+
     public Integer calculateTargetCalories() {
         BigDecimal tdee = calculateTdee();
         if (tdee == null) {
             return null;
         }
-        return tdee.setScale(0, RoundingMode.HALF_UP).intValue();
+        return tdee.setScale(0, RoundingMode.HALF_UP).intValue() + resolveGoalCalorieDelta();
     }
 
     public BigDecimal weightToLose() {

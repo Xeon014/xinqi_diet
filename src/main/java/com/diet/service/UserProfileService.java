@@ -10,8 +10,8 @@ import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
-import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.user.ActionSuggestionResponse;
@@ -47,6 +47,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserProfileService {
 
     private static final int NAME_MAX_LENGTH = 20;
+    private static final int GOAL_DELTA_MIN = -1000;
+    private static final int GOAL_DELTA_MAX = 1000;
+    private static final BigDecimal DAILY_CONSUMPTION_BASE_RATIO = new BigDecimal("0.70");
 
     private static final Map<MealType, BigDecimal> MEAL_TARGET_RATIO = Map.of(
             MealType.BREAKFAST, BigDecimal.valueOf(0.25),
@@ -87,7 +90,7 @@ public class UserProfileService {
     }
 
     public UserResponse create(CreateUserRequest request) {
-        Integer targetCalories = calculateEffectiveTargetCaloriesFromParams(
+        Integer baseCalories = calculateEffectiveBaseCaloriesFromParams(
                 request.gender(),
                 request.birthDate(),
                 request.height(),
@@ -95,6 +98,16 @@ public class UserProfileService {
                 request.customBmr(),
                 request.customTdee()
         );
+        GoalMode goalMode = resolveGoalMode(request.goalMode(), null);
+        Integer goalCalorieDelta = resolveGoalCalorieDelta(
+                request.goalMode(),
+                request.goalCalorieDelta(),
+                request.dailyCalorieTarget(),
+                goalMode,
+                null,
+                baseCalories
+        );
+        Integer targetCalories = calculateTargetCalories(baseCalories, goalCalorieDelta);
 
         UserProfile user = new UserProfile(
                 normalizeNameForCreate(request.name()),
@@ -106,7 +119,9 @@ public class UserProfileService {
                 request.currentWeight(),
                 request.targetWeight(),
                 request.customBmr(),
-                request.customTdee()
+                request.customTdee(),
+                goalMode,
+                goalCalorieDelta
         );
         userProfileRepository.save(user);
         return toResponse(user);
@@ -136,7 +151,7 @@ public class UserProfileService {
         BigDecimal nextTargetWeight = resolveValue(request.targetWeight(), user.getTargetWeight());
         Integer nextCustomBmr = resolveCustomBmr(request, nextGender, nextBirthDate, nextHeight, nextCurrentWeight, user.getCustomBmr());
         Integer nextCustomTdee = resolveCustomTdee(request.customTdee(), user.getCustomTdee());
-        Integer nextDailyCalorieTarget = calculateEffectiveTargetCaloriesFromParams(
+        Integer nextBaseCalories = calculateEffectiveBaseCaloriesFromParams(
                 nextGender,
                 nextBirthDate,
                 nextHeight,
@@ -144,6 +159,16 @@ public class UserProfileService {
                 nextCustomBmr,
                 nextCustomTdee
         );
+        GoalMode nextGoalMode = resolveGoalMode(request.goalMode(), user.getGoalMode());
+        Integer nextGoalCalorieDelta = resolveGoalCalorieDelta(
+                request.goalMode(),
+                request.goalCalorieDelta(),
+                request.dailyCalorieTarget(),
+                nextGoalMode,
+                user.getGoalCalorieDelta(),
+                nextBaseCalories
+        );
+        Integer nextDailyCalorieTarget = calculateTargetCalories(nextBaseCalories, nextGoalCalorieDelta);
 
         user.updateProfile(
                 nextName,
@@ -155,7 +180,9 @@ public class UserProfileService {
                 nextCurrentWeight,
                 nextTargetWeight,
                 nextCustomBmr,
-                nextCustomTdee
+                nextCustomTdee,
+                nextGoalMode,
+                nextGoalCalorieDelta
         );
         userProfileRepository.update(user);
         return toResponse(user);
@@ -573,6 +600,8 @@ public class UserProfileService {
                 user.getTargetWeight(),
                 user.getCustomBmr(),
                 user.getCustomTdee(),
+                user.resolveGoalMode(),
+                user.resolveGoalCalorieDelta(),
                 user.calculateBmi(),
                 user.calculateBmr(),
                 user.calculateTdee(),
@@ -610,7 +639,7 @@ public class UserProfileService {
     }
 
     private Integer resolveEffectiveTargetCalories(UserProfile user) {
-        return calculateEffectiveTargetCaloriesFromParams(
+        Integer baseCalories = calculateEffectiveBaseCaloriesFromParams(
                 user.getGender(),
                 user.getBirthDate(),
                 user.getHeight(),
@@ -618,9 +647,10 @@ public class UserProfileService {
                 user.getCustomBmr(),
                 user.getCustomTdee()
         );
+        return calculateTargetCalories(baseCalories, user.resolveGoalCalorieDelta());
     }
 
-    private Integer calculateEffectiveTargetCaloriesFromParams(
+    private Integer calculateEffectiveBaseCaloriesFromParams(
             Gender gender,
             LocalDate birthDate,
             BigDecimal height,
@@ -656,7 +686,7 @@ public class UserProfileService {
         if (bmr == null) {
             return null;
         }
-        return bmr.divide(new BigDecimal("0.70"), 2, RoundingMode.HALF_UP);
+        return bmr.divide(DAILY_CONSUMPTION_BASE_RATIO, 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateFormulaBmrFromParams(
@@ -682,6 +712,62 @@ public class UserProfileService {
 
     private Integer resolveCustomTdee(Integer requestedCustomTdee, Integer currentCustomTdee) {
         return requestedCustomTdee != null ? requestedCustomTdee : currentCustomTdee;
+    }
+
+    private GoalMode resolveGoalMode(GoalMode requestedGoalMode, GoalMode currentGoalMode) {
+        if (requestedGoalMode != null) {
+            return requestedGoalMode;
+        }
+        return currentGoalMode != null ? currentGoalMode : GoalMode.MAINTAIN;
+    }
+
+    private Integer resolveGoalCalorieDelta(
+            GoalMode requestedGoalMode,
+            Integer requestedGoalCalorieDelta,
+            Integer compatibleDailyCalorieTarget,
+            GoalMode resolvedGoalMode,
+            Integer currentGoalCalorieDelta,
+            Integer baseCalories
+    ) {
+        Integer goalCalorieDelta = requestedGoalCalorieDelta;
+        if (goalCalorieDelta == null && compatibleDailyCalorieTarget != null) {
+            if (baseCalories == null) {
+                throw new IllegalArgumentException("设置目标热量前请先完善基础代谢或基础日消耗");
+            }
+            goalCalorieDelta = compatibleDailyCalorieTarget - baseCalories;
+        }
+        if (goalCalorieDelta == null && requestedGoalMode != null) {
+            goalCalorieDelta = resolvedGoalMode.getDefaultDelta();
+        }
+        if (goalCalorieDelta == null && currentGoalCalorieDelta != null) {
+            goalCalorieDelta = currentGoalCalorieDelta;
+        }
+        if (goalCalorieDelta == null) {
+            goalCalorieDelta = GoalMode.MAINTAIN.getDefaultDelta();
+        }
+        validateGoalCalorieDelta(goalCalorieDelta);
+        return goalCalorieDelta;
+    }
+
+    private Integer calculateTargetCalories(Integer baseCalories, Integer goalCalorieDelta) {
+        if (baseCalories == null) {
+            return null;
+        }
+        return baseCalories + normalizeGoalCalorieDelta(goalCalorieDelta);
+    }
+
+    private int normalizeGoalCalorieDelta(Integer goalCalorieDelta) {
+        if (goalCalorieDelta == null) {
+            return GoalMode.MAINTAIN.getDefaultDelta();
+        }
+        return goalCalorieDelta;
+    }
+
+    private void validateGoalCalorieDelta(Integer goalCalorieDelta) {
+        int normalizedDelta = normalizeGoalCalorieDelta(goalCalorieDelta);
+        if (normalizedDelta < GOAL_DELTA_MIN || normalizedDelta > GOAL_DELTA_MAX) {
+            throw new IllegalArgumentException("goalCalorieDelta must be between -1000 and 1000");
+        }
     }
 
     private Integer resolveCustomBmr(

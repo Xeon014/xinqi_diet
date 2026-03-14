@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS user_profile (
     current_weight DECIMAL(5, 2) NULL COMMENT '当前体重 kg',
     target_weight DECIMAL(5, 2) NULL COMMENT '目标体重 kg',
     custom_bmr INT NULL COMMENT '自定义 BMR kcal',
-    custom_tdee INT NULL COMMENT '自定义 TDEE kcal',
+    custom_tdee INT NULL COMMENT '自定义基础日消耗 kcal',
+    goal_mode VARCHAR(20) NULL COMMENT '热量目标模式',
+    goal_calorie_delta INT NULL COMMENT '目标热量差值 kcal',
     last_login_at DATETIME NULL COMMENT '最近登录时间',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     UNIQUE KEY uk_user_profile_open_id (open_id)
@@ -113,7 +115,6 @@ CREATE TABLE IF NOT EXISTS meal_combo (
     user_id BIGINT NOT NULL COMMENT '用户 ID',
     name VARCHAR(50) NOT NULL COMMENT '套餐名称',
     description VARCHAR(200) NULL COMMENT '套餐说明',
-    meal_type VARCHAR(20) NOT NULL COMMENT '默认餐次类型',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     updated_at DATETIME NOT NULL COMMENT '更新时间',
     KEY idx_meal_combo_user_created (user_id, created_at)

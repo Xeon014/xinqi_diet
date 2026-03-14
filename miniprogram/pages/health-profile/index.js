@@ -1,6 +1,15 @@
 const { getCurrentUser, updateProfile } = require("../../services/user");
 const { pickErrorMessage } = require("../../utils/request");
 
+const MAX_GOAL_DELTA = 1000;
+const MIN_GOAL_DELTA = -1000;
+
+const GOAL_MODE_OPTIONS = [
+  { label: "减脂", value: "LOSE", defaultDelta: -300 },
+  { label: "维持", value: "MAINTAIN", defaultDelta: 0 },
+  { label: "增重", value: "GAIN", defaultDelta: 300 },
+];
+
 function toInteger(value) {
   return Math.round(Number(value || 0));
 }
@@ -22,12 +31,21 @@ function toPositiveNumber(rawValue) {
   return Number.isFinite(number) ? number : NaN;
 }
 
+function toSignedNumber(rawValue) {
+  const text = String(rawValue == null ? "" : rawValue).trim();
+  if (!text) {
+    return null;
+  }
+  const number = Number(text);
+  return Number.isFinite(number) ? number : NaN;
+}
+
 function parseAge(birthDate) {
   if (!birthDate) {
     return null;
   }
   const today = new Date();
-  const birth = new Date(birthDate + "T00:00:00");
+  const birth = new Date(`${birthDate}T00:00:00`);
   if (Number.isNaN(birth.getTime()) || birth.getTime() > today.getTime()) {
     return null;
   }
@@ -55,12 +73,30 @@ function calculateFormulaBmr(profile) {
   return toInteger(base + offset);
 }
 
-function calculateEstimatedTdee(profile) {
+function calculateEstimatedBaseCalories(profile) {
   const effectiveBmr = profile && profile.bmr != null ? Number(profile.bmr) : null;
   if (!Number.isFinite(effectiveBmr) || effectiveBmr <= 0) {
     return null;
   }
   return toInteger(effectiveBmr / 0.7);
+}
+
+function formatGoalMode(mode) {
+  if (mode === "LOSE") {
+    return "减脂";
+  }
+  if (mode === "GAIN") {
+    return "增重";
+  }
+  return "维持";
+}
+
+function formatSignedInteger(value) {
+  const number = toInteger(value);
+  if (number > 0) {
+    return `+${number}`;
+  }
+  return String(number);
 }
 
 function getMissingBmrFields(profile) {
@@ -89,21 +125,37 @@ function createSettings(profile) {
 
 function buildMetrics(profile) {
   const bmrEstimate = calculateFormulaBmr(profile);
-  const tdeeEstimate = calculateEstimatedTdee(profile);
+  const baseCaloriesEstimate = calculateEstimatedBaseCalories(profile);
   const missingBmrFields = getMissingBmrFields(profile);
+  const goalMode = profile.goalMode || "MAINTAIN";
+  const goalCalorieDelta = profile.goalCalorieDelta == null ? 0 : toInteger(profile.goalCalorieDelta);
 
   return {
     currentWeightLabel: profile.currentWeight == null ? "--" : String(profile.currentWeight),
     bmiLabel: toOneDecimal(profile.bmi),
     bmrLabel: profile.bmr == null ? "--" : String(toInteger(profile.bmr)),
-    tdeeLabel: profile.tdee == null ? "--" : String(toInteger(profile.tdee)),
+    baseCaloriesLabel: profile.tdee == null ? "--" : String(toInteger(profile.tdee)),
+    targetCaloriesLabel: profile.dailyCalorieTarget == null ? "--" : String(toInteger(profile.dailyCalorieTarget)),
+    goalMode,
+    goalModeLabel: formatGoalMode(goalMode),
+    goalDeltaLabel: formatSignedInteger(goalCalorieDelta),
     bmrEstimate: bmrEstimate == null ? "--" : String(bmrEstimate),
-    tdeeEstimate: tdeeEstimate == null ? "--" : String(tdeeEstimate),
+    baseCaloriesEstimate: baseCaloriesEstimate == null ? "--" : String(baseCaloriesEstimate),
     bmrEstimateAvailable: bmrEstimate != null,
-    tdeeEstimateAvailable: tdeeEstimate != null,
-    bmrHint: bmrEstimate == null ? "请先完善" + missingBmrFields.join("、") : "可直接填入智能预估值",
-    tdeeHint: tdeeEstimate == null ? "请先完善基础代谢" : "按无运动情况下的日常消耗预估"
+    baseCaloriesEstimateAvailable: baseCaloriesEstimate != null,
+    bmrHint: bmrEstimate == null ? `请先完善${missingBmrFields.join("、")}` : "可直接填入智能预估值",
+    baseCaloriesHint: baseCaloriesEstimate == null ? "请先完善基础代谢" : "按无运动情况下的日常消耗预估",
+    goalHint: "目标热量 = 基础日消耗 + 差值，负数减脂，正数增重",
   };
+}
+
+function calculateTargetPreview(baseCaloriesLabel, goalCalorieDelta) {
+  const baseCalories = toPositiveNumber(baseCaloriesLabel);
+  const delta = toSignedNumber(goalCalorieDelta);
+  if (baseCalories == null || !Number.isFinite(baseCalories) || delta == null || !Number.isFinite(delta)) {
+    return "--";
+  }
+  return String(toInteger(baseCalories + delta));
 }
 
 function createEmptySheet() {
@@ -117,6 +169,8 @@ function createEmptySheet() {
     smartValue: "--",
     smartAvailable: false,
     hint: "",
+    modeValue: "MAINTAIN",
+    targetPreview: "--",
     saving: false,
   };
 }
@@ -128,19 +182,25 @@ Page({
       currentWeightLabel: "--",
       bmiLabel: "--",
       bmrLabel: "--",
-      tdeeLabel: "--",
+      baseCaloriesLabel: "--",
+      targetCaloriesLabel: "--",
+      goalMode: "MAINTAIN",
+      goalModeLabel: "维持",
+      goalDeltaLabel: "0",
       bmrEstimate: "--",
-      tdeeEstimate: "--",
+      baseCaloriesEstimate: "--",
       bmrEstimateAvailable: false,
-      tdeeEstimateAvailable: false,
+      baseCaloriesEstimateAvailable: false,
       bmrHint: "",
-      tdeeHint: ""
+      baseCaloriesHint: "",
+      goalHint: "",
     },
     settings: {
       currentWeight: "",
       targetWeight: "",
     },
-    sheet: createEmptySheet()
+    goalModeOptions: GOAL_MODE_OPTIONS,
+    sheet: createEmptySheet(),
   },
 
   onShow() {
@@ -173,7 +233,7 @@ Page({
       profile,
       metrics: buildMetrics(profile),
       settings: preserveSettings ? { ...this.data.settings } : createSettings(profile),
-      sheet: createEmptySheet()
+      sheet: createEmptySheet(),
     };
   },
 
@@ -185,11 +245,11 @@ Page({
 
   handleInput(event) {
     const field = event.currentTarget.dataset.field;
-    this.setData({ ["settings." + field]: event.detail.value });
+    this.setData({ [`settings.${field}`]: event.detail.value });
   },
 
   openSheet(type) {
-    const metrics = this.data.metrics;
+    const { metrics, profile } = this.data;
     if (type === "BMR") {
       this.setData({
         sheet: {
@@ -202,25 +262,51 @@ Page({
           smartValue: metrics.bmrEstimate,
           smartAvailable: metrics.bmrEstimateAvailable,
           hint: metrics.bmrHint,
+          modeValue: "MAINTAIN",
+          targetPreview: "--",
           saving: false,
-        }
+        },
       });
       return;
     }
 
+    if (type === "BASE") {
+      this.setData({
+        sheet: {
+          visible: true,
+          type,
+          title: "基础日消耗设置",
+          fieldLabel: "基础日消耗 (kcal/天)",
+          currentValue: metrics.baseCaloriesLabel,
+          inputValue: metrics.baseCaloriesLabel === "--" ? "" : metrics.baseCaloriesLabel,
+          smartValue: metrics.baseCaloriesEstimate,
+          smartAvailable: metrics.baseCaloriesEstimateAvailable,
+          hint: metrics.baseCaloriesHint,
+          modeValue: "MAINTAIN",
+          targetPreview: "--",
+          saving: false,
+        },
+      });
+      return;
+    }
+
+    const goalMode = profile.goalMode || "MAINTAIN";
+    const goalCalorieDelta = profile.goalCalorieDelta == null ? 0 : toInteger(profile.goalCalorieDelta);
     this.setData({
       sheet: {
         visible: true,
         type,
-        title: "每日消耗热量设置",
-        fieldLabel: "每日消耗热量 (kcal/天)",
-        currentValue: metrics.tdeeLabel,
-        inputValue: metrics.tdeeLabel === "--" ? "" : metrics.tdeeLabel,
-        smartValue: metrics.tdeeEstimate,
-        smartAvailable: metrics.tdeeEstimateAvailable,
-        hint: metrics.tdeeHint,
+        title: "目标热量设置",
+        fieldLabel: "热量差值 (kcal/天)",
+        currentValue: metrics.targetCaloriesLabel,
+        inputValue: String(goalCalorieDelta),
+        smartValue: "--",
+        smartAvailable: false,
+        hint: metrics.goalHint,
+        modeValue: goalMode,
+        targetPreview: calculateTargetPreview(metrics.baseCaloriesLabel, goalCalorieDelta),
         saving: false,
-      }
+      },
     });
   },
 
@@ -228,8 +314,12 @@ Page({
     this.openSheet("BMR");
   },
 
-  handleOpenTdeeSheet() {
-    this.openSheet("TDEE");
+  handleOpenBaseSheet() {
+    this.openSheet("BASE");
+  },
+
+  handleOpenGoalSheet() {
+    this.openSheet("GOAL");
   },
 
   handleCloseSheet() {
@@ -240,7 +330,28 @@ Page({
   },
 
   handleSheetInput(event) {
-    this.setData({ "sheet.inputValue": event.detail.value });
+    const inputValue = event.detail.value;
+    if (this.data.sheet.type === "GOAL") {
+      this.setData({
+        "sheet.inputValue": inputValue,
+        "sheet.targetPreview": calculateTargetPreview(this.data.metrics.baseCaloriesLabel, inputValue),
+      });
+      return;
+    }
+    this.setData({ "sheet.inputValue": inputValue });
+  },
+
+  handleGoalModeSelect(event) {
+    if (this.data.sheet.type !== "GOAL") {
+      return;
+    }
+    const { value } = event.currentTarget.dataset;
+    const option = GOAL_MODE_OPTIONS.find((item) => item.value === value) || GOAL_MODE_OPTIONS[1];
+    this.setData({
+      "sheet.modeValue": option.value,
+      "sheet.inputValue": String(option.defaultDelta),
+      "sheet.targetPreview": calculateTargetPreview(this.data.metrics.baseCaloriesLabel, option.defaultDelta),
+    });
   },
 
   handleUseSmartValue() {
@@ -252,43 +363,62 @@ Page({
   },
 
   handleSaveSheet() {
-    const sheet = this.data.sheet;
-    const metrics = this.data.metrics;
+    const { sheet, metrics } = this.data;
     if (sheet.saving || !sheet.visible) {
       return;
     }
 
-    const numberValue = toPositiveNumber(sheet.inputValue);
-    if (numberValue == null || !Number.isFinite(numberValue) || numberValue <= 0) {
-      wx.showToast({
-        title: sheet.type === "BMR" ? "请输入正确基础代谢" : "请输入正确每日消耗热量",
-        icon: "none"
-      });
-      return;
-    }
+    let payload = null;
+    let successTitle = "";
 
-    const roundedValue = toInteger(numberValue);
-    const currentValue = sheet.type === "BMR" ? toPositiveNumber(metrics.bmrLabel) : toPositiveNumber(metrics.tdeeLabel);
-    if (currentValue != null && roundedValue === toInteger(currentValue)) {
-      this.setData({ sheet: createEmptySheet() });
-      return;
-    }
+    if (sheet.type === "GOAL") {
+      const goalCalorieDelta = toSignedNumber(sheet.inputValue);
+      if (!sheet.modeValue) {
+        wx.showToast({ title: "请选择目标模式", icon: "none" });
+        return;
+      }
+      if (goalCalorieDelta == null || !Number.isFinite(goalCalorieDelta) || goalCalorieDelta < MIN_GOAL_DELTA || goalCalorieDelta > MAX_GOAL_DELTA) {
+        wx.showToast({ title: "请输入-1000到1000的热量差值", icon: "none" });
+        return;
+      }
+      payload = {
+        goalMode: sheet.modeValue,
+        goalCalorieDelta: toInteger(goalCalorieDelta),
+      };
+      successTitle = "目标热量已更新";
+    } else {
+      const numberValue = toPositiveNumber(sheet.inputValue);
+      if (numberValue == null || !Number.isFinite(numberValue) || numberValue <= 0) {
+        wx.showToast({
+          title: sheet.type === "BMR" ? "请输入正确基础代谢" : "请输入正确基础日消耗",
+          icon: "none",
+        });
+        return;
+      }
 
-    const payload = sheet.type === "BMR"
-      ? { customBmr: roundedValue }
-      : { customTdee: roundedValue };
+      const roundedValue = toInteger(numberValue);
+      const currentValue = sheet.type === "BMR"
+        ? toPositiveNumber(metrics.bmrLabel)
+        : toPositiveNumber(metrics.baseCaloriesLabel);
+      if (currentValue != null && roundedValue === toInteger(currentValue)) {
+        this.setData({ sheet: createEmptySheet() });
+        return;
+      }
+
+      payload = sheet.type === "BMR"
+        ? { customBmr: roundedValue }
+        : { customTdee: roundedValue };
+      successTitle = sheet.type === "BMR" ? "基础代谢已更新" : "基础日消耗已更新";
+    }
 
     this.setData({ "sheet.saving": true });
     updateProfile(payload)
       .then((updatedProfile) => {
         this.setData({
           ...this.buildProfileViewData(updatedProfile, true),
-          sheet: createEmptySheet()
+          sheet: createEmptySheet(),
         });
-        wx.showToast({
-          title: sheet.type === "BMR" ? "基础代谢已更新" : "每日消耗热量已更新",
-          icon: "success"
-        });
+        wx.showToast({ title: successTitle, icon: "success" });
       })
       .catch((error) => {
         this.setData({ "sheet.saving": false });
@@ -297,7 +427,7 @@ Page({
   },
 
   handleSave() {
-    const settings = this.data.settings;
+    const { settings } = this.data;
     const payload = {};
 
     const currentWeight = toPositiveNumber(settings.currentWeight);
@@ -335,5 +465,5 @@ Page({
       });
   },
 
-  noop() {}
+  noop() {},
 });

@@ -2,6 +2,7 @@ package com.diet.dto.user;
 
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,10 +28,10 @@ public record UserResponse(
         @Schema(description = "身高，单位 cm")
         BigDecimal height,
 
-        @Schema(description = "活动量等级（兼容保留）")
+        @Schema(description = "活动量等级（兼容保留，不参与热量计算）")
         ActivityLevel activityLevel,
 
-        @Schema(description = "当前目标热量，默认跟随当前有效 TDEE，单位 kcal")
+        @Schema(description = "当前目标热量（基础日消耗 + 目标差值），单位 kcal")
         Integer dailyCalorieTarget,
 
         @Schema(description = "当前体重，单位 kg")
@@ -42,8 +43,14 @@ public record UserResponse(
         @Schema(description = "用户自定义基础代谢 BMR，单位 kcal，可为空")
         Integer customBmr,
 
-        @Schema(description = "用户自定义每日消耗热量 TDEE，单位 kcal，可为空")
+        @Schema(description = "用户自定义基础日消耗，单位 kcal，可为空")
         Integer customTdee,
+
+        @Schema(description = "热量目标模式：LOSE/MAINTAIN/GAIN")
+        GoalMode goalMode,
+
+        @Schema(description = "目标热量差值，单位 kcal")
+        Integer goalCalorieDelta,
 
         @Schema(description = "BMI 指数")
         BigDecimal bmi,
@@ -51,7 +58,7 @@ public record UserResponse(
         @Schema(description = "基础代谢 BMR")
         BigDecimal bmr,
 
-        @Schema(description = "每日总能量消耗 TDEE")
+        @Schema(description = "无运动情况下的基础日消耗")
         BigDecimal tdee,
 
         @Schema(description = "创建时间")
