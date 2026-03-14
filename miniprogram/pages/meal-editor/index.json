@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "添加餐次",
-  "usingComponents": {
-    "record-mode-date-switch": "/components/record-mode-date-switch/index"
-  }
-}

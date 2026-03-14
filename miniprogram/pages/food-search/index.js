@@ -1,8 +1,9 @@
 const { searchFoods } = require("../../services/food");
-const { createRecord, deleteRecord, getRecords, updateRecord } = require("../../services/record");
+const { getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
+const { createRecord, createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { getToday } = require("../../utils/date");
-const { decorateFood, filterFoodsByCategory, FOOD_CATEGORIES } = require("../../utils/food");
+const { decorateFood, filterFoodsByCategory, FOOD_CATEGORIES, isBuiltinFood, isCustomFood } = require("../../utils/food");
 const { getRecentFoods, saveRecentFood } = require("../../utils/recent-foods");
 const {
   clearRecentFoodSearches,
@@ -18,6 +19,7 @@ const FILTER_KEYS = {
   RECENT: "RECENT",
   RECENT_SEARCH: "RECENT_SEARCH",
   CUSTOM: "CUSTOM",
+  COMBO: "COMBO",
 };
 const MEAL_TYPE_LABELS = {
   BREAKFAST: "早餐",
@@ -26,11 +28,19 @@ const MEAL_TYPE_LABELS = {
   SNACK: "加餐",
 };
 
-const SYSTEM_FILTERS = [
-  { key: FILTER_KEYS.RECENT, label: "最近记录" },
-  { key: FILTER_KEYS.RECENT_SEARCH, label: "最近搜索" },
-  { key: FILTER_KEYS.CUSTOM, label: "自定义" },
-];
+function buildSystemFilters(canUseComboFilter) {
+  const filters = [
+    { key: FILTER_KEYS.RECENT, label: "最近记录" },
+    { key: FILTER_KEYS.RECENT_SEARCH, label: "最近搜索" },
+    { key: FILTER_KEYS.CUSTOM, label: "自定义" },
+  ];
+
+  if (canUseComboFilter) {
+    filters.push({ key: FILTER_KEYS.COMBO, label: "套餐" });
+  }
+
+  return filters;
+}
 
 const BUILTIN_CATEGORIES = FOOD_CATEGORIES.filter((item) => item.key !== "ALL");
 
@@ -60,6 +70,15 @@ function includesKeyword(food, keyword) {
   return String(food.name || "").toLowerCase().includes(keyword);
 }
 
+function includesComboKeyword(combo, keyword) {
+  if (!keyword) {
+    return true;
+  }
+  const normalizedKeyword = keyword.toLowerCase();
+  return String(combo.name || "").toLowerCase().includes(normalizedKeyword)
+    || String(combo.description || "").toLowerCase().includes(normalizedKeyword);
+}
+
 function getKeywordFromConfirmEvent(event, fallbackKeyword) {
   if (event && event.detail && typeof event.detail.value === "string") {
     return event.detail.value;
@@ -83,15 +102,19 @@ Page({
     isSearching: false,
     showRecentSearchList: false,
     showFoodSection: false,
+    showComboSection: false,
     showCustomCreateAction: false,
-    systemFilters: SYSTEM_FILTERS,
+    canUseComboFilter: false,
+    systemFilters: buildSystemFilters(false),
     builtinCategories: BUILTIN_CATEGORIES,
     selectedCategoryKey: FILTER_KEYS.RECENT,
     currentCategoryLabel: "最近记录",
     foods: [],
+    combos: [],
     recentFoods: [],
     recentSearches: [],
     displayedFoods: [],
+    displayedCombos: [],
     emptyTitle: "最近记录为空",
     emptyDescription: "先记录一次饮食，常用食物会出现在这里。",
     recordDate: getToday(),
@@ -131,6 +154,7 @@ Page({
     const parsedRecordId = Number(options.recordId);
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
     const enableDirectEdit = Boolean(source) || pageMode === "edit";
+    const canUseComboFilter = enableDirectEdit && pageMode === "create";
 
     this.setData(
       {
@@ -141,10 +165,15 @@ Page({
         enableDirectEdit,
         pageMode,
         pageRecordId,
+        canUseComboFilter,
+        systemFilters: buildSystemFilters(canUseComboFilter),
       },
       () => {
         this.loadRecentSearches();
         this.loadFoods();
+        if (canUseComboFilter) {
+          this.loadCombos();
+        }
 
         if (pageMode === "edit") {
           if (!pageRecordId) {
@@ -156,6 +185,12 @@ Page({
         }
       }
     );
+  },
+
+  onShow() {
+    if (this.data.canUseComboFilter) {
+      this.loadCombos();
+    }
   },
 
   loadFoods() {
@@ -180,6 +215,20 @@ Page({
         wx.showToast({
           title: pickErrorMessage(error),
           icon: "none",
+        });
+      });
+  },
+
+  loadCombos() {
+    getMealComboList()
+      .then((result) => {
+        this.setData({ combos: result.combos || [] }, () => {
+          this.refreshView();
+        });
+      })
+      .catch(() => {
+        this.setData({ combos: [] }, () => {
+          this.refreshView();
         });
       });
   },
@@ -269,7 +318,7 @@ Page({
 
   handleOpenCustomFood() {
     wx.navigateTo({
-      url: "/pages/custom-food/index",
+      url: "/pages/custom-food/index?mode=create&from=selector",
       success: (res) => {
         res.eventChannel.on("foodCreated", (food) => {
           const normalizedFood = normalizeFood(decorateFood(food));
@@ -288,9 +337,9 @@ Page({
 
           if (this.openerEventChannel) {
             this.openerEventChannel.emit("foodSelected", normalizedFood);
-            wx.navigateBack({
-              delta: 2,
-            });
+            setTimeout(() => {
+              wx.navigateBack();
+            }, 320);
             return;
           }
 
@@ -319,6 +368,59 @@ Page({
     }
 
     wx.navigateBack();
+  },
+
+  handleSelectCombo(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const combo = this.data.displayedCombos[index];
+    if (!combo || !this.data.canUseComboFilter) {
+      return;
+    }
+
+    getMealComboDetail(combo.id)
+      .then((detail) => {
+        const items = Array.isArray(detail.items) ? detail.items : [];
+        if (!items.length) {
+          wx.showToast({ title: "该套餐暂无食物", icon: "none" });
+          return null;
+        }
+
+        return createRecordBatch({
+          mealType: this.data.mealType,
+          recordDate: this.data.recordDate,
+          items: items.map((item) => ({
+            foodId: item.foodId,
+            quantityInGram: toNumber(item.quantityInGram),
+          })),
+        }).then(() => {
+          if (this.userId) {
+            items.forEach((item) => {
+              saveRecentFood(this.userId, {
+                id: item.foodId,
+                name: item.foodName,
+                caloriesPer100g: item.caloriesPer100g,
+                proteinPer100g: item.proteinPer100g,
+                carbsPer100g: item.carbsPer100g,
+                fatPer100g: item.fatPer100g,
+                category: item.category,
+              });
+            });
+          }
+        });
+      })
+      .then((result) => {
+        if (result === null) {
+          return;
+        }
+        app.globalData.refreshHomeOnShow = true;
+        wx.showToast({ title: "套餐已加入", icon: "success" });
+        setTimeout(() => {
+          this.goHome();
+        }, 320);
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      });
   },
 
   openFoodEditor(food) {
@@ -568,16 +670,22 @@ Page({
 
   buildCustomFoods(keyword) {
     return this.data.foods
-      .filter((food) => !food.isBuiltin)
+      .filter((food) => isCustomFood(food))
       .filter((food) => includesKeyword(food, keyword));
   },
 
   buildBuiltinFoods(keyword, categoryKey) {
-    return filterFoodsByCategory(this.data.foods, categoryKey).filter((food) => includesKeyword(food, keyword));
+    return filterFoodsByCategory(this.data.foods, categoryKey)
+      .filter((food) => isBuiltinFood(food))
+      .filter((food) => includesKeyword(food, keyword));
   },
 
   buildAllFoods(keyword) {
     return this.data.foods.filter((food) => includesKeyword(food, keyword));
+  },
+
+  buildCombos(keyword) {
+    return this.data.combos.filter((combo) => includesComboKeyword(combo, keyword));
   },
 
   resolveEmptyState({ categoryKey, isSearching }) {
@@ -605,7 +713,14 @@ Page({
     if (categoryKey === FILTER_KEYS.CUSTOM) {
       return {
         emptyTitle: "暂无自定义食物",
-        emptyDescription: "可在“自定义”标题右侧点击添加。",
+        emptyDescription: "可在右上角添加自定义食物。",
+      };
+    }
+
+    if (categoryKey === FILTER_KEYS.COMBO) {
+      return {
+        emptyTitle: "暂无自定义套餐",
+        emptyDescription: "先去自定义套餐里创建常用套餐。",
       };
     }
 
@@ -621,9 +736,10 @@ Page({
     const currentCategoryKey = this.data.selectedCategoryKey;
 
     let displayedFoods = [];
+    let displayedCombos = [];
     let showRecentSearchList = false;
-    let currentCategoryLabel = this.getCategoryLabel(currentCategoryKey);
     let showCustomCreateAction = false;
+    let currentCategoryLabel = this.getCategoryLabel(currentCategoryKey);
 
     if (isSearching) {
       displayedFoods = this.buildAllFoods(keyword);
@@ -635,10 +751,11 @@ Page({
     } else if (currentCategoryKey === FILTER_KEYS.CUSTOM) {
       displayedFoods = this.buildCustomFoods(keyword);
       showCustomCreateAction = true;
+    } else if (currentCategoryKey === FILTER_KEYS.COMBO && this.data.canUseComboFilter) {
+      displayedCombos = this.buildCombos(keyword);
     } else {
       displayedFoods = this.buildBuiltinFoods(keyword, currentCategoryKey);
     }
-    const showFoodSection = displayedFoods.length > 0 || showCustomCreateAction;
 
     const emptyState = this.resolveEmptyState({
       categoryKey: currentCategoryKey,
@@ -648,8 +765,10 @@ Page({
     this.setData({
       isSearching,
       displayedFoods,
+      displayedCombos,
       showRecentSearchList,
-      showFoodSection,
+      showFoodSection: displayedFoods.length > 0 || showCustomCreateAction,
+      showComboSection: displayedCombos.length > 0,
       showCustomCreateAction,
       currentCategoryLabel,
       emptyTitle: emptyState.emptyTitle,

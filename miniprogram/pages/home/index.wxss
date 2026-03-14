@@ -238,14 +238,6 @@
   padding: 8rpx 16rpx 6rpx 16rpx;
 }
 
-.record-group:nth-child(odd) {
-  margin-right: 10rpx;
-}
-
-.record-group:nth-child(even) {
-  margin-left: 10rpx;
-}
-
 .group-head {
   align-items: center;
   display: flex;
@@ -336,6 +328,38 @@
   font-size: 30rpx;
   line-height: 1;
   padding-top: 2rpx;
+}
+
+.group-action-exercise {
+  background: rgba(185, 94, 58, 0.12);
+}
+
+.group-exercise-icon {
+  align-items: center;
+  display: flex;
+  height: 22rpx;
+  justify-content: center;
+  position: relative;
+  width: 22rpx;
+}
+
+.group-exercise-stroke {
+  background: #b95e3a;
+  border-radius: 2rpx;
+  height: 14rpx;
+  transform: skew(-20deg) rotate(16deg);
+  width: 5rpx;
+}
+
+.group-exercise-icon::before {
+  background: #b95e3a;
+  border-radius: 2rpx;
+  content: "";
+  height: 5rpx;
+  left: 11rpx;
+  position: absolute;
+  top: 6rpx;
+  width: 10rpx;
 }
 
 .group-count {

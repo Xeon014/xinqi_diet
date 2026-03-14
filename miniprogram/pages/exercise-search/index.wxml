@@ -1,39 +1,143 @@
 <view class="page-shell exercise-search-page">
-  <view class="panel search-bar">
-    <input class="search-input" placeholder="搜索运动" value="{{keyword}}" bindinput="handleInput" confirm-type="search" />
+  <view class="search-bar panel">
+    <input
+      class="search-input"
+      placeholder="搜索运动"
+      value="{{keyword}}"
+      bindinput="handleInput"
+      bindconfirm="handleSearchConfirm"
+      confirm-type="search"
+    />
   </view>
 
-  <view class="tool-row">
-    <view class="tool-btn" bindtap="handleOpenCustomExercise">自定义运动</view>
-  </view>
-
-  <view class="panel category-panel">
-    <view
-      wx:for="{{categories}}"
-      wx:key="key"
-      class="category-chip {{selectedCategory === item.key ? 'active' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="handleCategoryTap"
-    >
-      {{item.label}}
-    </view>
-  </view>
-
-  <view wx:if="{{displayedExercises.length}}" class="panel list-panel">
-    <view
-      wx:for="{{displayedExercises}}"
-      wx:key="id"
-      class="exercise-item"
-      data-index="{{index}}"
-      bindtap="handleSelectExercise"
-    >
-      <view class="exercise-head">
-        <view class="exercise-name">{{item.name}}</view>
-        <view class="exercise-met">MET {{item.metValue}}</view>
+  <view class="exercise-layout">
+    <view wx:if="{{!isSearching}}" class="category-sidebar panel">
+      <view
+        wx:for="{{systemFilters}}"
+        wx:key="key"
+        class="category-item {{selectedCategoryKey === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleCategoryTap"
+      >
+        {{item.label}}
       </view>
-      <view class="exercise-meta">{{item.categoryLabel}}</view>
+      <view class="category-divider"></view>
+      <view
+        wx:for="{{builtinCategories}}"
+        wx:key="key"
+        class="category-item {{selectedCategoryKey === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleCategoryTap"
+      >
+        {{item.label}}
+      </view>
+    </view>
+
+    <view class="exercise-content {{isSearching ? 'full' : ''}}">
+      <view wx:if="{{showRecentSearchList && recentSearches.length}}" class="panel section-panel">
+        <view class="section-head-row">
+          <view class="section-title-small">最近搜索</view>
+          <view class="clear-btn" bindtap="handleClearRecentSearches">清空</view>
+        </view>
+        <view class="history-list">
+          <view
+            wx:for="{{recentSearches}}"
+            wx:key="*this"
+            class="history-chip"
+            data-keyword="{{item}}"
+            bindtap="handleTapRecentSearch"
+          >
+            {{item}}
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{showExerciseSection}}" class="panel section-panel">
+        <view class="section-title-row">
+          <view class="section-title-tag">{{currentCategoryLabel}}</view>
+          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">添加</view>
+        </view>
+        <view wx:if="{{displayedExercises.length}}" class="exercise-list compact-list">
+          <view
+            wx:for="{{displayedExercises}}"
+            wx:key="id"
+            class="exercise-item"
+            data-index="{{index}}"
+            bindtap="handleSelectExercise"
+          >
+            <view class="exercise-head">
+              <view class="exercise-name">{{item.name}}</view>
+              <view class="exercise-met">MET {{item.metValue}}</view>
+            </view>
+            <view class="exercise-meta">{{item.categoryLabel}}</view>
+          </view>
+        </view>
+      </view>
+
+      <empty-state
+        wx:if="{{!displayedExercises.length && !(showRecentSearchList && recentSearches.length)}}"
+        title="{{emptyTitle}}"
+        description="{{emptyDescription}}"
+      />
     </view>
   </view>
 
-  <empty-state wx:else title="暂无运动项目" description="换个关键词试试" />
+  <view wx:if="{{editorVisible}}" class="editor-overlay" bindtap="handleEditorClose"></view>
+
+  <view wx:if="{{editorVisible}}" class="editor-sheet panel" catchtouchmove="noop">
+    <view class="editor-head">
+      <view class="editor-title">运动编辑</view>
+      <view class="editor-head-actions">
+        <view
+          wx:if="{{editorCanDelete}}"
+          class="editor-delete {{editorLoading ? 'disabled' : ''}}"
+          bindtap="handleEditorDelete"
+        >删除</view>
+        <view
+          class="icon-action {{editorLoading ? 'disabled' : ''}}"
+          bindtap="handleEditorClose"
+        >✕</view>
+      </view>
+    </view>
+
+    <view class="editor-exercise-name">{{editorExerciseName || '运动'}}</view>
+    <view class="editor-exercise-meta">{{editorCategoryLabel || '运动'}} · MET {{editorMetValue}}</view>
+
+    <view class="editor-row">
+      <view class="field-label">时长</view>
+      <view class="duration-wrap">
+        <input
+          class="duration-input"
+          type="digit"
+          value="{{editorDurationMinutes}}"
+          bindinput="handleEditorDurationInput"
+        />
+        <view class="duration-unit">min</view>
+      </view>
+    </view>
+
+    <view class="editor-row">
+      <view class="field-label">强度</view>
+      <picker
+        mode="selector"
+        range="{{intensityOptions}}"
+        range-key="label"
+        value="{{editorIntensityLevel === 'LOW' ? 0 : editorIntensityLevel === 'MEDIUM' ? 1 : 2}}"
+        bindchange="handleEditorIntensityChange"
+      >
+        <view class="intensity-chip">{{editorIntensityLevel === 'LOW' ? '低强度' : editorIntensityLevel === 'MEDIUM' ? '中强度' : '高强度'}}</view>
+      </picker>
+    </view>
+
+    <view class="editor-summary-card">
+      <view class="summary-label">预计消耗</view>
+      <view class="summary-value">{{editorTotalCalories}} kcal</view>
+    </view>
+
+    <view class="editor-action-row">
+      <view class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}" bindtap="handleEditorSubmit">
+        {{editorMode === 'edit' ? '保存' : '添加'}}
+      </view>
+    </view>
+  </view>
 </view>

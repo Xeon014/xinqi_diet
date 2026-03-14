@@ -9,9 +9,17 @@ public interface FoodRepository {
 
     void save(Food food);
 
+    void deleteById(Long id);
+
     Optional<Food> findById(Long id);
 
-    Optional<Food> findByNameIgnoreCase(String name);
+    Optional<Food> findAccessibleById(Long userId, Long id);
 
-    List<Food> findAll(String keyword);
+    Optional<Food> findOwnedCustomById(Long userId, Long id);
+
+    Optional<Food> findByAccessibleNameIgnoreCase(Long userId, String name);
+
+    List<Food> findAll(Long userId, String keyword);
+
+    List<Food> findCustomByUser(Long userId, String keyword);
 }

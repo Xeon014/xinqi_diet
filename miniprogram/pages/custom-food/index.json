@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "\u81ea\u5b9a\u4e49\u98df\u7269"
+  "navigationBarTitleText": "自定义食物",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }

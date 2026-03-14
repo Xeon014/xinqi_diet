@@ -17,6 +17,9 @@ public class Food {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @TableField("user_id")
+    private Long userId;
+
     private String name;
 
     @TableField("calories_per_100g")
@@ -50,6 +53,7 @@ public class Food {
     private LocalDateTime createdAt;
 
     public Food(
+            Long userId,
             String name,
             BigDecimal caloriesPer100g,
             BigDecimal proteinPer100g,
@@ -57,6 +61,7 @@ public class Food {
             BigDecimal fatPer100g,
             String category
     ) {
+        this.userId = userId;
         this.name = name;
         this.caloriesPer100g = caloriesPer100g;
         this.proteinPer100g = proteinPer100g;
@@ -81,7 +86,7 @@ public class Food {
             String aliases,
             Boolean builtin
     ) {
-        this(name, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g, category);
+        this(null, name, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g, category);
         this.source = source;
         this.sourceRef = sourceRef;
         this.aliases = aliases;

@@ -14,6 +14,8 @@ public interface MealRecordRepository {
 
     void deleteById(Long id);
 
+    long countByFoodId(Long foodId);
+
     List<MealRecord> findByUserAndDate(Long userId, LocalDate date);
 
     List<MealRecord> findByUserAndDateAndMealType(Long userId, LocalDate date, MealType mealType);

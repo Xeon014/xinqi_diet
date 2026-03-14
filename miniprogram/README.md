@@ -3,9 +3,8 @@
 ## 目录（核心页面）
 
 - `pages/home`：首页（日期切换、净热量总览、分组记录、健康日记入口）
-- `pages/food-search`：食物选择页（搜索、分类、最近搜索、食物编辑底部弹窗）
-- `pages/exercise-editor`：运动记录编辑
-- `pages/exercise-search`：运动搜索与选择
+- `pages/food-search`：食物选择页（搜索、分类、最近搜索、套餐、食物编辑底部弹窗）
+- `pages/exercise-search`：运动选择页（搜索、分类、最近搜索、运动编辑底部弹窗）
 - `pages/health-diary-editor`：健康日记编辑（图文）
 - `pages/profile`：我的页
 - `pages/personal-info`：个人基础资料维护
@@ -13,8 +12,8 @@
 - `pages/meal-combo-manage`：自定义套餐管理
 - `pages/progress`：趋势页
 - `pages/onboarding-profile`：首次登录资料引导
-- `pages/custom-food`：自定义食物创建
-- `pages/custom-exercise`：自定义运动创建
+- `pages/custom-food`：自定义食物管理
+- `pages/custom-exercise`：自定义运动管理
 
 ## 饮食记录链路（当前实现）
 
@@ -23,12 +22,24 @@
 - 在 `food-search` 选中食物后，不再跳转独立页面，而是从底部弹出食物编辑弹窗：
   - 新建场景按钮：`添加`
   - 编辑场景按钮：`完成编辑`
+- 食物选择页左侧筛选：`最近记录 / 最近搜索 / 自定义 / 套餐 / 内置分类`
 - 自定义食物入口位于“自定义”列表标题右侧的 `添加` 按钮。
+- “我的 -> 自定义食物”进入独立管理页，支持新建、编辑、删除。
 - 食物列表仅展示名称与热量（`kcal`），不展示蛋白/碳水/脂肪明细。
 
-## 当前无可见业务入口的页面（待后续清理）
+## 运动记录链路（当前实现）
 
-- `pages/meal-editor`
+- 首页右下角加号：进入 `exercise-search`（携带日期）。
+- 首页已有运动记录：进入 `exercise-search` 的编辑模式（携带 `mode=edit&recordId`）。
+- 在 `exercise-search` 选中运动后，从同页底部弹出运动编辑弹窗：
+  - 新建场景按钮：`添加`
+  - 编辑场景按钮：`保存`
+- 运动选择页左侧筛选：`最近运动 / 最近搜索 / 自定义 / 内置分类`
+- 自定义运动入口位于“自定义”筛选标题右侧的 `添加` 按钮。
+- “我的 -> 自定义运动”进入独立管理页，支持新建、编辑、删除。
+
+## 当前无可见业务入口的页面
+
 - `pages/food-item-editor`
 
 ## 联调方式

@@ -45,12 +45,38 @@ function getFoodCategoryLabel(rawCategory) {
 }
 
 function decorateFood(food) {
+  const hasExplicitBuiltinFlag = (food.isBuiltin !== undefined && food.isBuiltin !== null)
+    || (food.builtin !== undefined && food.builtin !== null);
+  const isBuiltin = hasExplicitBuiltinFlag
+    ? Boolean(food.isBuiltin ?? food.builtin)
+    : food.userId === null || food.userId === undefined;
   return {
     ...food,
+    isBuiltin,
     category: food.category || getFoodCategoryLabel(food.category),
     categoryKey: normalizeFoodCategoryKey(food.category),
     categoryLabel: getFoodCategoryLabel(food.category),
   };
+}
+
+function isBuiltinFood(food) {
+  if (!food) {
+    return false;
+  }
+  if (food.isBuiltin !== undefined && food.isBuiltin !== null) {
+    return Boolean(food.isBuiltin);
+  }
+  if (food.builtin !== undefined && food.builtin !== null) {
+    return Boolean(food.builtin);
+  }
+  return food.userId === null || food.userId === undefined;
+}
+
+function isCustomFood(food) {
+  if (!food) {
+    return false;
+  }
+  return !isBuiltinFood(food) && food.userId !== null && food.userId !== undefined;
 }
 
 function filterFoodsByCategory(foods, categoryKey) {
@@ -68,5 +94,7 @@ module.exports = {
   decorateFood,
   filterFoodsByCategory,
   getFoodCategoryLabel,
+  isBuiltinFood,
+  isCustomFood,
   normalizeFoodCategoryKey,
 };

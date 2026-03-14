@@ -33,10 +33,36 @@ function getIntensityLabel(intensity) {
 }
 
 function decorateExercise(exercise) {
+  const hasExplicitBuiltinFlag = (exercise.isBuiltin !== undefined && exercise.isBuiltin !== null)
+    || (exercise.builtin !== undefined && exercise.builtin !== null);
+  const isBuiltin = hasExplicitBuiltinFlag
+    ? Boolean(exercise.isBuiltin ?? exercise.builtin)
+    : exercise.userId === null || exercise.userId === undefined;
   return {
     ...exercise,
+    isBuiltin,
     categoryLabel: getExerciseCategoryLabel(exercise.category),
   };
+}
+
+function isBuiltinExercise(exercise) {
+  if (!exercise) {
+    return false;
+  }
+  if (exercise.isBuiltin !== undefined && exercise.isBuiltin !== null) {
+    return Boolean(exercise.isBuiltin);
+  }
+  if (exercise.builtin !== undefined && exercise.builtin !== null) {
+    return Boolean(exercise.builtin);
+  }
+  return exercise.userId === null || exercise.userId === undefined;
+}
+
+function isCustomExercise(exercise) {
+  if (!exercise) {
+    return false;
+  }
+  return !isBuiltinExercise(exercise) && exercise.userId !== null && exercise.userId !== undefined;
 }
 
 function filterExercisesByCategory(exercises, category) {
@@ -53,4 +79,6 @@ module.exports = {
   filterExercisesByCategory,
   getExerciseCategoryLabel,
   getIntensityLabel,
+  isBuiltinExercise,
+  isCustomExercise,
 };

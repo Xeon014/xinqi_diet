@@ -9,7 +9,13 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface FoodMapper extends BaseMapper<Food> {
 
-    Food findByNameIgnoreCase(String name);
+    Food findAccessibleById(@Param("userId") Long userId, @Param("id") Long id);
 
-    List<Food> findAll(@Param("keyword") String keyword);
+    Food findOwnedCustomById(@Param("userId") Long userId, @Param("id") Long id);
+
+    Food findByAccessibleNameIgnoreCase(@Param("userId") Long userId, @Param("name") String name);
+
+    List<Food> findAll(@Param("userId") Long userId, @Param("keyword") String keyword);
+
+    List<Food> findCustomByUser(@Param("userId") Long userId, @Param("keyword") String keyword);
 }

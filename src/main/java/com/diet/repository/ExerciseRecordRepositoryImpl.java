@@ -43,6 +43,12 @@ public class ExerciseRecordRepositoryImpl implements ExerciseRecordRepository {
     }
 
     @Override
+    public long countByExerciseId(Long exerciseId) {
+        return exerciseRecordMapper.selectCount(new LambdaQueryWrapper<ExerciseRecord>()
+                .eq(ExerciseRecord::getExerciseId, exerciseId));
+    }
+
+    @Override
     public List<ExerciseRecord> findByUserAndDate(Long userId, LocalDate date) {
         return exerciseRecordMapper.selectList(new LambdaQueryWrapper<ExerciseRecord>()
                 .eq(ExerciseRecord::getUserId, userId)

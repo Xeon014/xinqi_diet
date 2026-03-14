@@ -4,11 +4,6 @@
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:xinqi_diet}
     password: ${DB_PASSWORD:XinqiDiet@2026!}
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      continue-on-error: false
 
 logging:
   level:

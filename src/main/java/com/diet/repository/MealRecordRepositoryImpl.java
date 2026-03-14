@@ -44,6 +44,12 @@ public class MealRecordRepositoryImpl implements MealRecordRepository {
     }
 
     @Override
+    public long countByFoodId(Long foodId) {
+        return mealRecordMapper.selectCount(new LambdaQueryWrapper<MealRecord>()
+                .eq(MealRecord::getFoodId, foodId));
+    }
+
+    @Override
     public List<MealRecord> findByUserAndDate(Long userId, LocalDate date) {
         return mealRecordMapper.selectList(new LambdaQueryWrapper<MealRecord>()
                 .eq(MealRecord::getUserId, userId)

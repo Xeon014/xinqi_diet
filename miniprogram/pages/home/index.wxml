@@ -84,7 +84,16 @@
             +
           </view>
         </view>
-        <view wx:else class="group-count">{{group.records.length}} 条</view>
+        <view wx:else class="group-actions">
+          <view
+            class="group-action-btn group-action-exercise"
+            bindtap="handleQuickAddExercise"
+          >
+            <view class="group-exercise-icon">
+              <view class="group-exercise-stroke"></view>
+            </view>
+          </view>
+        </view>
       </view>
 
       <view wx:if="{{group.records.length}}" class="group-list">

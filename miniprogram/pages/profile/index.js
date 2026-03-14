@@ -89,7 +89,7 @@ Page({
   handleOpenTool(event) {
     const { key } = event.currentTarget.dataset;
     if (key === "custom-food") {
-      wx.navigateTo({ url: "/pages/food-search/index" });
+      wx.navigateTo({ url: "/pages/custom-food/index" });
       return;
     }
     if (key === "custom-combo") {
@@ -97,7 +97,7 @@ Page({
       return;
     }
     if (key === "custom-exercise") {
-      wx.navigateTo({ url: "/pages/exercise-search/index" });
+      wx.navigateTo({ url: "/pages/custom-exercise/index" });
     }
   },
 });

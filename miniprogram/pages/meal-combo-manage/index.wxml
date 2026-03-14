@@ -1,6 +1,12 @@
 <view class="page-shell combo-manage-page">
   <view wx:if="{{editing}}" class="panel combo-editor">
-    <view class="section-title">编辑套餐</view>
+    <view class="editor-head">
+      <view>
+        <view class="section-title">{{editMode === 'edit' ? '编辑套餐' : '新建套餐'}}</view>
+        <view class="section-subtitle">支持直接维护常用套餐</view>
+      </view>
+      <view wx:if="{{editMode === 'edit'}}" class="action-btn danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
+    </view>
 
     <view class="field-group">
       <view class="field-label">套餐名称</view>
@@ -22,9 +28,9 @@
       </view>
     </view>
 
-    <view class="list-head">
+    <view class="list-head list-head-gap">
       <view class="field-label">食物明细</view>
-      <view class="add-food-btn" bindtap="handleAddFood">+ 添加食物</view>
+      <view class="action-btn small" bindtap="handleAddFood">添加食物</view>
     </view>
 
     <view wx:if="{{editForm.items.length}}" class="food-list">
@@ -48,22 +54,31 @@
 
     <view class="editor-actions">
       <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
-      <view class="primary-button" bindtap="handleSaveEdit">保存</view>
+      <view class="primary-button" bindtap="handleSaveEdit">{{editMode === 'edit' ? '保存' : '创建'}}</view>
     </view>
   </view>
 
-  <view wx:elif="{{combos.length}}" class="panel combo-list">
-    <view wx:for="{{combos}}" wx:key="id" class="combo-item">
-      <view class="combo-main">
-        <view class="combo-name">{{item.name}}</view>
-        <view class="combo-meta">{{mealTypeLabels[item.mealType] || '餐次'}} · {{item.items.length}} 种食物</view>
+  <block wx:else>
+    <view class="panel manage-head">
+      <view>
+        <view class="section-title">自定义套餐</view>
       </view>
-      <view class="combo-actions">
-        <view class="action-btn" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
-        <view class="action-btn danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+      <view class="action-btn" bindtap="handleStartCreate">新建</view>
+    </view>
+
+    <view wx:if="{{combos.length}}" class="panel combo-list">
+      <view wx:for="{{combos}}" wx:key="id" class="combo-item">
+        <view class="combo-main">
+          <view class="combo-name">{{item.name}}</view>
+          <view class="combo-meta">{{mealTypeLabels[item.mealType] || '餐次'}} · {{item.items.length}} 种食物</view>
+        </view>
+        <view class="combo-actions">
+          <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+          <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+        </view>
       </view>
     </view>
-  </view>
 
-  <empty-state wx:else title="暂无自定义套餐" description="先去记录页把常用食物保存为套餐" />
+    <empty-state wx:else title="暂无自定义套餐" description="先创建你的常用套餐" />
+  </block>
 </view>

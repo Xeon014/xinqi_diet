@@ -73,8 +73,26 @@
         </view>
       </view>
 
+      <view wx:if="{{showComboSection}}" class="panel section-panel">
+        <view class="section-title-row">
+          <view class="section-title-tag">{{currentCategoryLabel}}</view>
+        </view>
+        <view class="combo-list compact-list">
+          <view
+            wx:for="{{displayedCombos}}"
+            wx:key="id"
+            class="combo-item"
+            data-index="{{index}}"
+            bindtap="handleSelectCombo"
+          >
+            <view class="combo-name">{{item.name}}</view>
+            <view class="combo-meta">{{mealTypeLabel}} · {{item.items.length}} 种食物</view>
+          </view>
+        </view>
+      </view>
+
       <empty-state
-        wx:if="{{!displayedFoods.length && !(showRecentSearchList && recentSearches.length)}}"
+        wx:if="{{!displayedFoods.length && !displayedCombos.length && !(showRecentSearchList && recentSearches.length)}}"
         title="{{emptyTitle}}"
         description="{{emptyDescription}}"
       />
@@ -89,9 +107,9 @@
       <view class="editor-head-actions">
         <view
           wx:if="{{editorCanDelete}}"
-          class="icon-action danger {{editorLoading ? 'disabled' : ''}}"
+          class="editor-delete {{editorLoading ? 'disabled' : ''}}"
           bindtap="handleEditorDelete"
-        >🗑</view>
+        >删除</view>
         <view
           class="icon-action {{editorLoading ? 'disabled' : ''}}"
           bindtap="handleEditorClose"
@@ -130,10 +148,7 @@
     </view>
 
     <view class="editor-action-row">
-      <view
-        class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}"
-        bindtap="handleEditorSubmit"
-      >
+      <view class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}" bindtap="handleEditorSubmit">
         {{editorMode === 'edit' ? '完成编辑' : '添加'}}
       </view>
     </view>

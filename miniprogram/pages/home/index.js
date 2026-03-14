@@ -175,8 +175,18 @@ function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
   return `/pages/food-search/index?${params.join("&")}`;
 }
 
-function buildExerciseEditorUrl(recordDate) {
-  return `/pages/exercise-editor/index?recordDate=${encodeURIComponent(recordDate)}`;
+function buildExerciseSearchUrl({ recordDate, source, mode, recordId }) {
+  const params = [
+    `recordDate=${encodeURIComponent(recordDate)}`,
+    `source=${encodeURIComponent(source)}`,
+  ];
+  if (mode) {
+    params.push(`mode=${encodeURIComponent(mode)}`);
+  }
+  if (recordId != null) {
+    params.push(`recordId=${encodeURIComponent(recordId)}`);
+  }
+  return `/pages/exercise-search/index?${params.join("&")}`;
 }
 
 function resolveMealNutrition(records) {
@@ -401,7 +411,11 @@ Page({
 
   handleQuickAddExercise() {
     wx.navigateTo({
-      url: buildExerciseEditorUrl(this.data.recordDate),
+      url: buildExerciseSearchUrl({
+        recordDate: this.data.recordDate,
+        source: "home",
+        mode: "create",
+      }),
     });
   },
 
@@ -540,7 +554,12 @@ Page({
     }
 
     wx.navigateTo({
-      url: `/pages/exercise-editor/index?mode=edit&recordDate=${encodeURIComponent(recordDate)}`,
+      url: buildExerciseSearchUrl({
+        recordDate,
+        source: "home",
+        mode: "edit",
+        recordId,
+      }),
     });
   },
 

@@ -1,4 +1,4 @@
-const { deleteMealCombo, getMealComboDetail, getMealComboList, updateMealCombo } = require("../../services/meal-combo");
+const { createMealCombo, deleteMealCombo, getMealComboDetail, getMealComboList, updateMealCombo } = require("../../services/meal-combo");
 const { pickErrorMessage } = require("../../utils/request");
 
 const MEAL_TYPES = [
@@ -12,6 +12,16 @@ const MEAL_TYPE_LABELS = MEAL_TYPES.reduce((result, item) => {
   result[item.value] = item.label;
   return result;
 }, {});
+
+function buildEmptyForm() {
+  return {
+    id: null,
+    name: "",
+    description: "",
+    mealType: "BREAKFAST",
+    items: [],
+  };
+}
 
 function toNumber(value) {
   const number = Number(value);
@@ -42,13 +52,14 @@ Page({
     mealTypeLabels: MEAL_TYPE_LABELS,
     mealTypes: MEAL_TYPES,
     editing: false,
-    editForm: {
-      id: null,
-      name: "",
-      description: "",
-      mealType: "BREAKFAST",
-      items: [],
-    },
+    editMode: "create",
+    editForm: buildEmptyForm(),
+  },
+
+  onLoad(options = {}) {
+    if (options.mode === "create") {
+      this.handleStartCreate();
+    }
   },
 
   onShow() {
@@ -67,12 +78,17 @@ Page({
       });
   },
 
+  handleStartCreate() {
+    this.setData({ editing: true, editMode: "create", editForm: buildEmptyForm() });
+  },
+
   handleEdit(event) {
     const comboId = Number(event.currentTarget.dataset.id);
     getMealComboDetail(comboId)
       .then((combo) => {
         this.setData({
           editing: true,
+          editMode: "edit",
           editForm: {
             id: combo.id,
             name: combo.name || "",
@@ -88,10 +104,11 @@ Page({
   },
 
   handleDelete(event) {
-    const comboId = Number(event.currentTarget.dataset.id);
+    const comboId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
+    const target = this.data.combos.find((item) => Number(item.id) === comboId);
     wx.showModal({
       title: "删除套餐",
-      content: "删除后不可恢复，是否继续？",
+      content: target ? `确认删除“${target.name}”吗？` : "删除后不可恢复，是否继续？",
       success: (result) => {
         if (!result.confirm) {
           return;
@@ -99,6 +116,7 @@ Page({
         deleteMealCombo(comboId)
           .then(() => {
             wx.showToast({ title: "删除成功", icon: "success" });
+            this.handleCancelEdit(false);
             this.loadCombos();
           })
           .catch((error) => {
@@ -167,29 +185,21 @@ Page({
     this.setData({ "editForm.items": items });
   },
 
-  handleCancelEdit() {
-    this.setData({
-      editing: false,
-      editForm: {
-        id: null,
-        name: "",
-        description: "",
-        mealType: "BREAKFAST",
-        items: [],
-      },
-    });
-    this.loadCombos();
+  handleCancelEdit(shouldReload = true) {
+    this.setData({ editing: false, editMode: "create", editForm: buildEmptyForm() });
+    if (shouldReload) {
+      this.loadCombos();
+    }
   },
 
   handleSaveEdit() {
     const { id, name, description, mealType, items } = this.data.editForm;
-    const comboName = (name || "").trim();
+    const comboName = String(name || "").trim();
 
     if (!comboName) {
       wx.showToast({ title: "请输入套餐名称", icon: "none" });
       return;
     }
-
     if (!items.length) {
       wx.showToast({ title: "请至少保留一种食物", icon: "none" });
       return;
@@ -201,7 +211,7 @@ Page({
       return;
     }
 
-    updateMealCombo(id, {
+    const payload = {
       name: comboName,
       description,
       mealType,
@@ -209,9 +219,12 @@ Page({
         foodId: item.foodId,
         quantityInGram: toNumber(item.quantityInGram),
       })),
-    })
+    };
+
+    const task = id ? updateMealCombo(id, payload) : createMealCombo(payload);
+    task
       .then(() => {
-        wx.showToast({ title: "保存成功", icon: "success" });
+        wx.showToast({ title: id ? "保存成功" : "创建成功", icon: "success" });
         this.handleCancelEdit();
       })
       .catch((error) => {

@@ -66,6 +66,12 @@ public class MealComboRepositoryImpl implements MealComboRepository {
     }
 
     @Override
+    public long countItemsByFoodId(Long foodId) {
+        return mealComboItemMapper.selectCount(new LambdaQueryWrapper<MealComboItem>()
+                .eq(MealComboItem::getFoodId, foodId));
+    }
+
+    @Override
     public void deleteById(Long comboId) {
         mealComboMapper.deleteById(comboId);
     }

@@ -3,6 +3,9 @@
     name: diet
   profiles:
     active: dev
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml

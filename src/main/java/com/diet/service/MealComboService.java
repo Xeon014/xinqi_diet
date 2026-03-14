@@ -46,7 +46,7 @@ public class MealComboService {
         combo.setUpdatedAt(LocalDateTime.now());
         mealComboRepository.save(combo);
 
-        List<MealComboItem> comboItems = buildItems(combo.getId(), request.items());
+        List<MealComboItem> comboItems = buildItems(userId, combo.getId(), request.items());
         mealComboRepository.saveItems(comboItems);
 
         return toResponse(combo, comboItems);
@@ -62,7 +62,7 @@ public class MealComboService {
         mealComboRepository.save(combo);
 
         mealComboRepository.deleteItemsByComboId(combo.getId());
-        List<MealComboItem> comboItems = buildItems(combo.getId(), request.items());
+        List<MealComboItem> comboItems = buildItems(userId, combo.getId(), request.items());
         mealComboRepository.saveItems(comboItems);
 
         return toResponse(combo, comboItems);
@@ -92,10 +92,11 @@ public class MealComboService {
         return toResponse(combo, mealComboRepository.findItemsByComboId(combo.getId()));
     }
 
-    private List<MealComboItem> buildItems(Long comboId, List<CreateMealComboItemRequest> requestItems) {
+    private List<MealComboItem> buildItems(Long userId, Long comboId, List<CreateMealComboItemRequest> requestItems) {
         List<MealComboItem> comboItems = new ArrayList<>();
         for (int i = 0; i < requestItems.size(); i++) {
             CreateMealComboItemRequest requestItem = requestItems.get(i);
+            getAccessibleFood(userId, requestItem.foodId());
             comboItems.add(new MealComboItem(
                     comboId,
                     requestItem.foodId(),
@@ -158,6 +159,11 @@ public class MealComboService {
 
     private Food getFood(Long foodId) {
         return foodRepository.findById(foodId)
+                .orElseThrow(() -> new NotFoundException("food not found, id=" + foodId));
+    }
+
+    private Food getAccessibleFood(Long userId, Long foodId) {
+        return foodRepository.findAccessibleById(userId, foodId)
                 .orElseThrow(() -> new NotFoundException("food not found, id=" + foodId));
     }
 }
