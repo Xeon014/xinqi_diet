@@ -1,15 +1,6 @@
 const { getCurrentUser, updateProfile } = require("../../services/user");
 const { pickErrorMessage } = require("../../utils/request");
 
-const MAX_GOAL_DELTA = 1000;
-const MIN_GOAL_DELTA = -1000;
-
-const GOAL_MODE_OPTIONS = [
-  { label: "减脂", value: "LOSE", defaultDelta: -300 },
-  { label: "维持", value: "MAINTAIN", defaultDelta: 0 },
-  { label: "增重", value: "GAIN", defaultDelta: 300 },
-];
-
 function toInteger(value) {
   return Math.round(Number(value || 0));
 }
@@ -23,15 +14,6 @@ function toOneDecimal(value) {
 }
 
 function toPositiveNumber(rawValue) {
-  const text = String(rawValue == null ? "" : rawValue).trim();
-  if (!text) {
-    return null;
-  }
-  const number = Number(text);
-  return Number.isFinite(number) ? number : NaN;
-}
-
-function toSignedNumber(rawValue) {
   const text = String(rawValue == null ? "" : rawValue).trim();
   if (!text) {
     return null;
@@ -81,24 +63,6 @@ function calculateEstimatedBaseCalories(profile) {
   return toInteger(effectiveBmr / 0.7);
 }
 
-function formatGoalMode(mode) {
-  if (mode === "LOSE") {
-    return "减脂";
-  }
-  if (mode === "GAIN") {
-    return "增重";
-  }
-  return "维持";
-}
-
-function formatSignedInteger(value) {
-  const number = toInteger(value);
-  if (number > 0) {
-    return `+${number}`;
-  }
-  return String(number);
-}
-
 function getMissingBmrFields(profile) {
   const missingFields = [];
   if (!profile || !profile.gender) {
@@ -127,35 +91,22 @@ function buildMetrics(profile) {
   const bmrEstimate = calculateFormulaBmr(profile);
   const baseCaloriesEstimate = calculateEstimatedBaseCalories(profile);
   const missingBmrFields = getMissingBmrFields(profile);
-  const goalMode = profile.goalMode || "MAINTAIN";
-  const goalCalorieDelta = profile.goalCalorieDelta == null ? 0 : toInteger(profile.goalCalorieDelta);
+  const baseCaloriesReference = profile.tdee == null ? baseCaloriesEstimate : toInteger(profile.tdee);
+  const targetCalories = profile.dailyCalorieTarget == null ? null : toInteger(profile.dailyCalorieTarget);
 
   return {
     currentWeightLabel: profile.currentWeight == null ? "--" : String(profile.currentWeight),
     bmiLabel: toOneDecimal(profile.bmi),
     bmrLabel: profile.bmr == null ? "--" : String(toInteger(profile.bmr)),
-    baseCaloriesLabel: profile.tdee == null ? "--" : String(toInteger(profile.tdee)),
-    targetCaloriesLabel: profile.dailyCalorieTarget == null ? "--" : String(toInteger(profile.dailyCalorieTarget)),
-    goalMode,
-    goalModeLabel: formatGoalMode(goalMode),
-    goalDeltaLabel: formatSignedInteger(goalCalorieDelta),
+    targetCaloriesLabel: targetCalories == null ? "--" : String(targetCalories),
+    targetCaloriesHint: targetCalories == null ? "未设置" : `当前 ${targetCalories} kcal/天`,
     bmrEstimate: bmrEstimate == null ? "--" : String(bmrEstimate),
-    baseCaloriesEstimate: baseCaloriesEstimate == null ? "--" : String(baseCaloriesEstimate),
     bmrEstimateAvailable: bmrEstimate != null,
-    baseCaloriesEstimateAvailable: baseCaloriesEstimate != null,
     bmrHint: bmrEstimate == null ? `请先完善${missingBmrFields.join("、")}` : "可直接填入智能预估值",
-    baseCaloriesHint: baseCaloriesEstimate == null ? "请先完善基础代谢" : "按无运动情况下的日常消耗预估",
-    goalHint: "目标热量 = 基础日消耗 + 差值，负数减脂，正数增重",
+    baseCaloriesHint: baseCaloriesReference == null
+      ? "暂无法预估基础日消耗，请先完善基础代谢"
+      : `预估基础日消耗约 ${baseCaloriesReference} kcal/天`,
   };
-}
-
-function calculateTargetPreview(baseCaloriesLabel, goalCalorieDelta) {
-  const baseCalories = toPositiveNumber(baseCaloriesLabel);
-  const delta = toSignedNumber(goalCalorieDelta);
-  if (baseCalories == null || !Number.isFinite(baseCalories) || delta == null || !Number.isFinite(delta)) {
-    return "--";
-  }
-  return String(toInteger(baseCalories + delta));
 }
 
 function createEmptySheet() {
@@ -169,8 +120,6 @@ function createEmptySheet() {
     smartValue: "--",
     smartAvailable: false,
     hint: "",
-    modeValue: "MAINTAIN",
-    targetPreview: "--",
     saving: false,
   };
 }
@@ -182,24 +131,17 @@ Page({
       currentWeightLabel: "--",
       bmiLabel: "--",
       bmrLabel: "--",
-      baseCaloriesLabel: "--",
       targetCaloriesLabel: "--",
-      goalMode: "MAINTAIN",
-      goalModeLabel: "维持",
-      goalDeltaLabel: "0",
+      targetCaloriesHint: "未设置",
       bmrEstimate: "--",
-      baseCaloriesEstimate: "--",
       bmrEstimateAvailable: false,
-      baseCaloriesEstimateAvailable: false,
       bmrHint: "",
       baseCaloriesHint: "",
-      goalHint: "",
     },
     settings: {
       currentWeight: "",
       targetWeight: "",
     },
-    goalModeOptions: GOAL_MODE_OPTIONS,
     sheet: createEmptySheet(),
   },
 
@@ -249,7 +191,7 @@ Page({
   },
 
   openSheet(type) {
-    const { metrics, profile } = this.data;
+    const { metrics } = this.data;
     if (type === "BMR") {
       this.setData({
         sheet: {
@@ -262,49 +204,23 @@ Page({
           smartValue: metrics.bmrEstimate,
           smartAvailable: metrics.bmrEstimateAvailable,
           hint: metrics.bmrHint,
-          modeValue: "MAINTAIN",
-          targetPreview: "--",
           saving: false,
         },
       });
       return;
     }
 
-    if (type === "BASE") {
-      this.setData({
-        sheet: {
-          visible: true,
-          type,
-          title: "基础日消耗设置",
-          fieldLabel: "基础日消耗 (kcal/天)",
-          currentValue: metrics.baseCaloriesLabel,
-          inputValue: metrics.baseCaloriesLabel === "--" ? "" : metrics.baseCaloriesLabel,
-          smartValue: metrics.baseCaloriesEstimate,
-          smartAvailable: metrics.baseCaloriesEstimateAvailable,
-          hint: metrics.baseCaloriesHint,
-          modeValue: "MAINTAIN",
-          targetPreview: "--",
-          saving: false,
-        },
-      });
-      return;
-    }
-
-    const goalMode = profile.goalMode || "MAINTAIN";
-    const goalCalorieDelta = profile.goalCalorieDelta == null ? 0 : toInteger(profile.goalCalorieDelta);
     this.setData({
       sheet: {
         visible: true,
         type,
         title: "目标热量设置",
-        fieldLabel: "热量差值 (kcal/天)",
+        fieldLabel: "目标热量 (kcal/天)",
         currentValue: metrics.targetCaloriesLabel,
-        inputValue: String(goalCalorieDelta),
+        inputValue: metrics.targetCaloriesLabel === "--" ? "" : metrics.targetCaloriesLabel,
         smartValue: "--",
         smartAvailable: false,
-        hint: metrics.goalHint,
-        modeValue: goalMode,
-        targetPreview: calculateTargetPreview(metrics.baseCaloriesLabel, goalCalorieDelta),
+        hint: metrics.baseCaloriesHint,
         saving: false,
       },
     });
@@ -312,10 +228,6 @@ Page({
 
   handleOpenBmrSheet() {
     this.openSheet("BMR");
-  },
-
-  handleOpenBaseSheet() {
-    this.openSheet("BASE");
   },
 
   handleOpenGoalSheet() {
@@ -330,28 +242,7 @@ Page({
   },
 
   handleSheetInput(event) {
-    const inputValue = event.detail.value;
-    if (this.data.sheet.type === "GOAL") {
-      this.setData({
-        "sheet.inputValue": inputValue,
-        "sheet.targetPreview": calculateTargetPreview(this.data.metrics.baseCaloriesLabel, inputValue),
-      });
-      return;
-    }
-    this.setData({ "sheet.inputValue": inputValue });
-  },
-
-  handleGoalModeSelect(event) {
-    if (this.data.sheet.type !== "GOAL") {
-      return;
-    }
-    const { value } = event.currentTarget.dataset;
-    const option = GOAL_MODE_OPTIONS.find((item) => item.value === value) || GOAL_MODE_OPTIONS[1];
-    this.setData({
-      "sheet.modeValue": option.value,
-      "sheet.inputValue": String(option.defaultDelta),
-      "sheet.targetPreview": calculateTargetPreview(this.data.metrics.baseCaloriesLabel, option.defaultDelta),
-    });
+    this.setData({ "sheet.inputValue": event.detail.value });
   },
 
   handleUseSmartValue() {
@@ -372,43 +263,37 @@ Page({
     let successTitle = "";
 
     if (sheet.type === "GOAL") {
-      const goalCalorieDelta = toSignedNumber(sheet.inputValue);
-      if (!sheet.modeValue) {
-        wx.showToast({ title: "请选择目标模式", icon: "none" });
-        return;
-      }
-      if (goalCalorieDelta == null || !Number.isFinite(goalCalorieDelta) || goalCalorieDelta < MIN_GOAL_DELTA || goalCalorieDelta > MAX_GOAL_DELTA) {
-        wx.showToast({ title: "请输入-1000到1000的热量差值", icon: "none" });
-        return;
-      }
-      payload = {
-        goalMode: sheet.modeValue,
-        goalCalorieDelta: toInteger(goalCalorieDelta),
-      };
-      successTitle = "目标热量已更新";
-    } else {
-      const numberValue = toPositiveNumber(sheet.inputValue);
-      if (numberValue == null || !Number.isFinite(numberValue) || numberValue <= 0) {
-        wx.showToast({
-          title: sheet.type === "BMR" ? "请输入正确基础代谢" : "请输入正确基础日消耗",
-          icon: "none",
-        });
+      const targetCalories = toPositiveNumber(sheet.inputValue);
+      if (targetCalories == null || !Number.isFinite(targetCalories) || targetCalories <= 0) {
+        wx.showToast({ title: "请输入正确目标热量", icon: "none" });
         return;
       }
 
-      const roundedValue = toInteger(numberValue);
-      const currentValue = sheet.type === "BMR"
-        ? toPositiveNumber(metrics.bmrLabel)
-        : toPositiveNumber(metrics.baseCaloriesLabel);
+      const roundedValue = toInteger(targetCalories);
+      const currentValue = toPositiveNumber(metrics.targetCaloriesLabel);
       if (currentValue != null && roundedValue === toInteger(currentValue)) {
         this.setData({ sheet: createEmptySheet() });
         return;
       }
 
-      payload = sheet.type === "BMR"
-        ? { customBmr: roundedValue }
-        : { customTdee: roundedValue };
-      successTitle = sheet.type === "BMR" ? "基础代谢已更新" : "基础日消耗已更新";
+      payload = { dailyCalorieTarget: roundedValue };
+      successTitle = "目标热量已更新";
+    } else {
+      const numberValue = toPositiveNumber(sheet.inputValue);
+      if (numberValue == null || !Number.isFinite(numberValue) || numberValue <= 0) {
+        wx.showToast({ title: "请输入正确基础代谢", icon: "none" });
+        return;
+      }
+
+      const roundedValue = toInteger(numberValue);
+      const currentValue = toPositiveNumber(metrics.bmrLabel);
+      if (currentValue != null && roundedValue === toInteger(currentValue)) {
+        this.setData({ sheet: createEmptySheet() });
+        return;
+      }
+
+      payload = { customBmr: roundedValue };
+      successTitle = "基础代谢已更新";
     }
 
     this.setData({ "sheet.saving": true });

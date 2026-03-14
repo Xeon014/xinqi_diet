@@ -71,46 +71,20 @@
       <view class="recommend-btn" bindtap="handleUseRecommendedBmr">使用推荐值 {{formulaBmrPreview}}</view>
     </view>
 
-    <view wx:if="{{steps[currentStep].key === 'baseCalories'}}" class="field-wrap">
-      <input
-        class="field-input"
-        type="number"
-        value="{{form.baseCalories}}"
-        data-field="baseCalories"
-        bindinput="handleInput"
-        placeholder="请输入基础日消耗(kcal/天)"
-      />
-      <view class="recommend-btn" bindtap="handleUseRecommendedBaseCalories">使用推荐值 {{baseCaloriesPreview}}</view>
-    </view>
-
     <view wx:if="{{steps[currentStep].key === 'goal'}}" class="field-wrap">
-      <view class="mode-row">
-        <view
-          wx:for="{{goalModeOptions}}"
-          wx:key="value"
-          wx:for-item="option"
-          class="mode-chip {{form.goalMode === option.value ? 'active' : ''}}"
-          data-value="{{option.value}}"
-          bindtap="handleGoalModeSelect"
-        >
-          {{option.label}}
-        </view>
-      </view>
-
       <view class="field-wrap goal-input-wrap">
         <input
           class="field-input"
-          type="text"
-          value="{{form.goalCalorieDelta}}"
-          data-field="goalCalorieDelta"
+          type="number"
+          value="{{form.dailyCalorieTarget}}"
+          data-field="dailyCalorieTarget"
           bindinput="handleInput"
-          placeholder="请输入热量差值，例如 -300"
+          placeholder="请输入目标热量(kcal/天)"
         />
       </view>
 
       <view class="formula-tip">
-        <view>负数表示减脂，正数表示增重，范围 -1000 到 1000。</view>
-        <view class="goal-preview">预计目标热量 {{targetCaloriesPreview}} kcal/天</view>
+        <view>{{baseCaloriesHint}}</view>
       </view>
     </view>
   </view>

@@ -18,11 +18,6 @@
         <view class="metric-value">{{metrics.bmrLabel}}</view>
         <view class="metric-unit">kcal/天</view>
       </view>
-      <view class="metric-card orange">
-        <view class="metric-label">基础日消耗</view>
-        <view class="metric-value">{{metrics.baseCaloriesLabel}}</view>
-        <view class="metric-unit">kcal/天</view>
-      </view>
       <view class="metric-card plum">
         <view class="metric-label">目标热量</view>
         <view class="metric-value">{{metrics.targetCaloriesLabel}}</view>
@@ -67,18 +62,10 @@
       <view class="setting-entry-action">去设置</view>
     </view>
 
-    <view class="setting-entry-card" bindtap="handleOpenBaseSheet">
-      <view class="setting-entry-main">
-        <view class="setting-entry-title">基础日消耗</view>
-        <view class="setting-entry-sub">当前 {{metrics.baseCaloriesLabel}} kcal/天</view>
-      </view>
-      <view class="setting-entry-action">去设置</view>
-    </view>
-
     <view class="setting-entry-card" bindtap="handleOpenGoalSheet">
       <view class="setting-entry-main">
         <view class="setting-entry-title">目标热量</view>
-        <view class="setting-entry-sub">{{metrics.goalModeLabel}} · {{metrics.goalDeltaLabel}} kcal/天 · 目标 {{metrics.targetCaloriesLabel}} kcal/天</view>
+        <view class="setting-entry-sub">{{metrics.targetCaloriesHint}}</view>
       </view>
       <view class="setting-entry-action">去设置</view>
     </view>
@@ -91,40 +78,20 @@
     <view class="sheet-head">
       <view>
         <view class="sheet-title">{{sheet.title}}</view>
-        <view wx:if="{{sheet.type === 'GOAL'}}" class="sheet-current">当前目标 {{sheet.currentValue}} kcal/天</view>
-        <view wx:else class="sheet-current">当前 {{sheet.currentValue}} kcal/天</view>
       </view>
       <view class="sheet-close" bindtap="handleCloseSheet">✕</view>
     </view>
 
     <view wx:if="{{sheet.type === 'GOAL'}}">
-      <view class="goal-mode-row">
-        <view
-          wx:for="{{goalModeOptions}}"
-          wx:key="value"
-          wx:for-item="option"
-          class="goal-mode-chip {{sheet.modeValue === option.value ? 'active' : ''}}"
-          data-value="{{option.value}}"
-          bindtap="handleGoalModeSelect"
-        >
-          {{option.label}}
-        </view>
-      </view>
-
       <view class="field-group sheet-field-group">
         <view class="field-label">{{sheet.fieldLabel}}</view>
         <input
           class="field-input"
-          type="text"
+          type="digit"
           value="{{sheet.inputValue}}"
           bindinput="handleSheetInput"
-          placeholder="例如 -300"
+          placeholder="请输入目标热量"
         />
-      </view>
-
-      <view class="goal-summary-card">
-        <view class="goal-summary-label">预计目标热量</view>
-        <view class="goal-summary-value">{{sheet.targetPreview}} kcal/天</view>
       </view>
       <view class="sheet-hint">{{sheet.hint}}</view>
     </view>

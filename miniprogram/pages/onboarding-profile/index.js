@@ -3,17 +3,13 @@ const { getCurrentUserId } = require("../../utils/auth");
 const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
-const MAX_GOAL_DELTA = 1000;
-const MIN_GOAL_DELTA = -1000;
-
 const STEPS = [
   { key: "gender", title: "选择性别", description: "用于健康指标计算。", required: true },
   { key: "birthDate", title: "填写生日", description: "用于年龄与代谢计算。", required: true },
   { key: "height", title: "填写身高", description: "单位 cm。", required: true },
   { key: "currentWeight", title: "填写体重", description: "单位 kg。", required: true },
   { key: "bmr", title: "基础代谢 BMR", description: "静息状态下身体每天消耗的热量。", required: true },
-  { key: "baseCalories", title: "基础日消耗", description: "按无运动情况下的日常消耗预估。", required: true },
-  { key: "goal", title: "目标热量", description: "在基础日消耗上设置减脂、维持或增重差值。", required: true },
+  { key: "goal", title: "目标热量", description: "参考预估基础日消耗，自行设置每天目标热量。", required: true },
 ];
 
 const GENDER_OPTIONS = [
@@ -21,26 +17,11 @@ const GENDER_OPTIONS = [
   { label: "男", value: "MALE" },
 ];
 
-const GOAL_MODE_OPTIONS = [
-  { label: "减脂", value: "LOSE", defaultDelta: -300 },
-  { label: "维持", value: "MAINTAIN", defaultDelta: 0 },
-  { label: "增重", value: "GAIN", defaultDelta: 300 },
-];
-
 function toInteger(value) {
   return Math.round(Number(value || 0));
 }
 
 function toPositiveNumber(rawValue) {
-  const text = String(rawValue == null ? "" : rawValue).trim();
-  if (!text) {
-    return null;
-  }
-  const number = Number(text);
-  return Number.isFinite(number) ? number : NaN;
-}
-
-function toSignedNumber(rawValue) {
   const text = String(rawValue == null ? "" : rawValue).trim();
   if (!text) {
     return null;
@@ -88,35 +69,21 @@ function calculateBaseCalories(bmr) {
   return toInteger(bmr / 0.7);
 }
 
-function calculateTargetCalories(baseCalories, goalCalorieDelta) {
-  if (baseCalories == null || goalCalorieDelta == null || !Number.isFinite(goalCalorieDelta)) {
-    return null;
-  }
-  return toInteger(baseCalories + goalCalorieDelta);
-}
-
-function getGoalModeOption(value) {
-  return GOAL_MODE_OPTIONS.find((option) => option.value === value) || GOAL_MODE_OPTIONS[1];
-}
-
 Page({
   data: {
     maxBirthDate: getToday(),
     steps: STEPS,
     currentStep: 0,
     genderOptions: GENDER_OPTIONS,
-    goalModeOptions: GOAL_MODE_OPTIONS,
     submitting: false,
     formulaBmrPreview: "--",
-    baseCaloriesPreview: "--",
-    targetCaloriesPreview: "--",
+    baseCaloriesHint: "暂无法预估基础日消耗，请先完善基础代谢",
     birthDateColumns: [[], [], []],
     birthDateColumnIndex: [0, 0, 0],
     birthDateDisplay: "",
     form: {
       birthDate: "",
-      goalMode: "MAINTAIN",
-      goalCalorieDelta: "0",
+      dailyCalorieTarget: "",
     },
   },
 
@@ -131,17 +98,12 @@ Page({
     const customBmr = toPositiveNumber(form.bmr);
     const effectiveBmr = customBmr != null && Number.isFinite(customBmr) && customBmr > 0 ? customBmr : formulaBmr;
     const recommendedBaseCalories = calculateBaseCalories(effectiveBmr);
-    const customBaseCalories = toPositiveNumber(form.baseCalories);
-    const effectiveBaseCalories = customBaseCalories != null && Number.isFinite(customBaseCalories) && customBaseCalories > 0
-      ? customBaseCalories
-      : recommendedBaseCalories;
-    const goalCalorieDelta = toSignedNumber(form.goalCalorieDelta);
-    const targetCalories = calculateTargetCalories(effectiveBaseCalories, goalCalorieDelta);
 
     this.setData({
       formulaBmrPreview: formulaBmr == null ? "--" : String(formulaBmr),
-      baseCaloriesPreview: recommendedBaseCalories == null ? "--" : String(recommendedBaseCalories),
-      targetCaloriesPreview: targetCalories == null ? "--" : String(targetCalories),
+      baseCaloriesHint: recommendedBaseCalories == null
+        ? "暂无法预估基础日消耗，请先完善基础代谢"
+        : `预估基础日消耗约 ${recommendedBaseCalories} kcal/天`,
     });
   },
 
@@ -204,17 +166,6 @@ Page({
     });
   },
 
-  handleGoalModeSelect(event) {
-    const { value } = event.currentTarget.dataset;
-    const option = getGoalModeOption(value);
-    this.setData({
-      "form.goalMode": option.value,
-      "form.goalCalorieDelta": String(option.defaultDelta),
-    }, () => {
-      this.refreshFormulaMeta();
-    });
-  },
-
   handleBirthDateColumnChange(event) {
     const { column, value } = event.detail;
     const newIndex = [...this.data.birthDateColumnIndex];
@@ -258,19 +209,6 @@ Page({
       return;
     }
     this.setData({ "form.bmr": String(bmr) }, () => {
-      this.refreshFormulaMeta();
-    });
-  },
-
-  handleUseRecommendedBaseCalories() {
-    const recommendedBaseCalories = calculateBaseCalories(
-      toPositiveNumber(this.data.form.bmr) || calculateFormulaBmr(this.data.form)
-    );
-    if (recommendedBaseCalories == null) {
-      wx.showToast({ title: "无法计算推荐值", icon: "none" });
-      return;
-    }
-    this.setData({ "form.baseCalories": String(recommendedBaseCalories) }, () => {
       this.refreshFormulaMeta();
     });
   },
@@ -339,22 +277,10 @@ Page({
         }
         break;
       }
-      case "baseCalories": {
-        const baseCalories = toPositiveNumber(form.baseCalories);
-        if (baseCalories == null || !Number.isFinite(baseCalories) || baseCalories <= 0) {
-          wx.showToast({ title: "请输入基础日消耗", icon: "none" });
-          return false;
-        }
-        break;
-      }
       case "goal": {
-        const goalCalorieDelta = toSignedNumber(form.goalCalorieDelta);
-        if (!form.goalMode) {
-          wx.showToast({ title: "请选择目标模式", icon: "none" });
-          return false;
-        }
-        if (goalCalorieDelta == null || !Number.isFinite(goalCalorieDelta) || goalCalorieDelta < MIN_GOAL_DELTA || goalCalorieDelta > MAX_GOAL_DELTA) {
-          wx.showToast({ title: "请输入-1000到1000的热量差值", icon: "none" });
+        const dailyCalorieTarget = toPositiveNumber(form.dailyCalorieTarget);
+        if (dailyCalorieTarget == null || !Number.isFinite(dailyCalorieTarget) || dailyCalorieTarget <= 0) {
+          wx.showToast({ title: "请输入目标热量", icon: "none" });
           return false;
         }
         break;
@@ -390,9 +316,7 @@ Page({
 
   buildPayload() {
     const { form } = this.data;
-    const payload = {
-      goalMode: form.goalMode || "MAINTAIN",
-    };
+    const payload = {};
 
     if (form.gender) {
       payload.gender = form.gender;
@@ -416,14 +340,9 @@ Page({
       payload.customBmr = toInteger(bmr);
     }
 
-    const baseCalories = toPositiveNumber(form.baseCalories);
-    if (baseCalories != null && Number.isFinite(baseCalories) && baseCalories > 0) {
-      payload.customTdee = toInteger(baseCalories);
-    }
-
-    const goalCalorieDelta = toSignedNumber(form.goalCalorieDelta);
-    if (goalCalorieDelta != null && Number.isFinite(goalCalorieDelta)) {
-      payload.goalCalorieDelta = toInteger(goalCalorieDelta);
+    const dailyCalorieTarget = toPositiveNumber(form.dailyCalorieTarget);
+    if (dailyCalorieTarget != null && Number.isFinite(dailyCalorieTarget) && dailyCalorieTarget > 0) {
+      payload.dailyCalorieTarget = toInteger(dailyCalorieTarget);
     }
 
     return payload;

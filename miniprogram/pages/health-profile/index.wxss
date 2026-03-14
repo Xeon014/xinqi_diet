@@ -37,10 +37,6 @@
   background: linear-gradient(180deg, #edf7f5 0%, #e2f1ec 100%);
 }
 
-.metric-card.orange {
-  background: linear-gradient(180deg, #fff4ea 0%, #fbe4d4 100%);
-}
-
 .metric-card.plum {
   background: linear-gradient(180deg, #f6eef9 0%, #eadcf4 100%);
 }
@@ -109,32 +105,6 @@
   font-size: 24rpx;
   font-weight: 700;
   margin-left: 18rpx;
-}
-
-.goal-mode-row {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 26rpx;
-}
-
-.goal-mode-chip {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.88);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
-  border-radius: 999rpx;
-  color: #1e5a4f;
-  display: inline-flex;
-  font-size: 24rpx;
-  font-weight: 700;
-  height: 74rpx;
-  justify-content: center;
-  min-width: 160rpx;
-  padding: 0 22rpx;
-}
-
-.goal-mode-chip.active {
-  background: rgba(30, 90, 79, 0.16);
-  border-color: rgba(30, 90, 79, 0.3);
 }
 
 .sheet-overlay {
@@ -214,26 +184,6 @@
   font-size: 23rpx;
   line-height: 1.6;
   margin-top: 14rpx;
-}
-
-.goal-summary-card {
-  background: linear-gradient(180deg, rgba(246, 249, 247, 0.98) 0%, rgba(234, 244, 239, 0.95) 100%);
-  border: 2rpx solid rgba(30, 90, 79, 0.12);
-  border-radius: 20rpx;
-  margin-top: 18rpx;
-  padding: 22rpx 24rpx;
-}
-
-.goal-summary-label {
-  color: #685c50;
-  font-size: 23rpx;
-}
-
-.goal-summary-value {
-  color: #1e5a4f;
-  font-size: 32rpx;
-  font-weight: 800;
-  margin-top: 10rpx;
 }
 
 .sheet-primary {
