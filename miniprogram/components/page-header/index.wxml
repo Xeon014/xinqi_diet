@@ -1,0 +1,53 @@
+<view class="page-header scene-{{scene}}" style="padding-top: {{statusBarHeight}}px;">
+  <view class="page-header-card">
+    <view class="page-header-nav" style="min-height: {{navBarHeight}}px;">
+      <view wx:if="{{showBack}}" class="nav-back" bindtap="handleBack">
+        <view class="nav-back-icon"></view>
+      </view>
+
+      <view wx:if="{{showBack}}" class="nav-slot"></view>
+    </view>
+
+    <view class="header-stage {{showBack ? '' : 'header-stage-full'}}">
+      <view class="header-art">
+        <view wx:if="{{scene === 'home'}}" class="art-home">
+          <view class="home-cutlery home-cutlery-left"></view>
+          <view class="home-cutlery home-cutlery-right"></view>
+          <view class="home-plate home-plate-outer"></view>
+          <view class="home-plate home-plate-inner"></view>
+          <view class="home-leaf home-leaf-a"></view>
+          <view class="home-leaf home-leaf-b"></view>
+          <view class="home-stem"></view>
+        </view>
+
+        <view wx:elif="{{scene === 'progress'}}" class="art-progress">
+          <view class="progress-bar progress-bar-a"></view>
+          <view class="progress-bar progress-bar-b"></view>
+          <view class="progress-bar progress-bar-c"></view>
+          <view class="progress-segment progress-segment-a"></view>
+          <view class="progress-segment progress-segment-b"></view>
+          <view class="progress-dot progress-dot-a"></view>
+          <view class="progress-dot progress-dot-b"></view>
+          <view class="progress-dot progress-dot-c"></view>
+        </view>
+
+        <view wx:elif="{{scene === 'profile'}}" class="art-profile">
+          <view class="profile-orbit profile-orbit-outer"></view>
+          <view class="profile-orbit profile-orbit-inner"></view>
+          <view class="profile-head"></view>
+          <view class="profile-shoulder"></view>
+          <view class="profile-badge"></view>
+        </view>
+
+        <view wx:elif="{{scene === 'onboarding'}}" class="art-onboarding">
+          <view class="onboarding-track"></view>
+          <view class="onboarding-node onboarding-node-a active"></view>
+          <view class="onboarding-node onboarding-node-b active"></view>
+          <view class="onboarding-node onboarding-node-c"></view>
+          <view class="onboarding-node onboarding-node-d"></view>
+          <view class="onboarding-card"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

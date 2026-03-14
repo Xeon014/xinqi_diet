@@ -101,6 +101,11 @@
   color: #b95e3a;
 }
 
+.list-count {
+  color: #74685c;
+  font-size: 22rpx;
+}
+
 .field-label {
   color: #46392f;
   font-size: 24rpx;
@@ -267,6 +272,14 @@
   height: 120rpx;
   justify-content: center;
   margin-top: 4rpx;
+}
+
+.danger-link {
+  color: #b95e3a;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 4rpx 6rpx 0;
+  text-align: center;
 }
 
 .combo-item {

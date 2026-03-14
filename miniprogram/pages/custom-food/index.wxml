@@ -1,6 +1,6 @@
 <view class="page-shell custom-food-page">
   <view class="panel manage-head">
-    <view class="section-title">自定义食物</view>
+    <view class="list-count">{{displayedFoods.length}} 项常用食物</view>
     <view class="action-btn" bindtap="handleStartCreate">新建</view>
   </view>
 

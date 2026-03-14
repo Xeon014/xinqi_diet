@@ -1,6 +1,5 @@
 <view class="page-shell personal-page" wx:if="{{profile}}">
   <view class="panel personal-panel">
-    <view class="section-title">个人信息</view>
     <view class="age-chip">{{profile.age == null ? '年龄未设置' : profile.age + ' 岁'}}</view>
 
     <view class="field-group">

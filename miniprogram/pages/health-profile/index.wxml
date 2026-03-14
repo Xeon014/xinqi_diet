@@ -1,6 +1,6 @@
 <view class="page-shell health-page" wx:if="{{profile}}">
   <view class="panel module-panel">
-    <view class="section-title">核心指标</view>
+    <view class="section-title">今日概览</view>
 
     <view class="metrics-grid">
       <view class="metric-card green">
@@ -32,7 +32,7 @@
   </view>
 
   <view class="panel module-panel">
-    <view class="section-title">健康档案</view>
+    <view class="section-title">目标设置</view>
 
     <view class="field-group two-column">
       <view class="field-half">

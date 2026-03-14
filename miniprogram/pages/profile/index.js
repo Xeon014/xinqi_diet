@@ -4,15 +4,15 @@ const { pickErrorMessage } = require("../../utils/request");
 const TOOL_ENTRIES = [
   {
     key: "custom-food",
-    title: "自定义食物",
+    title: "我的食物",
   },
   {
     key: "custom-combo",
-    title: "自定义套餐",
+    title: "常用套餐",
   },
   {
     key: "custom-exercise",
-    title: "自定义运动",
+    title: "我的运动",
   },
 ];
 
@@ -30,7 +30,7 @@ function toOneDecimal(value) {
 
 function buildProfileTitle(name) {
   const trimmedName = String(name || "").trim();
-  return trimmedName || "我的资料";
+  return trimmedName ? `你好，${trimmedName}` : "我的身体档案";
 }
 
 function buildProfileSub(profile) {

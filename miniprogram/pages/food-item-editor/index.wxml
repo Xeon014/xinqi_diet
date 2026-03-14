@@ -3,8 +3,11 @@
 
   <view class="sheet panel">
     <view class="sheet-head">
-      <view class="sheet-title">食物编辑</view>
-      <view class="sheet-close" bindtap="handleClose">关闭</view>
+      <view>
+        <view class="sheet-title">{{mode === 'edit' ? '编辑食物' : '添加食物'}}</view>
+        <view class="sheet-subtitle">{{mealTypeLabel}} · {{recordDate}}</view>
+      </view>
+      <view class="sheet-close" bindtap="handleClose">✕</view>
     </view>
 
     <view class="food-name">{{foodName || '食物'}}</view>

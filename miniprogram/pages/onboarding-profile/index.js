@@ -121,7 +121,6 @@ Page({
   },
 
   onLoad() {
-    wx.setNavigationBarTitle({ title: "完善资料" });
     this.initBirthDateColumns();
     this.refreshFormulaMeta();
   },

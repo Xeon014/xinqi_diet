@@ -2,7 +2,7 @@
   <view class="panel header-panel">
     <view class="header-row">
       <view>
-        <view class="section-title">首次登录引导</view>
+        <view class="section-title">开始建档</view>
         <view class="step-meta">第 {{currentStep + 1}} / {{steps.length}} 步</view>
       </view>
     </view>

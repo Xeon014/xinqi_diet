@@ -1,9 +1,4 @@
 <view class="page-shell diary-editor-page">
-  <view class="panel diary-date-panel">
-    <view class="section-title">健康日记</view>
-    <view class="date-label">{{recordDate}}</view>
-  </view>
-
   <view class="panel diary-content-panel">
     <view class="field-label">文字</view>
     <textarea

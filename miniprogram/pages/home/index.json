@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "净摄入概览",
+  "navigationBarTitleText": "每日记录",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "empty-state": "/components/empty-state/index"

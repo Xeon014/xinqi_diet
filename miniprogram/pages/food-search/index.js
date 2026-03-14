@@ -28,6 +28,12 @@ const MEAL_TYPE_LABELS = {
   SNACK: "加餐",
 };
 
+function syncNavigationTitle(pageMode) {
+  wx.setNavigationBarTitle({
+    title: pageMode === "edit" ? "编辑饮食" : "添加食物",
+  });
+}
+
 function buildSystemFilters(canUseComboFilter) {
   const filters = [
     { key: FILTER_KEYS.RECENT, label: "最近记录" },
@@ -176,6 +182,8 @@ Page({
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
     const enableDirectEdit = Boolean(source) || pageMode === "edit";
     const canUseComboFilter = enableDirectEdit && pageMode === "create";
+
+    syncNavigationTitle(pageMode);
 
     this.setData(
       {

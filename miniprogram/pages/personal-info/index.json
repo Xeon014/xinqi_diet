@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "个人信息",
+  "navigationBarTitleText": "个人资料",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "empty-state": "/components/empty-state/index"

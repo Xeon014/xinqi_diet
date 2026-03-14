@@ -14,7 +14,7 @@
   <view class="hero panel">
     <view class="hero-strip"></view>
     <view class="hero-head">
-      <view class="hero-title">净热量</view>
+      <view class="hero-title">今日净热量</view>
     </view>
 
     <view class="hero-main">

@@ -1,15 +1,5 @@
 <view class="page-shell combo-manage-page">
   <view wx:if="{{editing}}" class="combo-editor-page">
-    <view class="panel combo-editor-head">
-      <view class="editor-head-top">
-        <view class="section-title">{{editMode === 'edit' ? '编辑套餐' : '新建套餐'}}</view>
-        <view class="editor-head-actions">
-          <view wx:if="{{editMode === 'edit'}}" class="action-btn danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
-          <view class="icon-action" bindtap="handleCancelEdit">✕</view>
-        </view>
-      </view>
-    </view>
-
     <view class="panel combo-section compact-row">
       <view class="field-label inline-label">套餐名称</view>
       <input class="field-input inline-input" value="{{editForm.name}}" bindinput="handleEditName" placeholder="请输入套餐名称" />
@@ -69,6 +59,7 @@
       <view wx:else class="empty-box">暂无食物</view>
     </view>
 
+    <view wx:if="{{editMode === 'edit'}}" class="danger-link" bindtap="handleDelete">删除套餐</view>
     <view class="editor-footer-placeholder"></view>
     <view class="panel editor-footer">
       <view class="ghost-button" bindtap="handleCancelEdit">取消</view>
@@ -78,9 +69,7 @@
 
   <block wx:else>
     <view class="panel manage-head">
-      <view>
-        <view class="section-title">自定义套餐</view>
-      </view>
+      <view class="list-count">{{combos.length}} 套常用套餐</view>
       <view class="action-btn" bindtap="handleStartCreate">新建</view>
     </view>
 

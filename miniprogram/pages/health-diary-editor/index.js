@@ -53,6 +53,12 @@ function buildCloudPath(recordDate, filePath, index) {
   return `health-diary/${userId}/${recordDate}/${timestamp}-${index}-${random}${ext}`;
 }
 
+function syncNavigationTitle(diaryExists) {
+  wx.setNavigationBarTitle({
+    title: diaryExists ? "编辑日记" : "写日记",
+  });
+}
+
 Page({
   data: {
     recordDate: getToday(),
@@ -64,6 +70,7 @@ Page({
 
   onLoad(options) {
     const recordDate = options.recordDate || getToday();
+    syncNavigationTitle(false);
     this.setData({ recordDate }, () => {
       this.loadDiary();
     });
@@ -79,6 +86,7 @@ Page({
           imageFileIds: normalized.imageFileIds,
           diaryExists: normalized.exists,
         });
+        syncNavigationTitle(normalized.exists);
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });

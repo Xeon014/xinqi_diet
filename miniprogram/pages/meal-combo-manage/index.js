@@ -81,6 +81,14 @@ function decorateCombo(combo) {
   };
 }
 
+function syncNavigationTitle(editing, editMode) {
+  let title = "常用套餐";
+  if (editing) {
+    title = editMode === "edit" ? "编辑套餐" : "新建套餐";
+  }
+  wx.setNavigationBarTitle({ title });
+}
+
 Page({
   data: {
     combos: [],
@@ -91,6 +99,7 @@ Page({
   },
 
   onLoad(options = {}) {
+    syncNavigationTitle(false, "create");
     if (options.mode === "create") {
       this.handleStartCreate();
     }
@@ -131,6 +140,8 @@ Page({
         totalFat: toMacro(summary.totalFat),
         foodCount: summary.foodCount,
       },
+    }, () => {
+      syncNavigationTitle(true, mode);
     });
   },
 
@@ -255,10 +266,12 @@ Page({
       editMode: "create",
       editForm: buildEmptyForm(),
       editSummary: buildEmptySummary(),
+    }, () => {
+      syncNavigationTitle(false, "create");
+      if (shouldReload) {
+        this.loadCombos();
+      }
     });
-    if (shouldReload) {
-      this.loadCombos();
-    }
   },
 
   handleSaveEdit() {

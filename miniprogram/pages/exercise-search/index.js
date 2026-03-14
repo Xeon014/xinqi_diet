@@ -46,6 +46,12 @@ const INTENSITY_FACTOR_MAP = {
   HIGH: 1.2,
 };
 
+function syncNavigationTitle(pageMode) {
+  wx.setNavigationBarTitle({
+    title: pageMode === "edit" ? "编辑运动" : "添加运动",
+  });
+}
+
 function toNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
@@ -160,11 +166,7 @@ Page({
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
     const enableDirectEdit = Boolean(source) || pageMode === "edit";
 
-    if (enableDirectEdit) {
-      wx.setNavigationBarTitle({
-        title: pageMode === "edit" ? "编辑运动" : "记录运动",
-      });
-    }
+    syncNavigationTitle(pageMode);
 
     this.setData({
       recordDate,

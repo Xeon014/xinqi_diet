@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "自定义食物",
+  "navigationBarTitleText": "我的食物",
   "usingComponents": {
     "empty-state": "/components/empty-state/index"
   }

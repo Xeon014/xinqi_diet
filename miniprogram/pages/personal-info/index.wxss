@@ -16,7 +16,7 @@
   display: inline-flex;
   font-size: 22rpx;
   font-weight: 700;
-  margin-top: 22rpx;
+  margin-top: 0;
   padding: 10rpx 20rpx;
 }
 

@@ -1,7 +1,11 @@
 <view class="page-shell progress-page">
-  <view class="coming-soon">
-    <view class="coming-soon-icon">📊</view>
-    <view class="coming-soon-title">功能内测中</view>
-    <view class="coming-soon-desc">敬请期待</view>
+  <view class="panel coming-soon">
+    <view class="trend-mark">
+      <view class="trend-bar trend-bar-1"></view>
+      <view class="trend-bar trend-bar-2"></view>
+      <view class="trend-bar trend-bar-3"></view>
+    </view>
+    <view class="coming-soon-title">图表开发中</view>
+    <view class="coming-soon-desc">后续会展示体重和热量变化</view>
   </view>
 </view>
