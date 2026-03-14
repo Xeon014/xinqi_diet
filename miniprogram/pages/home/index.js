@@ -249,20 +249,31 @@ Page({
 
   onShow() {
     const app = getApp();
+    const pendingHomeRecordDate = app.globalData.pendingHomeRecordDate || "";
+    app.globalData.pendingHomeRecordDate = "";
     if (app.globalData.refreshHomeOnShow) {
       app.globalData.refreshHomeOnShow = false;
     }
 
-    this.refreshDateMeta();
-    this.maybeOpenOnboarding()
-      .then((opened) => {
-        if (!opened) {
+    const continueShowFlow = () => {
+      this.refreshDateMeta();
+      this.maybeOpenOnboarding()
+        .then((opened) => {
+          if (!opened) {
+            this.loadSummary();
+          }
+        })
+        .catch(() => {
           this.loadSummary();
-        }
-      })
-      .catch(() => {
-        this.loadSummary();
-      });
+        });
+    };
+
+    if (pendingHomeRecordDate && pendingHomeRecordDate !== this.data.recordDate) {
+      this.setData({ recordDate: pendingHomeRecordDate }, continueShowFlow);
+      return;
+    }
+
+    continueShowFlow();
   },
 
   onPullDownRefresh() {

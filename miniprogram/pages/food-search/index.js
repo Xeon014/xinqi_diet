@@ -27,6 +27,14 @@ const MEAL_TYPE_LABELS = {
   DINNER: "晚餐",
   SNACK: "加餐",
 };
+const MEAL_TYPE_OPTIONS = Object.keys(MEAL_TYPE_LABELS).map((key) => ({
+  key,
+  label: MEAL_TYPE_LABELS[key],
+}));
+const EDITOR_TYPES = {
+  FOOD: "FOOD",
+  COMBO: "COMBO",
+};
 
 function syncNavigationTitle(pageMode) {
   wx.setNavigationBarTitle({
@@ -49,6 +57,15 @@ function buildSystemFilters(canUseComboFilter) {
 }
 
 const BUILTIN_CATEGORIES = FOOD_CATEGORIES.filter((item) => item.key !== "ALL");
+
+function getMealTypeLabel(mealType) {
+  return MEAL_TYPE_LABELS[mealType] || "餐次";
+}
+
+function getMealTypeIndex(mealType) {
+  const index = MEAL_TYPE_OPTIONS.findIndex((item) => item.key === mealType);
+  return index >= 0 ? index : 0;
+}
 
 function toNumber(value) {
   const number = Number(value);
@@ -123,6 +140,19 @@ function decorateCombo(combo) {
   };
 }
 
+function normalizeComboEditorItem(item) {
+  return {
+    foodId: item.foodId,
+    foodName: item.foodName || "食物",
+    quantityInGram: String(toNumber(item.quantityInGram) || DEFAULT_QUANTITY),
+    caloriesPer100g: toInteger(item.caloriesPer100g),
+    proteinPer100g: toInteger(item.proteinPer100g),
+    carbsPer100g: toInteger(item.carbsPer100g),
+    fatPer100g: toInteger(item.fatPer100g),
+    category: item.category || "",
+  };
+}
+
 Page({
   data: {
     keyword: "",
@@ -151,14 +181,23 @@ Page({
     enableDirectEdit: false,
     pageMode: "create",
     pageRecordId: null,
+    mealTypeOptions: MEAL_TYPE_OPTIONS,
     editorVisible: false,
+    editorType: EDITOR_TYPES.FOOD,
     editorMode: "create",
     editorLoading: false,
     editorCanDelete: false,
     editorRecordId: null,
+    editorMealType: "BREAKFAST",
+    editorMealTypeIndex: 0,
+    editorMealTypeLabel: MEAL_TYPE_LABELS.BREAKFAST,
+    editorRecordDate: getToday(),
     editorFoodId: null,
     editorFoodName: "",
     editorCategoryLabel: "",
+    editorComboId: null,
+    editorComboName: "",
+    editorComboItems: [],
     editorCaloriesPer100g: 0,
     editorProteinPer100g: 0,
     editorCarbsPer100g: 0,
@@ -408,44 +447,12 @@ Page({
 
     getMealComboDetail(combo.id)
       .then((detail) => {
-        const items = Array.isArray(detail.items) ? detail.items : [];
+        const items = Array.isArray(detail.items) ? detail.items.map(normalizeComboEditorItem) : [];
         if (!items.length) {
           wx.showToast({ title: "该套餐暂无食物", icon: "none" });
-          return null;
-        }
-
-        return createRecordBatch({
-          mealType: this.data.mealType,
-          recordDate: this.data.recordDate,
-          items: items.map((item) => ({
-            foodId: item.foodId,
-            quantityInGram: toNumber(item.quantityInGram),
-          })),
-        }).then(() => {
-          if (this.userId) {
-            items.forEach((item) => {
-              saveRecentFood(this.userId, {
-                id: item.foodId,
-                name: item.foodName,
-                caloriesPer100g: item.caloriesPer100g,
-                proteinPer100g: item.proteinPer100g,
-                carbsPer100g: item.carbsPer100g,
-                fatPer100g: item.fatPer100g,
-                category: item.category,
-              });
-            });
-          }
-        });
-      })
-      .then((result) => {
-        if (result === null) {
           return;
         }
-        app.globalData.refreshHomeOnShow = true;
-        wx.showToast({ title: "套餐已加入", icon: "success" });
-        setTimeout(() => {
-          this.goHome();
-        }, 320);
+        this.openComboEditor(detail, items);
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -458,6 +465,39 @@ Page({
       mode: "create",
       recordId: null,
       canDelete: false,
+      mealType: this.data.mealType,
+      recordDate: this.data.recordDate,
+    });
+  },
+
+  openComboEditor(combo, items) {
+    const summary = buildComboSummary(items);
+    this.setData({
+      editorVisible: true,
+      editorType: EDITOR_TYPES.COMBO,
+      editorMode: "create",
+      editorCanDelete: false,
+      editorRecordId: null,
+      editorLoading: false,
+      editorMealType: this.data.mealType,
+      editorMealTypeIndex: getMealTypeIndex(this.data.mealType),
+      editorMealTypeLabel: getMealTypeLabel(this.data.mealType),
+      editorRecordDate: this.data.recordDate,
+      editorComboId: combo.id,
+      editorComboName: combo.name || "套餐",
+      editorComboItems: items,
+      editorFoodId: null,
+      editorFoodName: "",
+      editorCategoryLabel: "",
+      editorCaloriesPer100g: 0,
+      editorProteinPer100g: 0,
+      editorCarbsPer100g: 0,
+      editorFatPer100g: 0,
+      editorQuantityInGram: String(DEFAULT_QUANTITY),
+      editorTotalCalories: summary.totalCalories,
+      editorTotalProtein: 0,
+      editorTotalCarbs: 0,
+      editorTotalFat: 0,
     });
   },
 
@@ -488,7 +528,7 @@ Page({
             id: targetRecord.foodId,
             name: targetRecord.foodName,
             category: "",
-            categoryLabel: this.data.mealTypeLabel,
+            categoryLabel: "",
             caloriesPer100g: targetRecord.caloriesPer100g,
             proteinPer100g: targetRecord.proteinPer100g,
             carbsPer100g: targetRecord.carbsPer100g,
@@ -499,6 +539,8 @@ Page({
             mode: "edit",
             recordId: Number(targetRecord.id),
             canDelete: true,
+            mealType: targetRecord.mealType,
+            recordDate: targetRecord.recordDate,
           }
         );
       })
@@ -514,6 +556,7 @@ Page({
   applyEditorFoodData(food, quantityInGram, options = {}) {
     const normalizedFood = normalizeFood(food);
     const nextQuantity = String(quantityInGram || DEFAULT_QUANTITY);
+    const editorMealType = options.mealType || this.data.mealType;
     const totals = resolveTotalNutrients({
       quantityInGram: nextQuantity,
       caloriesPer100g: normalizedFood.caloriesPer100g,
@@ -524,12 +567,21 @@ Page({
 
     this.setData({
       editorVisible: true,
+      editorType: EDITOR_TYPES.FOOD,
       editorMode: options.mode || "create",
       editorCanDelete: Boolean(options.canDelete),
       editorRecordId: options.recordId || null,
+      editorLoading: false,
+      editorMealType,
+      editorMealTypeIndex: getMealTypeIndex(editorMealType),
+      editorMealTypeLabel: getMealTypeLabel(editorMealType),
+      editorRecordDate: options.recordDate || this.data.recordDate,
       editorFoodId: normalizedFood.id,
       editorFoodName: normalizedFood.name || "食物",
       editorCategoryLabel: normalizedFood.categoryLabel || normalizedFood.category || "",
+      editorComboId: null,
+      editorComboName: "",
+      editorComboItems: [],
       editorCaloriesPer100g: toInteger(normalizedFood.caloriesPer100g),
       editorProteinPer100g: toInteger(normalizedFood.proteinPer100g),
       editorCarbsPer100g: toInteger(normalizedFood.carbsPer100g),
@@ -540,6 +592,37 @@ Page({
       editorTotalCarbs: totals.totalCarbs,
       editorTotalFat: totals.totalFat,
     });
+  },
+
+  handleEditorMealTypeChange(event) {
+    if (this.data.editorLoading) {
+      return;
+    }
+
+    const index = Number(event.detail.value);
+    const option = this.data.mealTypeOptions[index];
+    if (!option || option.key === this.data.editorMealType) {
+      return;
+    }
+
+    this.setData({
+      editorMealType: option.key,
+      editorMealTypeIndex: index,
+      editorMealTypeLabel: option.label,
+    });
+  },
+
+  handleEditorDateChange(event) {
+    if (this.data.editorLoading) {
+      return;
+    }
+
+    const editorRecordDate = event.detail.value;
+    if (!editorRecordDate) {
+      return;
+    }
+
+    this.setData({ editorRecordDate });
   },
 
   handleEditorQuantityInput(event) {
@@ -561,6 +644,29 @@ Page({
     });
   },
 
+  handleComboItemQuantityInput(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || index < 0) {
+      return;
+    }
+
+    const editorComboItems = this.data.editorComboItems.map((item, itemIndex) => {
+      if (itemIndex !== index) {
+        return item;
+      }
+      return {
+        ...item,
+        quantityInGram: event.detail.value,
+      };
+    });
+    const summary = buildComboSummary(editorComboItems);
+
+    this.setData({
+      editorComboItems,
+      editorTotalCalories: summary.totalCalories,
+    });
+  },
+
   validateEditorQuantity() {
     if (toNumber(this.data.editorQuantityInGram) <= 0) {
       wx.showToast({ title: "请输入正确重量", icon: "none" });
@@ -569,44 +675,115 @@ Page({
     return true;
   },
 
+  validateComboEditor() {
+    if (!this.data.editorComboItems.length) {
+      wx.showToast({ title: "该套餐暂无食物", icon: "none" });
+      return false;
+    }
+
+    const invalidItem = this.data.editorComboItems.find((item) => toNumber(item.quantityInGram) <= 0);
+    if (invalidItem) {
+      wx.showToast({ title: `请检查 ${invalidItem.foodName} 的克数`, icon: "none" });
+      return false;
+    }
+    return true;
+  },
+
+  validateEditor() {
+    if (!this.data.editorMealType || !this.data.editorRecordDate) {
+      wx.showToast({ title: "请先选择餐次和日期", icon: "none" });
+      return false;
+    }
+
+    if (this.data.editorType === EDITOR_TYPES.COMBO) {
+      return this.validateComboEditor();
+    }
+
+    return this.validateEditorQuantity();
+  },
+
+  saveRecentFoods(items) {
+    if (!this.userId) {
+      return;
+    }
+
+    items.forEach((item) => {
+      saveRecentFood(this.userId, {
+        id: item.foodId,
+        name: item.foodName,
+        caloriesPer100g: item.caloriesPer100g,
+        proteinPer100g: item.proteinPer100g,
+        carbsPer100g: item.carbsPer100g,
+        fatPer100g: item.fatPer100g,
+        category: item.category || "",
+      });
+    });
+  },
+
+  syncHomeAfterSave(recordDate) {
+    app.globalData.refreshHomeOnShow = true;
+    if (this.data.source === "home") {
+      app.globalData.pendingHomeRecordDate = recordDate;
+    }
+  },
+
   handleEditorSubmit() {
     if (this.data.editorLoading) {
       return;
     }
-    if (!this.validateEditorQuantity()) {
+    if (!this.validateEditor()) {
       return;
     }
 
-    const quantityInGram = toNumber(this.data.editorQuantityInGram);
-    const saveTask = this.data.editorMode === "edit"
-      ? updateRecord(this.data.editorRecordId, { quantityInGram })
-      : createRecord({
-        foodId: this.data.editorFoodId,
-        mealType: this.data.mealType,
-        quantityInGram,
-        recordDate: this.data.recordDate,
-      });
+    const saveTask = this.data.editorType === EDITOR_TYPES.COMBO
+      ? createRecordBatch({
+        mealType: this.data.editorMealType,
+        recordDate: this.data.editorRecordDate,
+        items: this.data.editorComboItems.map((item) => ({
+          foodId: item.foodId,
+          quantityInGram: toNumber(item.quantityInGram),
+        })),
+      })
+      : (() => {
+        const quantityInGram = toNumber(this.data.editorQuantityInGram);
+        return this.data.editorMode === "edit"
+          ? updateRecord(this.data.editorRecordId, {
+            quantityInGram,
+            mealType: this.data.editorMealType,
+            recordDate: this.data.editorRecordDate,
+          })
+          : createRecord({
+            foodId: this.data.editorFoodId,
+            mealType: this.data.editorMealType,
+            quantityInGram,
+            recordDate: this.data.editorRecordDate,
+          });
+      })();
 
     this.setData({ editorLoading: true });
     saveTask
       .then(() => {
-        const userId = getCurrentUserId();
-        if (userId) {
-          saveRecentFood(userId, {
-            id: this.data.editorFoodId,
-            name: this.data.editorFoodName,
+        if (this.data.editorType === EDITOR_TYPES.COMBO) {
+          this.saveRecentFoods(this.data.editorComboItems);
+        } else {
+          this.saveRecentFoods([{
+            foodId: this.data.editorFoodId,
+            foodName: this.data.editorFoodName,
             caloriesPer100g: this.data.editorCaloriesPer100g,
             proteinPer100g: this.data.editorProteinPer100g,
             carbsPer100g: this.data.editorCarbsPer100g,
             fatPer100g: this.data.editorFatPer100g,
             category: this.data.editorCategoryLabel,
-          });
+          }]);
         }
 
-        app.globalData.refreshHomeOnShow = true;
-        wx.showToast({ title: "已保存", icon: "success" });
+        this.syncHomeAfterSave(this.data.editorRecordDate);
+        wx.showToast({
+          title: this.data.editorType === EDITOR_TYPES.COMBO ? "套餐已添加" : "已保存",
+          icon: "success",
+        });
         setTimeout(() => {
-          if (this.data.editorMode === "edit" || this.data.enableDirectEdit) {
+          if (this.data.editorType === EDITOR_TYPES.COMBO || this.data.editorMode === "edit" || this.data.enableDirectEdit) {
             this.goHome();
             return;
           }
@@ -622,7 +799,7 @@ Page({
   },
 
   handleEditorDelete() {
-    if (!this.data.editorCanDelete || this.data.editorLoading) {
+    if (this.data.editorType !== EDITOR_TYPES.FOOD || !this.data.editorCanDelete || this.data.editorLoading) {
       return;
     }
 
@@ -669,11 +846,30 @@ Page({
   closeEditor() {
     this.setData({
       editorVisible: false,
+      editorType: EDITOR_TYPES.FOOD,
       editorMode: "create",
       editorCanDelete: false,
       editorRecordId: null,
       editorLoading: false,
+      editorMealType: this.data.mealType,
+      editorMealTypeIndex: getMealTypeIndex(this.data.mealType),
+      editorMealTypeLabel: getMealTypeLabel(this.data.mealType),
+      editorRecordDate: this.data.recordDate,
+      editorFoodId: null,
+      editorFoodName: "",
+      editorCategoryLabel: "",
+      editorComboId: null,
+      editorComboName: "",
+      editorComboItems: [],
+      editorCaloriesPer100g: 0,
+      editorProteinPer100g: 0,
+      editorCarbsPer100g: 0,
+      editorFatPer100g: 0,
       editorQuantityInGram: String(DEFAULT_QUANTITY),
+      editorTotalCalories: 0,
+      editorTotalProtein: 0,
+      editorTotalCarbs: 0,
+      editorTotalFat: 0,
     });
   },
 

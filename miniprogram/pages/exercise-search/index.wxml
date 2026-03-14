@@ -100,6 +100,12 @@
       </view>
     </view>
 
+    <view class="editor-top-row">
+      <picker mode="date" value="{{editorRecordDate}}" bindchange="handleEditorDateChange" disabled="{{editorLoading}}">
+        <view class="editor-top-chip">{{editorRecordDate}}</view>
+      </picker>
+    </view>
+
     <view class="editor-exercise-name">{{editorExerciseName || '运动'}}</view>
     <view class="editor-exercise-meta">{{editorCategoryLabel || '运动'}} · MET {{editorMetValue}}</view>
 

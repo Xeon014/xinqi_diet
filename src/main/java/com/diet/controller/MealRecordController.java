@@ -71,15 +71,15 @@ public class MealRecordController {
                 )));
     }
 
-    @Operation(summary = "更新饮食记录克重", description = "按记录 ID 更新当前用户某条记录的克重")
+    @Operation(summary = "更新饮食记录", description = "按记录 ID 更新当前用户某条记录的克重、餐次和日期")
     @PutMapping("/{id}")
-    public ApiResponse<MealRecordResponse> updateQuantity(
+    public ApiResponse<MealRecordResponse> updateRecord(
             @Parameter(description = "饮食记录 ID") @PathVariable Long id,
             @Valid @RequestBody UpdateMealRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, null);
-        return ApiResponse.success(mealRecordService.updateQuantity(userId, id, request.quantityInGram()));
+        return ApiResponse.success(mealRecordService.updateRecord(userId, id, request));
     }
 
     @Operation(summary = "删除饮食记录", description = "按记录 ID 删除当前用户的一条饮食记录")

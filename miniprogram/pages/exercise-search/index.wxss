@@ -258,6 +258,27 @@
   margin-top: 18rpx;
 }
 
+.editor-top-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.editor-top-chip {
+  align-items: center;
+  background: rgba(93, 76, 58, 0.08);
+  border: 1rpx solid rgba(70, 57, 47, 0.1);
+  border-radius: 999rpx;
+  color: #5d4c3a;
+  display: inline-flex;
+  font-size: 22rpx;
+  font-weight: 600;
+  height: 54rpx;
+  justify-content: center;
+  min-width: 164rpx;
+  padding: 0 20rpx;
+}
+
 .editor-exercise-meta {
   color: #75695d;
   font-size: 24rpx;

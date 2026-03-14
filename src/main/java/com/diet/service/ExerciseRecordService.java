@@ -76,6 +76,7 @@ public class ExerciseRecordService {
         record.setDurationMinutes(request.durationMinutes());
         record.setIntensityLevel(intensity);
         record.setIntensityFactor(intensity.factor());
+        record.setRecordDate(request.recordDate());
         record.setTotalCalories(ExerciseRecord.calculateTotalCalories(
                 exercise.getMetValue(),
                 record.getWeightKgSnapshot(),

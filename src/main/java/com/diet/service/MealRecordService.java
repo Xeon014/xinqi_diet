@@ -12,6 +12,7 @@ import com.diet.dto.record.CreateMealRecordBatchRequest;
 import com.diet.dto.record.CreateMealRecordItemRequest;
 import com.diet.dto.record.CreateMealRecordRequest;
 import com.diet.dto.record.MealRecordResponse;
+import com.diet.dto.record.UpdateMealRecordRequest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -77,12 +78,14 @@ public class MealRecordService {
         return responses;
     }
 
-    public MealRecordResponse updateQuantity(Long userId, Long recordId, BigDecimal quantityInGram) {
+    public MealRecordResponse updateRecord(Long userId, Long recordId, UpdateMealRecordRequest request) {
         getUser(userId);
         MealRecord record = getOwnedRecord(userId, recordId);
         Food food = getAccessibleFood(userId, record.getFoodId());
-        record.setQuantityInGram(quantityInGram);
-        record.setTotalCalories(MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), quantityInGram));
+        record.setQuantityInGram(request.quantityInGram());
+        record.setMealType(request.mealType());
+        record.setRecordDate(request.recordDate());
+        record.setTotalCalories(MealRecord.calculateTotalCalories(food.getCaloriesPer100g(), request.quantityInGram()));
         mealRecordRepository.save(record);
         return toResponse(record, food);
     }

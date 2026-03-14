@@ -144,6 +144,7 @@ Page({
     editorLoading: false,
     editorCanDelete: false,
     editorRecordId: null,
+    editorRecordDate: getToday(),
     editorExerciseId: null,
     editorExerciseName: "",
     editorCategory: "",
@@ -450,6 +451,7 @@ Page({
           mode: "edit",
           recordId: Number(targetRecord.id),
           canDelete: true,
+          recordDate: targetRecord.recordDate,
         });
       })
       .catch((error) => {
@@ -476,6 +478,7 @@ Page({
       editorMode: options.mode || "create",
       editorCanDelete: Boolean(options.canDelete),
       editorRecordId: options.recordId || null,
+      editorRecordDate: options.recordDate || this.data.recordDate,
       editorExerciseId: exercise.id,
       editorExerciseName: exercise.name || "运动",
       editorCategory: exercise.category || "",
@@ -487,6 +490,19 @@ Page({
       editorWeightKgSnapshot: toNumber(exercise.weightKgSnapshot) || PREVIEW_WEIGHT_KG,
       editorTotalCalories: toInteger(totalCalories),
     });
+  },
+
+  handleEditorDateChange(event) {
+    if (this.data.editorLoading) {
+      return;
+    }
+
+    const editorRecordDate = event.detail.value;
+    if (!editorRecordDate) {
+      return;
+    }
+
+    this.setData({ editorRecordDate });
   },
 
   handleEditorDurationInput(event) {
@@ -525,11 +541,22 @@ Page({
       wx.showToast({ title: "请选择运动", icon: "none" });
       return false;
     }
+    if (!this.data.editorRecordDate) {
+      wx.showToast({ title: "请选择日期", icon: "none" });
+      return false;
+    }
     if (toNumber(this.data.editorDurationMinutes) <= 0) {
       wx.showToast({ title: "请输入正确时长", icon: "none" });
       return false;
     }
     return true;
+  },
+
+  syncHomeAfterSave(recordDate) {
+    app.globalData.refreshHomeOnShow = true;
+    if (this.data.source === "home") {
+      app.globalData.pendingHomeRecordDate = recordDate;
+    }
   },
 
   handleEditorSubmit() {
@@ -545,12 +572,13 @@ Page({
       ? updateExerciseRecord(this.data.editorRecordId, {
         durationMinutes,
         intensityLevel: this.data.editorIntensityLevel,
+        recordDate: this.data.editorRecordDate,
       })
       : createExerciseRecord({
         exerciseId: this.data.editorExerciseId,
         durationMinutes,
         intensityLevel: this.data.editorIntensityLevel,
-        recordDate: this.data.recordDate,
+        recordDate: this.data.editorRecordDate,
       });
 
     this.setData({ editorLoading: true });
@@ -566,7 +594,7 @@ Page({
           });
         }
 
-        app.globalData.refreshHomeOnShow = true;
+        this.syncHomeAfterSave(this.data.editorRecordDate);
         wx.showToast({ title: "已保存", icon: "success" });
         setTimeout(() => {
           this.goHome();
@@ -632,6 +660,7 @@ Page({
       editorCanDelete: false,
       editorRecordId: null,
       editorLoading: false,
+      editorRecordDate: this.data.recordDate,
       editorExerciseId: null,
       editorExerciseName: "",
       editorCategory: "",

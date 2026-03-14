@@ -103,10 +103,10 @@
 
   <view wx:if="{{editorVisible}}" class="editor-sheet panel" catchtouchmove="noop">
     <view class="editor-head">
-      <view class="editor-title">食物编辑</view>
+      <view class="editor-title">{{editorType === 'COMBO' ? '添加套餐' : '食物编辑'}}</view>
       <view class="editor-head-actions">
         <view
-          wx:if="{{editorCanDelete}}"
+          wx:if="{{editorType === 'FOOD' && editorCanDelete}}"
           class="editor-delete {{editorLoading ? 'disabled' : ''}}"
           bindtap="handleEditorDelete"
         >删除</view>
@@ -117,39 +117,93 @@
       </view>
     </view>
 
-    <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
-    <view class="editor-food-meta">{{mealTypeLabel}} · {{editorCaloriesPer100g}} kcal / 100g</view>
+    <view class="editor-top-row">
+      <picker mode="date" value="{{editorRecordDate}}" bindchange="handleEditorDateChange" disabled="{{editorLoading}}">
+        <view class="editor-top-chip">{{editorRecordDate}}</view>
+      </picker>
+      <picker
+        mode="selector"
+        range="{{mealTypeOptions}}"
+        range-key="label"
+        value="{{editorMealTypeIndex}}"
+        bindchange="handleEditorMealTypeChange"
+        disabled="{{editorLoading}}"
+      >
+        <view class="editor-top-chip">{{editorMealTypeLabel}}</view>
+      </picker>
+    </view>
 
-    <view class="editor-row">
-      <view class="field-label">重量</view>
-      <view class="quantity-wrap">
-        <input class="quantity-input" type="digit" value="{{editorQuantityInGram}}" bindinput="handleEditorQuantityInput" />
-        <view class="quantity-unit">g</view>
+    <view wx:if="{{editorType === 'FOOD'}}">
+      <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
+      <view class="editor-food-meta">{{editorCaloriesPer100g}} kcal / 100g</view>
+    </view>
+
+    <view wx:else>
+      <view class="editor-food-name">{{editorComboName || '套餐'}}</view>
+      <view class="editor-food-meta">{{editorComboItems.length}} 种食物 · {{editorTotalCalories}} kcal</view>
+    </view>
+
+    <view wx:if="{{editorType === 'FOOD'}}">
+      <view class="editor-row">
+        <view class="field-label">重量</view>
+        <view class="quantity-wrap">
+          <input class="quantity-input" type="digit" value="{{editorQuantityInGram}}" bindinput="handleEditorQuantityInput" />
+          <view class="quantity-unit">g</view>
+        </view>
+      </view>
+
+      <view class="nutrition-grid">
+        <view class="nutrition-item">
+          <view class="nutrition-label">热量</view>
+          <view class="nutrition-value">{{editorTotalCalories}} kcal</view>
+        </view>
+        <view class="nutrition-item">
+          <view class="nutrition-label">蛋白</view>
+          <view class="nutrition-value">{{editorTotalProtein}} g</view>
+        </view>
+        <view class="nutrition-item">
+          <view class="nutrition-label">碳水</view>
+          <view class="nutrition-value">{{editorTotalCarbs}} g</view>
+        </view>
+        <view class="nutrition-item">
+          <view class="nutrition-label">脂肪</view>
+          <view class="nutrition-value">{{editorTotalFat}} g</view>
+        </view>
       </view>
     </view>
 
-    <view class="nutrition-grid">
-      <view class="nutrition-item">
-        <view class="nutrition-label">热量</view>
-        <view class="nutrition-value">{{editorTotalCalories}} kcal</view>
+    <view wx:else>
+      <view class="combo-editor-list">
+        <view wx:for="{{editorComboItems}}" wx:key="index" class="combo-editor-item">
+          <view class="combo-editor-head">
+            <view class="combo-editor-name">{{item.foodName}}</view>
+            <view class="combo-editor-calories">{{item.caloriesPer100g}} kcal / 100g</view>
+          </view>
+          <view class="combo-editor-row">
+            <view class="combo-editor-label">克数</view>
+            <view class="quantity-wrap">
+              <input
+                class="quantity-input"
+                type="digit"
+                value="{{item.quantityInGram}}"
+                data-index="{{index}}"
+                bindinput="handleComboItemQuantityInput"
+              />
+              <view class="quantity-unit">g</view>
+            </view>
+          </view>
+        </view>
       </view>
-      <view class="nutrition-item">
-        <view class="nutrition-label">蛋白</view>
-        <view class="nutrition-value">{{editorTotalProtein}} g</view>
-      </view>
-      <view class="nutrition-item">
-        <view class="nutrition-label">碳水</view>
-        <view class="nutrition-value">{{editorTotalCarbs}} g</view>
-      </view>
-      <view class="nutrition-item">
-        <view class="nutrition-label">脂肪</view>
-        <view class="nutrition-value">{{editorTotalFat}} g</view>
+
+      <view class="editor-summary-card">
+        <view class="summary-label">本次合计</view>
+        <view class="summary-value">{{editorTotalCalories}} kcal</view>
       </view>
     </view>
 
     <view class="editor-action-row">
       <view class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}" bindtap="handleEditorSubmit">
-        {{editorMode === 'edit' ? '完成编辑' : '添加'}}
+        {{editorType === 'COMBO' ? '添加套餐' : editorMode === 'edit' ? '完成编辑' : '添加'}}
       </view>
     </view>
   </view>
