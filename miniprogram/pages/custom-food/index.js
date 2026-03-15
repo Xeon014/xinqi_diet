@@ -234,7 +234,7 @@ Page({
     }
 
     wx.showModal({
-      title: "删除食物",
+      title: "删除自定义食物",
       content: `确认删除“${target.name}”吗？`,
       success: (result) => {
         if (!result.confirm) {

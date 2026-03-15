@@ -82,9 +82,9 @@ function decorateCombo(combo) {
 }
 
 function syncNavigationTitle(editing, editMode) {
-  let title = "常用套餐";
+  let title = "自定义套餐";
   if (editing) {
-    title = editMode === "edit" ? "编辑套餐" : "新建套餐";
+    title = editMode === "edit" ? "编辑自定义套餐" : "新建自定义套餐";
   }
   wx.setNavigationBarTitle({ title });
 }
@@ -183,7 +183,7 @@ Page({
     const comboId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
     const target = this.data.combos.find((item) => Number(item.id) === comboId);
     wx.showModal({
-      title: "删除套餐",
+      title: "删除自定义套餐",
       content: target ? `确认删除“${target.name}”吗？` : "删除后不可恢复，是否继续？",
       success: (result) => {
         if (!result.confirm) {
@@ -279,7 +279,7 @@ Page({
     const comboName = String(name || "").trim();
 
     if (!comboName) {
-      wx.showToast({ title: "请输入套餐名称", icon: "none" });
+      wx.showToast({ title: "请输入自定义套餐名称", icon: "none" });
       return;
     }
     if (!items.length) {

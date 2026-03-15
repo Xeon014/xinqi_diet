@@ -1,11 +1,7 @@
 <view class="page-shell custom-exercise-page">
   <view class="panel manage-head">
-    <view class="list-count">{{displayedExercises.length}} 项常用运动</view>
-    <view class="action-btn" bindtap="handleStartCreate">新建</view>
-  </view>
-
-  <view class="panel search-bar">
     <input class="search-input" placeholder="搜索自定义运动" value="{{keyword}}" bindinput="handleKeywordInput" />
+    <view class="action-btn" bindtap="handleStartCreate">新建</view>
   </view>
 
   <view wx:if="{{displayedExercises.length}}" class="panel list-panel">
@@ -24,12 +20,12 @@
     </view>
   </view>
 
-  <empty-state wx:else title="暂无自定义运动" description="先添加你的常用运动" />
+  <empty-state wx:else title="暂无自定义运动" description="先添加一个自定义运动" />
 
   <view wx:if="{{sheetVisible}}" class="sheet-overlay" bindtap="handleCancelEdit"></view>
   <view wx:if="{{sheetVisible}}" class="bottom-sheet panel" catchtap="noop" catchtouchmove="noop">
     <view class="sheet-head">
-      <view class="sheet-title">{{editMode === 'edit' ? '编辑运动' : '新建运动'}}</view>
+      <view class="sheet-title">{{editMode === 'edit' ? '编辑自定义运动' : '新建自定义运动'}}</view>
       <view class="sheet-actions">
         <view wx:if="{{editMode === 'edit'}}" class="mini-action danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
         <view class="sheet-close" bindtap="handleCancelEdit">✕</view>

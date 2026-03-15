@@ -55,7 +55,7 @@
       <view wx:if="{{showExerciseSection}}" class="panel section-panel">
         <view class="section-title-row">
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
-          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">添加</view>
+          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">新建</view>
         </view>
         <view wx:if="{{displayedExercises.length}}" class="exercise-list compact-list">
           <view
@@ -86,7 +86,7 @@
 
   <view wx:if="{{editorVisible}}" class="editor-sheet panel" catchtouchmove="noop">
     <view class="editor-head">
-      <view class="editor-title">运动编辑</view>
+      <view class="editor-title">编辑运动</view>
       <view class="editor-head-actions">
         <view
           wx:if="{{editorCanDelete}}"

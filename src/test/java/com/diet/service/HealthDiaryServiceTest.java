@@ -115,10 +115,32 @@ class HealthDiaryServiceTest {
                 new HealthDiaryUpsertRequest(
                         LocalDate.of(2026, 3, 11),
                         "测试",
-                        List.of("1", "2", "3", "4")
+                        List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
                 )
         ))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("imageFileIds size must be less than or equal to 3");
+                .hasMessageContaining("imageFileIds size must be less than or equal to 9");
+    }
+
+    @Test
+    void shouldAllowNineImages() {
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(new UserProfile()));
+        doAnswer(invocation -> {
+            HealthDiary diary = invocation.getArgument(0);
+            diary.setId(12L);
+            return null;
+        }).when(healthDiaryRepository).save(any(HealthDiary.class));
+
+        HealthDiaryUpsertResponse response = healthDiaryService.upsert(
+                1L,
+                new HealthDiaryUpsertRequest(
+                        LocalDate.of(2026, 3, 11),
+                        "九张图片",
+                        List.of("1", "2", "3", "4", "5", "6", "7", "8", "9")
+                )
+        );
+
+        assertThat(response.diary().id()).isEqualTo(12L);
+        assertThat(response.diary().imageFileIds()).hasSize(9);
     }
 }

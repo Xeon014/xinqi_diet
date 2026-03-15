@@ -7,7 +7,7 @@ const {
   deleteDailyHealthDiary,
 } = require("../../services/health-diary");
 
-const MAX_IMAGE_COUNT = 3;
+const MAX_IMAGE_COUNT = 9;
 const MAX_CONTENT_LENGTH = 500;
 
 function normalizeDiary(diary) {
@@ -104,7 +104,7 @@ Page({
   handleChooseImage() {
     const remainCount = MAX_IMAGE_COUNT - this.data.imageFileIds.length;
     if (remainCount <= 0) {
-      wx.showToast({ title: "最多上传 3 张", icon: "none" });
+      wx.showToast({ title: "最多上传 9 张", icon: "none" });
       return;
     }
 
