@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class HealthDiaryService {
 
-    private static final int MAX_IMAGE_COUNT = 3;
+    private static final int MAX_IMAGE_COUNT = 9;
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };

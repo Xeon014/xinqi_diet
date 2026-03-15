@@ -46,11 +46,11 @@ function buildSystemFilters(canUseComboFilter) {
   const filters = [
     { key: FILTER_KEYS.RECENT, label: "最近记录" },
     { key: FILTER_KEYS.RECENT_SEARCH, label: "最近搜索" },
-    { key: FILTER_KEYS.CUSTOM, label: "自定义" },
+    { key: FILTER_KEYS.CUSTOM, label: "自定义食物" },
   ];
 
   if (canUseComboFilter) {
-    filters.push({ key: FILTER_KEYS.COMBO, label: "套餐" });
+    filters.push({ key: FILTER_KEYS.COMBO, label: "自定义套餐" });
   }
 
   return filters;
@@ -173,7 +173,7 @@ Page({
     displayedFoods: [],
     displayedCombos: [],
     emptyTitle: "最近记录为空",
-    emptyDescription: "先记录一次饮食，常用食物会出现在这里。",
+    emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
     recordDate: getToday(),
     mealType: "BREAKFAST",
     mealTypeLabel: MEAL_TYPE_LABELS.BREAKFAST,
@@ -484,7 +484,7 @@ Page({
       editorMealTypeLabel: getMealTypeLabel(this.data.mealType),
       editorRecordDate: this.data.recordDate,
       editorComboId: combo.id,
-      editorComboName: combo.name || "套餐",
+      editorComboName: combo.name || "自定义套餐",
       editorComboItems: items,
       editorFoodId: null,
       editorFoodName: "",
@@ -779,7 +779,7 @@ Page({
 
         this.syncHomeAfterSave(this.data.editorRecordDate);
         wx.showToast({
-          title: this.data.editorType === EDITOR_TYPES.COMBO ? "套餐已添加" : "已保存",
+          title: this.data.editorType === EDITOR_TYPES.COMBO ? "自定义套餐已添加" : "已保存",
           icon: "success",
         });
         setTimeout(() => {
@@ -924,7 +924,7 @@ Page({
     if (categoryKey === FILTER_KEYS.RECENT) {
       return {
         emptyTitle: "最近记录为空",
-        emptyDescription: "先记录一次饮食，常用食物会出现在这里。",
+        emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
       };
     }
 
@@ -945,7 +945,7 @@ Page({
     if (categoryKey === FILTER_KEYS.COMBO) {
       return {
         emptyTitle: "暂无自定义套餐",
-        emptyDescription: "先去自定义套餐里创建常用套餐。",
+        emptyDescription: "先去自定义套餐中创建一个自定义套餐。",
       };
     }
 

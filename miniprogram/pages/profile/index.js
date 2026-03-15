@@ -4,15 +4,15 @@ const { pickErrorMessage } = require("../../utils/request");
 const TOOL_ENTRIES = [
   {
     key: "custom-food",
-    title: "我的食物",
+    title: "自定义食物",
   },
   {
     key: "custom-combo",
-    title: "常用套餐",
+    title: "自定义套餐",
   },
   {
     key: "custom-exercise",
-    title: "我的运动",
+    title: "自定义运动",
   },
 ];
 

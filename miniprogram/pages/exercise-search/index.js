@@ -34,7 +34,7 @@ const FILTER_KEYS = {
 const SYSTEM_FILTERS = [
   { key: FILTER_KEYS.RECENT, label: "最近运动" },
   { key: FILTER_KEYS.RECENT_SEARCH, label: "最近搜索" },
-  { key: FILTER_KEYS.CUSTOM, label: "自定义" },
+  { key: FILTER_KEYS.CUSTOM, label: "自定义运动" },
 ];
 
 const BUILTIN_CATEGORIES = EXERCISE_CATEGORIES.filter((item) => item.key !== "ALL");

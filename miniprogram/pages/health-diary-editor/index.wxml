@@ -14,7 +14,7 @@
   <view class="panel diary-image-panel">
     <view class="image-head">
       <view class="field-label">图片</view>
-      <view class="image-count">{{imageFileIds.length}}/3</view>
+      <view class="image-count">{{imageFileIds.length}}/9</view>
     </view>
 
     <view class="image-grid">
@@ -23,7 +23,7 @@
         <view class="remove-image" data-index="{{index}}" bindtap="handleRemoveImage">删除</view>
       </view>
 
-      <view wx:if="{{imageFileIds.length < 3}}" class="add-image" bindtap="handleChooseImage">添加图片</view>
+      <view wx:if="{{imageFileIds.length < 9}}" class="add-image" bindtap="handleChooseImage">添加图片</view>
     </view>
   </view>
 

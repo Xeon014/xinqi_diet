@@ -55,7 +55,7 @@
       <view wx:if="{{showFoodSection}}" class="panel section-panel">
         <view class="section-title-row">
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
-          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">添加</view>
+          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">新建</view>
         </view>
         <view wx:if="{{displayedFoods.length}}" class="food-list compact-list">
           <view
@@ -103,7 +103,7 @@
 
   <view wx:if="{{editorVisible}}" class="editor-sheet panel" catchtouchmove="noop">
     <view class="editor-head">
-      <view class="editor-title">{{editorType === 'COMBO' ? '添加套餐' : '食物编辑'}}</view>
+      <view class="editor-title">{{editorType === 'COMBO' ? '添加自定义套餐' : '编辑食物'}}</view>
       <view class="editor-head-actions">
         <view
           wx:if="{{editorType === 'FOOD' && editorCanDelete}}"
@@ -139,7 +139,7 @@
     </view>
 
     <view wx:else>
-      <view class="editor-food-name">{{editorComboName || '套餐'}}</view>
+      <view class="editor-food-name">{{editorComboName || '自定义套餐'}}</view>
       <view class="editor-food-meta">{{editorComboItems.length}} 种食物 · {{editorTotalCalories}} kcal</view>
     </view>
 
@@ -203,7 +203,7 @@
 
     <view class="editor-action-row">
       <view class="editor-submit-btn {{editorLoading ? 'disabled' : ''}}" bindtap="handleEditorSubmit">
-        {{editorType === 'COMBO' ? '添加套餐' : editorMode === 'edit' ? '完成编辑' : '添加'}}
+        {{editorType === 'COMBO' ? '添加自定义套餐' : editorMode === 'edit' ? '完成编辑' : '添加'}}
       </view>
     </view>
   </view>

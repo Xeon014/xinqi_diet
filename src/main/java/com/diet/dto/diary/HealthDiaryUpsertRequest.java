@@ -17,8 +17,8 @@ public record HealthDiaryUpsertRequest(
         @Size(max = 500, message = "content length must be less than or equal to 500")
         String content,
 
-        @Schema(description = "图片 fileID 列表，最多 3 张")
-        @Size(max = 3, message = "imageFileIds size must be less than or equal to 3")
+        @Schema(description = "图片 fileID 列表，最多 9 张")
+        @Size(max = 9, message = "imageFileIds size must be less than or equal to 9")
         List<@NotBlank(message = "imageFileId must not be blank") String> imageFileIds
 ) {
 }
