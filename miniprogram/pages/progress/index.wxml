@@ -1,11 +1,135 @@
 <view class="page-shell progress-page">
-  <view class="panel coming-soon">
-    <view class="trend-mark">
-      <view class="trend-bar trend-bar-1"></view>
-      <view class="trend-bar trend-bar-2"></view>
-      <view class="trend-bar trend-bar-3"></view>
+  <view class="panel range-panel">
+    <view class="range-tabs">
+      <view
+        wx:for="{{rangeOptions}}"
+        wx:key="key"
+        wx:for-item="item"
+        class="range-tab {{selectedRange === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleSelectRange"
+      >
+        {{item.label}}
+      </view>
     </view>
-    <view class="coming-soon-title">图表开发中</view>
-    <view class="coming-soon-desc">后续会展示体重和热量变化</view>
+  </view>
+
+  <view class="panel chart-panel">
+    <view class="chart-head">
+      <view class="chart-latest">{{currentLatestText}}</view>
+      <view class="chart-add-btn {{currentMetricCanCreate ? '' : 'disabled'}}" bindtap="handleOpenCurrentMetricEditor">+</view>
+    </view>
+
+    <view wx:if="{{trendLoading && !chartPoints.length}}" class="chart-loading">加载中...</view>
+
+    <block wx:elif="{{chartPoints.length}}">
+      <view class="axis-label axis-label-top">{{axisMaxLabel}}</view>
+      <view class="axis-label axis-label-bottom">{{axisMinLabel}}</view>
+      <scroll-view scroll-x class="chart-scroll" scroll-into-view="{{latestPointViewId}}">
+        <view class="chart-inner" style="width: {{chartWidthRpx}}rpx;">
+          <view class="grid-line grid-line-top"></view>
+          <view class="grid-line grid-line-middle"></view>
+          <view class="grid-line grid-line-bottom"></view>
+
+          <view
+            wx:for="{{chartSegments}}"
+            wx:key="index"
+            wx:for-item="segment"
+            class="trend-segment"
+            style="{{segment.style}}"
+          ></view>
+
+          <view
+            wx:for="{{chartPoints}}"
+            wx:key="index"
+            wx:for-item="point"
+            class="trend-point-wrap"
+            style="{{point.pointStyle}}"
+            id="trend-point-{{point.index}}"
+            data-date="{{point.date}}"
+            bindtap="handleSelectChartPoint"
+          >
+            <view class="trend-point {{point.isLatest ? 'latest' : ''}} {{point.isSelected ? 'selected' : ''}}"></view>
+            <view wx:if="{{point.isSelected}}" class="latest-value">{{point.displayValue}}</view>
+          </view>
+
+          <view
+            wx:for="{{chartPoints}}"
+            wx:key="date"
+            wx:for-item="point"
+            class="date-label {{point.showDateLabel ? '' : 'hidden'}}"
+            style="{{point.dateStyle}}"
+          >
+            {{point.dateLabel}}
+          </view>
+        </view>
+      </scroll-view>
+    </block>
+
+    <view wx:else class="chart-empty">暂无记录</view>
+
+    <view wx:if="{{selectedRange === 'ALL' && chartPoints.length && hasMore}}" class="load-more-row">
+      <view class="load-more-btn {{trendLoading ? 'disabled' : ''}}" bindtap="handleLoadMore">
+        {{trendLoading ? '加载中...' : '加载更早数据'}}
+      </view>
+    </view>
+  </view>
+
+  <view class="panel metric-panel">
+    <view class="metric-grid">
+      <view
+        wx:for="{{metricCards}}"
+        wx:key="key"
+        wx:for-item="item"
+        class="metric-card {{item.active ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleSelectMetric"
+      >
+        <view
+          wx:if="{{item.actionType !== 'none'}}"
+          class="metric-card-action"
+          data-key="{{item.key}}"
+          data-action="{{item.actionType}}"
+          catchtap="handleMetricAction"
+        >
+          <block wx:if="{{item.actionType === 'record'}}">+</block>
+          <block wx:else>›</block>
+        </view>
+
+        <view class="metric-label {{item.isCircumference ? 'metric-label-circumference' : ''}}">{{item.label}}</view>
+        <view class="metric-value-row">
+          <view class="metric-value {{item.isCircumference ? 'metric-value-circumference' : ''}}">{{item.valueLabel}}</view>
+          <view wx:if="{{item.hasValue && item.unit}}" class="metric-unit">{{item.unit}}</view>
+        </view>
+        <view class="metric-date">{{item.metaLabel}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{metricEditorVisible}}" class="sheet-overlay" bindtap="handleCloseMetricEditor"></view>
+  <view wx:if="{{metricEditorVisible}}" class="bottom-sheet panel" catchtouchmove="noop">
+    <view class="sheet-head">
+      <view class="sheet-title">记录{{metricEditorMetricLabel}}</view>
+      <view class="sheet-close" bindtap="handleCloseMetricEditor">✕</view>
+    </view>
+    <picker mode="date" value="{{metricEditorDate}}" bindchange="handleMetricEditorDateChange" disabled="{{metricEditorLoading}}">
+      <view class="sheet-date-picker">日期：{{metricEditorDate}}</view>
+    </picker>
+    <view class="sheet-input-row">
+      <input
+        class="sheet-input"
+        type="digit"
+        value="{{metricEditorValue}}"
+        placeholder="请输入数值"
+        bindinput="handleMetricEditorInput"
+      />
+      <view class="sheet-unit">{{metricEditorUnit}}</view>
+    </view>
+    <view
+      class="sheet-submit-btn {{metricEditorLoading ? 'disabled' : ''}}"
+      bindtap="handleSubmitMetricEditor"
+    >
+      {{metricEditorLoading ? "保存中..." : "保存"}}
+    </view>
   </view>
 </view>
