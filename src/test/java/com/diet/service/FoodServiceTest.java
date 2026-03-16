@@ -12,6 +12,8 @@ import com.diet.common.ConflictException;
 import com.diet.common.NotFoundException;
 import com.diet.domain.combo.MealComboRepository;
 import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodCalorieUnit;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.UserProfile;
@@ -68,18 +70,54 @@ class FoodServiceTest {
                 1L,
                 new CreateFoodRequest(
                         "  无糖酸奶  ",
-                        new BigDecimal("66"),
+                        new BigDecimal("276"),
                         new BigDecimal("3.5"),
                         new BigDecimal("6.0"),
                         new BigDecimal("2.8"),
-                        "饮品"
+                        "饮品",
+                        FoodCalorieUnit.KJ,
+                        FoodQuantityUnit.ML
                 )
         );
 
         assertThat(response.id()).isEqualTo(10L);
         assertThat(response.userId()).isEqualTo(1L);
         assertThat(response.name()).isEqualTo("无糖酸奶");
+        assertThat(response.caloriesPer100g()).isEqualByComparingTo("65.97");
+        assertThat(response.displayCaloriesPer100()).isEqualByComparingTo("275.63");
+        assertThat(response.calorieUnit()).isEqualTo(FoodCalorieUnit.KJ);
+        assertThat(response.quantityUnit()).isEqualTo(FoodQuantityUnit.ML);
         assertThat(response.isBuiltin()).isFalse();
+    }
+
+    @Test
+    void shouldUseDefaultUnitsWhenRequestUnitMissing() {
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(buildUser(1L)));
+        when(foodRepository.findByAccessibleNameIgnoreCase(1L, "水煮蛋")).thenReturn(Optional.empty());
+        doAnswer(invocation -> {
+            Food food = invocation.getArgument(0);
+            food.setId(100L);
+            return null;
+        }).when(foodRepository).save(any(Food.class));
+
+        FoodResponse response = foodService.create(
+                1L,
+                new CreateFoodRequest(
+                        "水煮蛋",
+                        new BigDecimal("155"),
+                        new BigDecimal("13"),
+                        new BigDecimal("1.1"),
+                        new BigDecimal("11"),
+                        "其他",
+                        null,
+                        null
+                )
+        );
+
+        assertThat(response.calorieUnit()).isEqualTo(FoodCalorieUnit.KCAL);
+        assertThat(response.quantityUnit()).isEqualTo(FoodQuantityUnit.G);
+        assertThat(response.caloriesPer100g()).isEqualByComparingTo("155.00");
+        assertThat(response.displayCaloriesPer100()).isEqualByComparingTo("155.00");
     }
 
     @Test

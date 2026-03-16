@@ -1,4 +1,5 @@
 const { createMealCombo, deleteMealCombo, getMealComboDetail, getMealComboList, updateMealCombo } = require("../../services/meal-combo");
+const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { pickErrorMessage } = require("../../utils/request");
 
 function buildEmptyForm() {
@@ -33,22 +34,46 @@ function toMacro(value) {
   return Math.round(toNumber(value) * 10) / 10;
 }
 
+function normalizeCalorieUnit(rawUnit) {
+  const normalized = String(rawUnit || "KCAL").toUpperCase();
+  return CALORIE_UNIT_LABELS[normalized] ? normalized : "KCAL";
+}
+
+function normalizeQuantityUnit(rawUnit) {
+  const normalized = String(rawUnit || "G").toUpperCase();
+  return QUANTITY_UNIT_LABELS[normalized] ? normalized : "G";
+}
+
+function convertCaloriesFromKcal(caloriesPer100Kcal, calorieUnit) {
+  if (calorieUnit === "KJ") {
+    return toNumber(caloriesPer100Kcal) * 4.184;
+  }
+  return toNumber(caloriesPer100Kcal);
+}
+
 function buildItemTotal(per100g, quantityInGram) {
   return toInteger((toNumber(per100g) * toNumber(quantityInGram)) / 100);
 }
 
 function normalizeItem(item) {
   const quantityInGram = toNumber(item.quantityInGram);
+  const calorieUnit = normalizeCalorieUnit(item.calorieUnit);
+  const quantityUnit = normalizeQuantityUnit(item.quantityUnit);
+  const caloriesPer100g = toNumber(item.caloriesPer100g);
   return {
     foodId: item.foodId,
     foodName: item.foodName,
-    caloriesPer100g: toNumber(item.caloriesPer100g),
+    caloriesPer100g,
+    calorieUnit,
+    calorieUnitLabel: CALORIE_UNIT_LABELS[calorieUnit] || "kcal",
     proteinPer100g: toNumber(item.proteinPer100g),
     carbsPer100g: toNumber(item.carbsPer100g),
     fatPer100g: toNumber(item.fatPer100g),
-    caloriesPer100gDisplay: toInteger(item.caloriesPer100g),
+    caloriesPer100gDisplay: toInteger(item.displayCaloriesPer100 ?? convertCaloriesFromKcal(caloriesPer100g, calorieUnit)),
+    quantityUnit,
+    quantityUnitLabel: QUANTITY_UNIT_LABELS[quantityUnit] || "g",
     quantityInGram: String(quantityInGram),
-    totalCalories: buildItemTotal(item.caloriesPer100g, quantityInGram),
+    totalCalories: buildItemTotal(caloriesPer100g, quantityInGram),
   };
 }
 
@@ -232,9 +257,12 @@ Page({
         foodId: food.id,
         foodName: food.name,
         caloriesPer100g: food.caloriesPer100g,
+        calorieUnit: food.calorieUnit,
+        displayCaloriesPer100: food.displayCaloriesPer100,
         proteinPer100g: food.proteinPer100g,
         carbsPer100g: food.carbsPer100g,
         fatPer100g: food.fatPer100g,
+        quantityUnit: food.quantityUnit,
         quantityInGram: 100,
       }));
     }
@@ -289,7 +317,7 @@ Page({
 
     const invalidItem = items.find((item) => toNumber(item.quantityInGram) <= 0);
     if (invalidItem) {
-      wx.showToast({ title: `请检查 ${invalidItem.foodName} 的克数`, icon: "none" });
+      wx.showToast({ title: `请检查 ${invalidItem.foodName} 的数量`, icon: "none" });
       return;
     }
 

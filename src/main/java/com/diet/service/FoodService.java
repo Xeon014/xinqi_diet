@@ -4,12 +4,16 @@ import com.diet.common.ConflictException;
 import com.diet.common.NotFoundException;
 import com.diet.domain.combo.MealComboRepository;
 import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodCalorieUnit;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.dto.food.CreateFoodRequest;
 import com.diet.dto.food.FoodResponse;
 import com.diet.dto.food.UpdateFoodRequest;
 import com.diet.domain.user.UserProfileRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +25,8 @@ public class FoodService {
     public static final String SCOPE_ALL = "ALL";
 
     public static final String SCOPE_CUSTOM = "CUSTOM";
+
+    private static final BigDecimal KJ_PER_KCAL = new BigDecimal("4.184");
 
     private final FoodRepository foodRepository;
 
@@ -48,16 +54,20 @@ public class FoodService {
         if (foodRepository.findByAccessibleNameIgnoreCase(userId, normalizedName).isPresent()) {
             throw new ConflictException("food already exists: " + request.name());
         }
+        FoodCalorieUnit calorieUnit = resolveCalorieUnit(request.calorieUnit());
+        FoodQuantityUnit quantityUnit = resolveQuantityUnit(request.quantityUnit());
 
         Food food = new Food(
                 userId,
                 normalizedName,
-                request.caloriesPer100g(),
+                normalizeCaloriesPer100(request.caloriesPer100g(), calorieUnit),
                 request.proteinPer100g(),
                 request.carbsPer100g(),
                 request.fatPer100g(),
                 request.category()
         );
+        food.setCalorieUnit(calorieUnit);
+        food.setQuantityUnit(quantityUnit);
         foodRepository.save(food);
         return toResponse(food);
     }
@@ -71,13 +81,21 @@ public class FoodService {
                 .ifPresent(existing -> {
                     throw new ConflictException("food already exists: " + normalizedName);
                 });
+        FoodCalorieUnit calorieUnit = request.calorieUnit() == null
+                ? resolveCalorieUnit(food.getCalorieUnit())
+                : resolveCalorieUnit(request.calorieUnit());
+        FoodQuantityUnit quantityUnit = request.quantityUnit() == null
+                ? resolveQuantityUnit(food.getQuantityUnit())
+                : resolveQuantityUnit(request.quantityUnit());
 
         food.setName(normalizedName);
-        food.setCaloriesPer100g(request.caloriesPer100g());
+        food.setCaloriesPer100g(normalizeCaloriesPer100(request.caloriesPer100g(), calorieUnit));
         food.setProteinPer100g(request.proteinPer100g());
         food.setCarbsPer100g(request.carbsPer100g());
         food.setFatPer100g(request.fatPer100g());
         food.setCategory(request.category());
+        food.setCalorieUnit(calorieUnit);
+        food.setQuantityUnit(quantityUnit);
         foodRepository.save(food);
         return toResponse(food);
     }
@@ -142,14 +160,19 @@ public class FoodService {
     }
 
     private FoodResponse toResponse(Food food) {
+        FoodCalorieUnit calorieUnit = resolveCalorieUnit(food.getCalorieUnit());
+        FoodQuantityUnit quantityUnit = resolveQuantityUnit(food.getQuantityUnit());
         return new FoodResponse(
                 food.getId(),
                 food.getUserId(),
                 food.getName(),
                 food.getCaloriesPer100g(),
+                toDisplayCaloriesPer100(food.getCaloriesPer100g(), calorieUnit),
+                calorieUnit,
                 food.getProteinPer100g(),
                 food.getCarbsPer100g(),
                 food.getFatPer100g(),
+                quantityUnit,
                 food.getCategory(),
                 food.getSource(),
                 food.getSourceRef(),
@@ -157,5 +180,28 @@ public class FoodService {
                 food.getBuiltin(),
                 food.getCreatedAt()
         );
+    }
+
+    private FoodCalorieUnit resolveCalorieUnit(FoodCalorieUnit calorieUnit) {
+        return calorieUnit == null ? FoodCalorieUnit.KCAL : calorieUnit;
+    }
+
+    private FoodQuantityUnit resolveQuantityUnit(FoodQuantityUnit quantityUnit) {
+        return quantityUnit == null ? FoodQuantityUnit.G : quantityUnit;
+    }
+
+    private BigDecimal normalizeCaloriesPer100(BigDecimal rawValue, FoodCalorieUnit calorieUnit) {
+        FoodCalorieUnit resolvedUnit = resolveCalorieUnit(calorieUnit);
+        if (resolvedUnit == FoodCalorieUnit.KJ) {
+            return rawValue.divide(KJ_PER_KCAL, 2, RoundingMode.HALF_UP);
+        }
+        return rawValue.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal toDisplayCaloriesPer100(BigDecimal caloriesPer100Kcal, FoodCalorieUnit calorieUnit) {
+        if (calorieUnit == FoodCalorieUnit.KJ) {
+            return caloriesPer100Kcal.multiply(KJ_PER_KCAL).setScale(2, RoundingMode.HALF_UP);
+        }
+        return caloriesPer100Kcal.setScale(2, RoundingMode.HALF_UP);
     }
 }

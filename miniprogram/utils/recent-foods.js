@@ -9,9 +9,12 @@ function pickFoodSnapshot(food) {
     id: food.id,
     name: food.name,
     caloriesPer100g: food.caloriesPer100g,
+    displayCaloriesPer100: food.displayCaloriesPer100,
+    calorieUnit: food.calorieUnit,
     proteinPer100g: food.proteinPer100g,
     carbsPer100g: food.carbsPer100g,
     fatPer100g: food.fatPer100g,
+    quantityUnit: food.quantityUnit,
     category: food.category,
     usedAt: Date.now(),
   };

@@ -1,5 +1,7 @@
 package com.diet.dto.food;
 
+import com.diet.domain.food.FoodCalorieUnit;
+import com.diet.domain.food.FoodQuantityUnit;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +22,8 @@ public record CreateFoodRequest(
         @NotNull(message = "fatPer100g must not be null")
         @DecimalMin(value = "0.0", message = "fatPer100g must not be negative")
         BigDecimal fatPer100g,
-        String category
+        String category,
+        FoodCalorieUnit calorieUnit,
+        FoodQuantityUnit quantityUnit
 ) {
 }

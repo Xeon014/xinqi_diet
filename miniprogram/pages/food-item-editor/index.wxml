@@ -11,20 +11,20 @@
     </view>
 
     <view class="food-name">{{foodName || '食物'}}</view>
-    <view class="food-meta">{{mealTypeLabel}} · {{caloriesPer100g}} kcal / 100g</view>
+    <view class="food-meta">{{mealTypeLabel}} · {{displayCaloriesPer100}} {{calorieUnitLabel}} / 100{{quantityUnitLabel}}</view>
 
     <view class="editor-row">
-      <view class="field-label">重量</view>
+      <view class="field-label">数量</view>
       <view class="quantity-wrap">
         <input class="quantity-input" type="digit" value="{{quantityInGram}}" bindinput="handleQuantityInput" />
-        <view class="quantity-unit">g</view>
+        <view class="quantity-unit">{{quantityUnitLabel}}</view>
       </view>
     </view>
 
     <view class="nutrition-grid">
       <view class="nutrition-item">
         <view class="nutrition-label">热量</view>
-        <view class="nutrition-value">{{totalCalories}} kcal</view>
+        <view class="nutrition-value">{{totalCalories}} {{calorieUnitLabel}}</view>
       </view>
       <view class="nutrition-item">
         <view class="nutrition-label">蛋白</view>

@@ -2,6 +2,8 @@ package com.diet.service;
 
 import com.diet.common.NotFoundException;
 import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodCalorieUnit;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
@@ -133,10 +135,12 @@ public class MealRecordService {
                 record.getFoodId(),
                 food.getName(),
                 food.getCaloriesPer100g(),
+                food.getCalorieUnit() == null ? FoodCalorieUnit.KCAL : food.getCalorieUnit(),
                 food.getProteinPer100g(),
                 food.getCarbsPer100g(),
                 food.getFatPer100g(),
                 record.getMealType(),
+                food.getQuantityUnit() == null ? FoodQuantityUnit.G : food.getQuantityUnit(),
                 record.getQuantityInGram(),
                 record.getTotalCalories(),
                 record.getRecordDate(),

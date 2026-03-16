@@ -25,6 +25,9 @@ public class Food {
     @TableField("calories_per_100g")
     private BigDecimal caloriesPer100g;
 
+    @TableField("calorie_unit")
+    private FoodCalorieUnit calorieUnit;
+
     @TableField("protein_per_100g")
     private BigDecimal proteinPer100g;
 
@@ -33,6 +36,9 @@ public class Food {
 
     @TableField("fat_per_100g")
     private BigDecimal fatPer100g;
+
+    @TableField("quantity_unit")
+    private FoodQuantityUnit quantityUnit;
 
     private String category;
 
@@ -64,9 +70,11 @@ public class Food {
         this.userId = userId;
         this.name = name;
         this.caloriesPer100g = caloriesPer100g;
+        this.calorieUnit = FoodCalorieUnit.KCAL;
         this.proteinPer100g = proteinPer100g;
         this.carbsPer100g = carbsPer100g;
         this.fatPer100g = fatPer100g;
+        this.quantityUnit = FoodQuantityUnit.G;
         this.category = category;
         this.source = "MANUAL";
         this.builtin = false;

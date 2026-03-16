@@ -1,5 +1,6 @@
 const { createRecord, deleteRecord, getRecords, updateRecord } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
+const { CALORIE_UNIT_LABELS, MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
 const { saveRecentFood } = require("../../utils/recent-foods");
 const { pickErrorMessage } = require("../../utils/request");
@@ -7,12 +8,6 @@ const { pickErrorMessage } = require("../../utils/request");
 const app = getApp();
 const DEFAULT_QUANTITY = 100;
 const DEFAULT_MEAL_TYPE = "BREAKFAST";
-const MEAL_TYPE_LABELS = {
-  BREAKFAST: "早餐",
-  LUNCH: "午餐",
-  DINNER: "晚餐",
-  SNACK: "加餐",
-};
 
 function toNumber(value) {
   const number = Number(value);
@@ -21,6 +16,23 @@ function toNumber(value) {
 
 function toInteger(value) {
   return Math.round(toNumber(value));
+}
+
+function normalizeCalorieUnit(rawUnit) {
+  const normalized = String(rawUnit || "KCAL").toUpperCase();
+  return CALORIE_UNIT_LABELS[normalized] ? normalized : "KCAL";
+}
+
+function normalizeQuantityUnit(rawUnit) {
+  const normalized = String(rawUnit || "G").toUpperCase();
+  return QUANTITY_UNIT_LABELS[normalized] ? normalized : "G";
+}
+
+function convertCaloriesFromKcal(caloriesPer100Kcal, calorieUnit) {
+  if (calorieUnit === "KJ") {
+    return toNumber(caloriesPer100Kcal) * 4.184;
+  }
+  return toNumber(caloriesPer100Kcal);
 }
 
 function isEditMode(mode) {
@@ -39,10 +51,13 @@ function normalizeFoodPayload(payload) {
     name: payload.name || "食物",
     category: payload.category || "",
     categoryLabel: payload.categoryLabel || payload.category || "",
-    caloriesPer100g: toInteger(payload.caloriesPer100g),
+    caloriesPer100g: toNumber(payload.caloriesPer100g),
+    calorieUnit: normalizeCalorieUnit(payload.calorieUnit),
+    displayCaloriesPer100: toNumber(payload.displayCaloriesPer100 ?? payload.caloriesPer100g),
     proteinPer100g: toInteger(payload.proteinPer100g),
     carbsPer100g: toInteger(payload.carbsPer100g),
     fatPer100g: toInteger(payload.fatPer100g),
+    quantityUnit: normalizeQuantityUnit(payload.quantityUnit),
   };
 }
 
@@ -62,10 +77,10 @@ function buildFoodSearchUrl({ mealType, recordDate, source }) {
   return `/pages/food-search/index?mealType=${encodeURIComponent(mealType)}&recordDate=${encodeURIComponent(recordDate)}&source=${encodeURIComponent(source)}`;
 }
 
-function resolveTotalNutrients({ quantityInGram, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g }) {
+function resolveTotalNutrients({ quantityInGram, displayCaloriesPer100, proteinPer100g, carbsPer100g, fatPer100g }) {
   const quantity = Math.max(toNumber(quantityInGram), 0);
   return {
-    totalCalories: toInteger((toNumber(caloriesPer100g) * quantity) / 100),
+    totalCalories: toInteger((toNumber(displayCaloriesPer100) * quantity) / 100),
     totalProtein: toInteger((toNumber(proteinPer100g) * quantity) / 100),
     totalCarbs: toInteger((toNumber(carbsPer100g) * quantity) / 100),
     totalFat: toInteger((toNumber(fatPer100g) * quantity) / 100),
@@ -84,10 +99,15 @@ Page({
     foodName: "",
     categoryLabel: "",
     caloriesPer100g: 0,
+    displayCaloriesPer100: 0,
+    calorieUnit: "KCAL",
+    calorieUnitLabel: "kcal",
     proteinPer100g: 0,
     carbsPer100g: 0,
     fatPer100g: 0,
     quantityInGram: String(DEFAULT_QUANTITY),
+    quantityUnit: "G",
+    quantityUnitLabel: "g",
     totalCalories: 0,
     totalProtein: 0,
     totalCarbs: 0,
@@ -131,7 +151,7 @@ Page({
   applyFoodData(food, quantityInGram) {
     const totals = resolveTotalNutrients({
       quantityInGram,
-      caloriesPer100g: food.caloriesPer100g,
+      displayCaloriesPer100: food.displayCaloriesPer100,
       proteinPer100g: food.proteinPer100g,
       carbsPer100g: food.carbsPer100g,
       fatPer100g: food.fatPer100g,
@@ -141,11 +161,16 @@ Page({
       foodId: food.id,
       foodName: food.name,
       categoryLabel: food.categoryLabel || food.category || "",
-      caloriesPer100g: toInteger(food.caloriesPer100g),
+      caloriesPer100g: toNumber(food.caloriesPer100g),
+      displayCaloriesPer100: toInteger(food.displayCaloriesPer100),
+      calorieUnit: food.calorieUnit || "KCAL",
+      calorieUnitLabel: CALORIE_UNIT_LABELS[food.calorieUnit || "KCAL"] || "kcal",
       proteinPer100g: toInteger(food.proteinPer100g),
       carbsPer100g: toInteger(food.carbsPer100g),
       fatPer100g: toInteger(food.fatPer100g),
       quantityInGram,
+      quantityUnit: food.quantityUnit || "G",
+      quantityUnitLabel: QUANTITY_UNIT_LABELS[food.quantityUnit || "G"] || "g",
       totalCalories: totals.totalCalories,
       totalProtein: totals.totalProtein,
       totalCarbs: totals.totalCarbs,
@@ -179,9 +204,14 @@ Page({
           category: "",
           categoryLabel: this.data.mealTypeLabel,
           caloriesPer100g: targetRecord.caloriesPer100g,
+          calorieUnit: normalizeCalorieUnit(targetRecord.calorieUnit),
+          displayCaloriesPer100: targetRecord.calorieUnit === "KJ"
+            ? convertCaloriesFromKcal(targetRecord.caloriesPer100g, "KJ")
+            : targetRecord.caloriesPer100g,
           proteinPer100g: targetRecord.proteinPer100g,
           carbsPer100g: targetRecord.carbsPer100g,
           fatPer100g: targetRecord.fatPer100g,
+          quantityUnit: normalizeQuantityUnit(targetRecord.quantityUnit),
         }, String(toNumber(targetRecord.quantityInGram) || DEFAULT_QUANTITY));
       })
       .catch((error) => {
@@ -194,7 +224,7 @@ Page({
     const quantityInGram = event.detail.value;
     const totals = resolveTotalNutrients({
       quantityInGram,
-      caloriesPer100g: this.data.caloriesPer100g,
+      displayCaloriesPer100: this.data.displayCaloriesPer100,
       proteinPer100g: this.data.proteinPer100g,
       carbsPer100g: this.data.carbsPer100g,
       fatPer100g: this.data.fatPer100g,
@@ -211,7 +241,7 @@ Page({
 
   validateQuantity() {
     if (toNumber(this.data.quantityInGram) <= 0) {
-      wx.showToast({ title: "请输入正确重量", icon: "none" });
+      wx.showToast({ title: "请输入正确数量", icon: "none" });
       return false;
     }
     return true;
@@ -252,9 +282,12 @@ Page({
             id: this.data.foodId,
             name: this.data.foodName,
             caloriesPer100g: this.data.caloriesPer100g,
+            calorieUnit: this.data.calorieUnit,
+            displayCaloriesPer100: this.data.displayCaloriesPer100,
             proteinPer100g: this.data.proteinPer100g,
             carbsPer100g: this.data.carbsPer100g,
             fatPer100g: this.data.fatPer100g,
+            quantityUnit: this.data.quantityUnit,
             category: this.data.categoryLabel,
           });
         }

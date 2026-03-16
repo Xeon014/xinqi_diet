@@ -11,7 +11,7 @@
     <view wx:for="{{displayedFoods}}" wx:key="id" class="item-row">
       <view class="item-main">
         <view class="item-name">{{item.name}}</view>
-        <view class="item-meta">{{item.categoryLabel}} · {{item.caloriesPer100g}} kcal / 100g</view>
+        <view class="item-meta">{{item.categoryLabel}} · {{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
       </view>
       <view class="item-actions">
         <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
@@ -54,12 +54,43 @@
 
     <view class="field-group two-column">
       <view class="field-half">
-        <view class="field-label">热量(kcal/100g)</view>
+        <view class="field-label">热量({{editForm.calorieUnit === 'KJ' ? 'kJ' : 'kcal'}}/100{{editForm.quantityUnit === 'ML' ? 'ml' : 'g'}})</view>
         <input class="field-input" type="digit" value="{{editForm.caloriesPer100g}}" data-field="caloriesPer100g" bindinput="handleInput" />
       </view>
       <view class="field-half">
         <view class="field-label">蛋白质(g)</view>
         <input class="field-input" type="digit" value="{{editForm.proteinPer100g}}" data-field="proteinPer100g" bindinput="handleInput" />
+      </view>
+    </view>
+
+    <view class="field-group two-column">
+      <view class="field-half">
+        <view class="field-label">热量单位</view>
+        <view class="category-grid">
+          <view
+            wx:for="{{calorieUnits}}"
+            wx:key="key"
+            class="category-chip {{editForm.calorieUnit === item.key ? 'active' : ''}}"
+            data-key="{{item.key}}"
+            bindtap="handleCalorieUnitTap"
+          >
+            {{item.label}}
+          </view>
+        </view>
+      </view>
+      <view class="field-half">
+        <view class="field-label">计量单位</view>
+        <view class="category-grid">
+          <view
+            wx:for="{{quantityUnits}}"
+            wx:key="key"
+            class="category-chip {{editForm.quantityUnit === item.key ? 'active' : ''}}"
+            data-key="{{item.key}}"
+            bindtap="handleQuantityUnitTap"
+          >
+            {{item.label}}
+          </view>
+        </view>
       </view>
     </view>
 

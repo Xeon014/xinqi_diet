@@ -1,5 +1,9 @@
 package com.diet.domain.metric;
 
 public enum BodyMetricType {
-    WEIGHT
+    WEIGHT,
+    CHEST_CIRCUMFERENCE,
+    WAIST_CIRCUMFERENCE,
+    HIP_CIRCUMFERENCE,
+    THIGH_CIRCUMFERENCE
 }

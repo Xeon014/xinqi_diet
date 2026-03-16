@@ -98,7 +98,7 @@ public class MealRecordController {
             @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             @Parameter(description = "记录日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @Parameter(description = "餐次类型，可选值 BREAKFAST/LUNCH/DINNER/SNACK")
+            @Parameter(description = "餐次类型，可选值 BREAKFAST/MORNING_SNACK/LUNCH/AFTERNOON_SNACK/DINNER/LATE_NIGHT_SNACK/OTHER")
             @RequestParam(required = false) MealType mealType,
             HttpServletRequest httpServletRequest
     ) {

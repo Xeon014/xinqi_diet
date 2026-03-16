@@ -1,6 +1,7 @@
 package com.diet.dto.user;
 
 import com.diet.domain.exercise.ExerciseIntensity;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.record.MealType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ public record DailyRecordResponse(
         LocalDate recordDate,
         LocalDateTime createdAt,
         MealType mealType,
+        FoodQuantityUnit quantityUnit,
         String foodName,
         BigDecimal quantityInGram,
         String exerciseName,

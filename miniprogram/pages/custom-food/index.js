@@ -1,4 +1,5 @@
 const { createFood, deleteFood, searchFoods, updateFood } = require("../../services/food");
+const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { FOOD_CREATION_CATEGORIES, decorateFood } = require("../../utils/food");
 const { pickErrorMessage } = require("../../utils/request");
 
@@ -7,9 +8,11 @@ function buildEmptyForm() {
     id: null,
     name: "",
     caloriesPer100g: "",
+    calorieUnit: "KCAL",
     proteinPer100g: "",
     carbsPer100g: "",
     fatPer100g: "",
+    quantityUnit: "G",
   };
 }
 
@@ -25,16 +28,29 @@ function toInteger(value) {
 function normalizeFood(food) {
   return {
     ...food,
-    caloriesPer100g: toInteger(food.caloriesPer100g),
+    caloriesPer100g: toNumber(food.caloriesPer100g),
+    displayCaloriesPer100: toInteger(food.displayCaloriesPer100 ?? food.caloriesPer100g),
+    calorieUnit: food.calorieUnit || "KCAL",
+    calorieUnitLabel: CALORIE_UNIT_LABELS[food.calorieUnit || "KCAL"] || "kcal",
     proteinPer100g: toInteger(food.proteinPer100g),
     carbsPer100g: toInteger(food.carbsPer100g),
     fatPer100g: toInteger(food.fatPer100g),
+    quantityUnit: food.quantityUnit || "G",
+    quantityUnitLabel: QUANTITY_UNIT_LABELS[food.quantityUnit || "G"] || "g",
   };
 }
 
 Page({
   data: {
     categories: FOOD_CREATION_CATEGORIES,
+    calorieUnits: [
+      { key: "KCAL", label: "kcal" },
+      { key: "KJ", label: "kJ" },
+    ],
+    quantityUnits: [
+      { key: "G", label: "克(g)" },
+      { key: "ML", label: "毫升(ml)" },
+    ],
     foods: [],
     displayedFoods: [],
     keyword: "",
@@ -120,10 +136,12 @@ Page({
       editForm: {
         id: target.id,
         name: target.name || "",
-        caloriesPer100g: String(toInteger(target.caloriesPer100g)),
+        caloriesPer100g: String(toInteger(target.displayCaloriesPer100)),
+        calorieUnit: target.calorieUnit || "KCAL",
         proteinPer100g: String(toInteger(target.proteinPer100g)),
         carbsPer100g: String(toInteger(target.carbsPer100g)),
         fatPer100g: String(toInteger(target.fatPer100g)),
+        quantityUnit: target.quantityUnit || "G",
       },
     });
   },
@@ -135,6 +153,14 @@ Page({
 
   handleCategoryTap(event) {
     this.setData({ selectedCategoryKey: event.currentTarget.dataset.key });
+  },
+
+  handleCalorieUnitTap(event) {
+    this.setData({ "editForm.calorieUnit": event.currentTarget.dataset.key });
+  },
+
+  handleQuantityUnitTap(event) {
+    this.setData({ "editForm.quantityUnit": event.currentTarget.dataset.key });
   },
 
   noop() {},
@@ -184,6 +210,8 @@ Page({
       carbsPer100g,
       fatPer100g,
       category: selectedCategory ? selectedCategory.label : "其他",
+      calorieUnit: editForm.calorieUnit || "KCAL",
+      quantityUnit: editForm.quantityUnit || "G",
     };
   },
 

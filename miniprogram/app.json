@@ -12,6 +12,7 @@
                   "pages/personal-info/index",
                   "pages/health-profile/index",
                   "pages/progress/index",
+                  "pages/metric-history/index",
                   "pages/meal-combo-manage/index"
               ],
     "window":  {
