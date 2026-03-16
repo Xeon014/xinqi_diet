@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS food (
     source VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT '数据来源',
     source_ref VARCHAR(100) NULL COMMENT '来源主键',
     aliases VARCHAR(500) NULL COMMENT '别名',
+    image_url VARCHAR(500) NULL COMMENT '食物主图 URL',
     is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置',
     sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类排序',
     created_at DATETIME NOT NULL COMMENT '创建时间',

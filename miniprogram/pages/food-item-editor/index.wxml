@@ -10,8 +10,13 @@
       <view class="sheet-close" bindtap="handleClose">✕</view>
     </view>
 
-    <view class="food-name">{{foodName || '食物'}}</view>
-    <view class="food-meta">{{mealTypeLabel}} · {{displayCaloriesPer100}} {{calorieUnitLabel}} / 100{{quantityUnitLabel}}</view>
+    <view class="food-header {{foodImageUrl ? 'with-image' : ''}}">
+      <image wx:if="{{foodImageUrl}}" class="food-image" src="{{foodImageUrl}}" mode="aspectFill" binderror="handleImageError" />
+      <view class="food-copy">
+        <view class="food-name">{{foodName || '食物'}}</view>
+        <view class="food-meta">{{mealTypeLabel}} · {{displayCaloriesPer100}} {{calorieUnitLabel}} / 100{{quantityUnitLabel}}</view>
+      </view>
+    </view>
 
     <view class="editor-row">
       <view class="field-label">数量</view>

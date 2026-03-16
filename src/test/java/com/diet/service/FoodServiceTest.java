@@ -19,6 +19,7 @@ import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.food.CreateFoodRequest;
+import com.diet.dto.food.FoodListResponse;
 import com.diet.dto.food.FoodResponse;
 import java.math.BigDecimal;
 import java.util.List;
@@ -84,7 +85,7 @@ class FoodServiceTest {
         assertThat(response.userId()).isEqualTo(1L);
         assertThat(response.name()).isEqualTo("无糖酸奶");
         assertThat(response.caloriesPer100g()).isEqualByComparingTo("65.97");
-        assertThat(response.displayCaloriesPer100()).isEqualByComparingTo("275.63");
+        assertThat(response.displayCaloriesPer100()).isEqualByComparingTo("276.02");
         assertThat(response.calorieUnit()).isEqualTo(FoodCalorieUnit.KJ);
         assertThat(response.quantityUnit()).isEqualTo(FoodQuantityUnit.ML);
         assertThat(response.isBuiltin()).isFalse();
@@ -122,13 +123,42 @@ class FoodServiceTest {
 
     @Test
     void shouldOnlyReturnOwnedCustomFoodsWhenScopeIsCustom() {
-        when(foodRepository.findCustomByUser(1L, "酸奶")).thenReturn(List.of(buildCustomFood(10L, 1L, "无糖酸奶")));
+        when(foodRepository.findPage(1L, "酸奶", null, true, false, 0, 50))
+                .thenReturn(List.of(buildCustomFood(10L, 1L, "无糖酸奶")));
+        when(foodRepository.countPage(1L, "酸奶", null, true, false)).thenReturn(1L);
 
-        List<FoodResponse> responses = foodService.findAll(1L, "酸奶", FoodService.SCOPE_CUSTOM);
+        FoodListResponse response = foodService.findAll(1L, "酸奶", null, 1, 50, FoodService.SCOPE_CUSTOM);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).name()).isEqualTo("无糖酸奶");
+        assertThat(response.foods()).hasSize(1);
+        assertThat(response.foods().get(0).name()).isEqualTo("无糖酸奶");
+        assertThat(response.total()).isEqualTo(1);
         verify(foodRepository, never()).findAll(any(), any());
+    }
+
+    @Test
+    void shouldNormalizeCategoryAndPageArgumentsWhenQueryingFoods() {
+        Food builtinFood = buildBuiltinFood(20L, "鸡胸肉", "https://example.com/chicken.jpg");
+        when(foodRepository.findPage(null, "鸡胸肉", "主食", false, false, 0, 100))
+                .thenReturn(List.of(builtinFood));
+        when(foodRepository.countPage(null, "鸡胸肉", "主食", false, false)).thenReturn(1L);
+
+        FoodListResponse response = foodService.findAll(null, "  鸡胸肉  ", "STAPLE", 0, 999, FoodService.SCOPE_ALL);
+
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(100);
+        assertThat(response.total()).isEqualTo(1);
+        assertThat(response.foods().get(0).imageUrl()).isEqualTo("https://example.com/chicken.jpg");
+    }
+
+    @Test
+    void shouldUseBuiltinOnlyModeForCategoryBrowse() {
+        when(foodRepository.findPage(null, null, "主食", false, true, 0, 50))
+                .thenReturn(List.of(buildBuiltinFood(30L, "糙米饭", null)));
+        when(foodRepository.countPage(null, null, "主食", false, true)).thenReturn(1L);
+
+        FoodListResponse response = foodService.findAll(null, null, "主食", 1, 50, FoodService.SCOPE_ALL);
+
+        assertThat(response.foods()).hasSize(1);
     }
 
     @Test
@@ -187,6 +217,22 @@ class FoodServiceTest {
                 "其他"
         );
         food.setId(foodId);
+        return food;
+    }
+
+    private Food buildBuiltinFood(Long foodId, String name, String imageUrl) {
+        Food food = new Food(
+                null,
+                name,
+                new BigDecimal("120"),
+                new BigDecimal("8"),
+                new BigDecimal("10"),
+                new BigDecimal("4"),
+                "主食"
+        );
+        food.setId(foodId);
+        food.setBuiltin(true);
+        food.setImageUrl(imageUrl);
         return food;
     }
 }

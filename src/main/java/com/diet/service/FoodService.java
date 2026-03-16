@@ -8,13 +8,16 @@ import com.diet.domain.food.FoodCalorieUnit;
 import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecordRepository;
+import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.food.CreateFoodRequest;
+import com.diet.dto.food.FoodListResponse;
 import com.diet.dto.food.FoodResponse;
 import com.diet.dto.food.UpdateFoodRequest;
-import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,14 @@ public class FoodService {
     public static final String SCOPE_CUSTOM = "CUSTOM";
 
     private static final BigDecimal KJ_PER_KCAL = new BigDecimal("4.184");
+
+    private static final int DEFAULT_PAGE = 1;
+
+    private static final int DEFAULT_PAGE_SIZE = 50;
+
+    private static final int MAX_PAGE_SIZE = 100;
+
+    private static final Map<String, String> CATEGORY_LABEL_MAP = buildCategoryLabelMap();
 
     private final FoodRepository foodRepository;
 
@@ -109,14 +120,28 @@ public class FoodService {
     }
 
     @Transactional(readOnly = true)
-    public List<FoodResponse> findAll(Long userId, String keyword, String scope) {
-        List<Food> foods = SCOPE_CUSTOM.equals(scope)
-                ? foodRepository.findCustomByUser(userId, keyword)
-                : foodRepository.findAll(userId, keyword);
-        return foods
-                .stream()
+    public FoodListResponse findAll(Long userId, String keyword, String category, int page, int size, String scope) {
+        int normalizedPage = normalizePage(page);
+        int normalizedSize = normalizePageSize(size);
+        String normalizedKeyword = normalizeKeyword(keyword);
+        String normalizedCategory = normalizeCategory(category);
+        boolean customOnly = SCOPE_CUSTOM.equals(scope);
+        boolean builtinOnly = !customOnly && normalizedCategory != null && normalizedKeyword == null;
+        int offset = (normalizedPage - 1) * normalizedSize;
+
+        List<FoodResponse> foods = foodRepository.findPage(
+                        userId,
+                        normalizedKeyword,
+                        normalizedCategory,
+                        customOnly,
+                        builtinOnly,
+                        offset,
+                        normalizedSize
+                ).stream()
                 .map(this::toResponse)
                 .toList();
+        long total = foodRepository.countPage(userId, normalizedKeyword, normalizedCategory, customOnly, builtinOnly);
+        return new FoodListResponse(foods, normalizedPage, normalizedSize, total);
     }
 
     @Transactional(readOnly = true)
@@ -177,9 +202,44 @@ public class FoodService {
                 food.getSource(),
                 food.getSourceRef(),
                 food.getAliases(),
+                food.getImageUrl(),
                 food.getBuiltin(),
                 food.getCreatedAt()
         );
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeCategory(String category) {
+        if (category == null) {
+            return null;
+        }
+        String trimmed = category.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        String upperCase = trimmed.toUpperCase();
+        if ("ALL".equals(upperCase)) {
+            return null;
+        }
+        return CATEGORY_LABEL_MAP.getOrDefault(upperCase, trimmed);
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(page, DEFAULT_PAGE);
+    }
+
+    private int normalizePageSize(int size) {
+        if (size <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(size, MAX_PAGE_SIZE);
     }
 
     private FoodCalorieUnit resolveCalorieUnit(FoodCalorieUnit calorieUnit) {
@@ -203,5 +263,17 @@ public class FoodService {
             return caloriesPer100Kcal.multiply(KJ_PER_KCAL).setScale(2, RoundingMode.HALF_UP);
         }
         return caloriesPer100Kcal.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static Map<String, String> buildCategoryLabelMap() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        mapping.put("STAPLE", "主食");
+        mapping.put("PROTEIN", "肉蛋奶");
+        mapping.put("VEGETABLE_FRUIT", "蔬果");
+        mapping.put("BEAN", "豆制品");
+        mapping.put("DRINK", "饮品");
+        mapping.put("SNACK", "零食");
+        mapping.put("OTHER", "其他");
+        return mapping;
     }
 }

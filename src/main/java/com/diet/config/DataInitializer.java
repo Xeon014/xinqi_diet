@@ -46,7 +46,7 @@ public class DataInitializer {
     }
 
     private void seedBuiltinFoodsIfNeeded(FoodRepository foodRepository, JdbcTemplate jdbcTemplate) {
-        if (foodRepository.count() >= 300) {
+        if (foodRepository.countBuiltin() >= 3000) {
             return;
         }
         importSql(jdbcTemplate, "builtin_food_seed.sql");

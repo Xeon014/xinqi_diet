@@ -21,6 +21,7 @@ public record FoodResponse(
         String source,
         String sourceRef,
         String aliases,
+        String imageUrl,
         @JsonProperty("isBuiltin")
         Boolean isBuiltin,
         LocalDateTime createdAt

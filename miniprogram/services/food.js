@@ -5,8 +5,17 @@ function searchFoods(keyword = "", options = {}) {
   if (keyword) {
     params.push(`keyword=${encodeURIComponent(keyword)}`);
   }
+  if (options.category) {
+    params.push(`category=${encodeURIComponent(options.category)}`);
+  }
   if (options.scope) {
     params.push(`scope=${encodeURIComponent(options.scope)}`);
+  }
+  if (options.page) {
+    params.push(`page=${encodeURIComponent(options.page)}`);
+  }
+  if (options.size) {
+    params.push(`size=${encodeURIComponent(options.size)}`);
   }
   const query = params.length ? `?${params.join("&")}` : "";
   return request({

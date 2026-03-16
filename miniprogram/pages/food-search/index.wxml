@@ -57,6 +57,7 @@
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
           <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">新建</view>
         </view>
+
         <view wx:if="{{displayedFoods.length}}" class="food-list compact-list">
           <view
             wx:for="{{displayedFoods}}"
@@ -65,12 +66,26 @@
             data-index="{{index}}"
             bindtap="handleSelectFood"
           >
-            <view class="food-top">
-              <view class="food-name">{{item.name}}</view>
-              <view class="food-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
+            <view wx:if="{{item.imageUrl}}" class="food-cover-wrap">
+              <image
+                class="food-cover"
+                src="{{item.imageUrl}}"
+                mode="aspectFill"
+                data-id="{{item.id}}"
+                binderror="handleFoodImageError"
+              />
+            </view>
+            <view class="food-main">
+              <view class="food-top">
+                <view class="food-name">{{item.name}}</view>
+                <view class="food-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
+              </view>
+              <view wx:if="{{item.categoryLabel}}" class="food-category">{{item.categoryLabel}}</view>
             </view>
           </view>
         </view>
+
+        <view wx:if="{{builtinStatusText}}" class="load-more-hint">{{builtinStatusText}}</view>
       </view>
 
       <view wx:if="{{showComboSection}}" class="panel section-panel">
@@ -92,7 +107,7 @@
       </view>
 
       <empty-state
-        wx:if="{{!displayedFoods.length && !displayedCombos.length && !(showRecentSearchList && recentSearches.length)}}"
+        wx:if="{{!builtinLoading && !displayedFoods.length && !displayedCombos.length && !(showRecentSearchList && recentSearches.length)}}"
         title="{{emptyTitle}}"
         description="{{emptyDescription}}"
       />
@@ -133,9 +148,18 @@
       </picker>
     </view>
 
-    <view wx:if="{{editorType === 'FOOD'}}">
-      <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
-      <view class="editor-food-meta">{{editorCaloriesPer100Display}} {{editorCalorieUnitLabel}} / 100{{editorQuantityUnitLabel}}</view>
+    <view wx:if="{{editorType === 'FOOD'}}" class="editor-food-header {{editorFoodImageUrl ? 'with-image' : ''}}">
+      <image
+        wx:if="{{editorFoodImageUrl}}"
+        class="editor-food-image"
+        src="{{editorFoodImageUrl}}"
+        mode="aspectFill"
+        binderror="handleEditorImageError"
+      />
+      <view class="editor-food-content">
+        <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
+        <view class="editor-food-meta">{{editorCaloriesPer100Display}} {{editorCalorieUnitLabel}} / 100{{editorQuantityUnitLabel}}</view>
+      </view>
     </view>
 
     <view wx:else>

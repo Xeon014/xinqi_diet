@@ -4,24 +4,83 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.diet.mapper.FoodMapper">
 
+    <sql id="baseColumns">
+        id,
+        user_id,
+        name,
+        calories_per_100g,
+        calorie_unit,
+        protein_per_100g,
+        carbs_per_100g,
+        fat_per_100g,
+        quantity_unit,
+        category,
+        source,
+        source_ref,
+        aliases,
+        image_url,
+        is_builtin,
+        sort_order,
+        created_at
+    </sql>
+
+    <sql id="accessScope">
+        <choose>
+            <when test="customOnly">
+                user_id = #{userId}
+                AND is_builtin = 0
+            </when>
+            <when test="builtinOnly">
+                is_builtin = 1
+            </when>
+            <when test="userId != null">
+                (is_builtin = 1 OR user_id = #{userId})
+            </when>
+            <otherwise>
+                is_builtin = 1
+            </otherwise>
+        </choose>
+    </sql>
+
+    <sql id="pageFilters">
+        <include refid="accessScope"/>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                OR LOWER(COALESCE(aliases, '')) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="categorySort">
+        CASE
+            WHEN category = '主食' THEN 1
+            WHEN category = '肉蛋奶' THEN 2
+            WHEN category = '蔬果' THEN 3
+            WHEN category = '豆制品' THEN 4
+            WHEN category = '饮品' THEN 5
+            WHEN category = '零食' THEN 6
+            WHEN category = '其他' THEN 7
+            ELSE 99
+        END
+    </sql>
+
+    <sql id="keywordSort">
+        CASE
+            WHEN #{keyword} IS NULL OR #{keyword} = '' THEN 9
+            WHEN LOWER(name) = LOWER(#{keyword}) THEN 0
+            WHEN LOWER(COALESCE(aliases, '')) LIKE CONCAT('%', LOWER(#{keyword}), '%') THEN 1
+            WHEN LOWER(name) LIKE CONCAT('%', LOWER(#{keyword}), '%') THEN 2
+            ELSE 8
+        END
+    </sql>
+
     <select id="findAccessibleById" resultType="com.diet.domain.food.Food">
         SELECT
-            id,
-            user_id,
-            name,
-            calories_per_100g,
-            calorie_unit,
-            protein_per_100g,
-            carbs_per_100g,
-            fat_per_100g,
-            quantity_unit,
-            category,
-            source,
-            source_ref,
-            aliases,
-            is_builtin,
-            sort_order,
-            created_at
+            <include refid="baseColumns"/>
         FROM food
         WHERE id = #{id}
         <choose>
@@ -37,22 +96,7 @@
 
     <select id="findOwnedCustomById" resultType="com.diet.domain.food.Food">
         SELECT
-            id,
-            user_id,
-            name,
-            calories_per_100g,
-            calorie_unit,
-            protein_per_100g,
-            carbs_per_100g,
-            fat_per_100g,
-            quantity_unit,
-            category,
-            source,
-            source_ref,
-            aliases,
-            is_builtin,
-            sort_order,
-            created_at
+            <include refid="baseColumns"/>
         FROM food
         WHERE id = #{id}
           AND user_id = #{userId}
@@ -62,22 +106,7 @@
 
     <select id="findByAccessibleNameIgnoreCase" resultType="com.diet.domain.food.Food">
         SELECT
-            id,
-            user_id,
-            name,
-            calories_per_100g,
-            calorie_unit,
-            protein_per_100g,
-            carbs_per_100g,
-            fat_per_100g,
-            quantity_unit,
-            category,
-            source,
-            source_ref,
-            aliases,
-            is_builtin,
-            sort_order,
-            created_at
+            <include refid="baseColumns"/>
         FROM food
         <where>
             LOWER(name) = LOWER(#{name})
@@ -95,22 +124,7 @@
 
     <select id="findAll" resultType="com.diet.domain.food.Food">
         SELECT
-            id,
-            user_id,
-            name,
-            calories_per_100g,
-            calorie_unit,
-            protein_per_100g,
-            carbs_per_100g,
-            fat_per_100g,
-            quantity_unit,
-            category,
-            source,
-            source_ref,
-            aliases,
-            is_builtin,
-            sort_order,
-            created_at
+            <include refid="baseColumns"/>
         FROM food
         <where>
             <choose>
@@ -122,22 +136,19 @@
                 </otherwise>
             </choose>
             <if test="keyword != null and keyword != ''">
-                AND (name LIKE CONCAT('%', #{keyword}, '%')
-                OR aliases LIKE CONCAT('%', #{keyword}, '%'))
+                AND (
+                    LOWER(name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(COALESCE(aliases, '')) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                )
             </if>
         </where>
         ORDER BY
             CASE
                 WHEN is_builtin = 0 THEN 0
-                WHEN category = '主食' THEN 1
-                WHEN category = '肉蛋奶' THEN 2
-                WHEN category = '蔬果' THEN 3
-                WHEN category = '豆制品' THEN 4
-                WHEN category = '饮品' THEN 5
-                WHEN category = '零食' THEN 6
-                WHEN category = '其他' THEN 7
-                ELSE 99
+                ELSE 1
             END ASC,
+            <include refid="keywordSort"/> ASC,
+            <include refid="categorySort"/> ASC,
             sort_order ASC,
             name ASC,
             id ASC
@@ -145,45 +156,52 @@
 
     <select id="findCustomByUser" resultType="com.diet.domain.food.Food">
         SELECT
-            id,
-            user_id,
-            name,
-            calories_per_100g,
-            calorie_unit,
-            protein_per_100g,
-            carbs_per_100g,
-            fat_per_100g,
-            quantity_unit,
-            category,
-            source,
-            source_ref,
-            aliases,
-            is_builtin,
-            sort_order,
-            created_at
+            <include refid="baseColumns"/>
         FROM food
         <where>
             user_id = #{userId}
             AND is_builtin = 0
             <if test="keyword != null and keyword != ''">
-                AND (name LIKE CONCAT('%', #{keyword}, '%')
-                OR aliases LIKE CONCAT('%', #{keyword}, '%'))
+                AND (
+                    LOWER(name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(COALESCE(aliases, '')) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                )
             </if>
         </where>
         ORDER BY
-            CASE
-                WHEN category = '主食' THEN 1
-                WHEN category = '肉蛋奶' THEN 2
-                WHEN category = '蔬果' THEN 3
-                WHEN category = '豆制品' THEN 4
-                WHEN category = '饮品' THEN 5
-                WHEN category = '零食' THEN 6
-                WHEN category = '其他' THEN 7
-                ELSE 99
-            END ASC,
+            <include refid="keywordSort"/> ASC,
+            <include refid="categorySort"/> ASC,
             sort_order ASC,
             name ASC,
             id ASC
+    </select>
+
+    <select id="findPage" resultType="com.diet.domain.food.Food">
+        SELECT
+            <include refid="baseColumns"/>
+        FROM food
+        <where>
+            <include refid="pageFilters"/>
+        </where>
+        ORDER BY
+            CASE
+                WHEN is_builtin = 0 THEN 0
+                ELSE 1
+            END ASC,
+            <include refid="keywordSort"/> ASC,
+            <include refid="categorySort"/> ASC,
+            sort_order ASC,
+            name ASC,
+            id ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(1)
+        FROM food
+        <where>
+            <include refid="pageFilters"/>
+        </where>
     </select>
 
 </mapper>

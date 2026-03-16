@@ -54,11 +54,32 @@
   width: 56rpx;
 }
 
+.food-header {
+  margin-top: 18rpx;
+}
+
+.food-header.with-image {
+  align-items: center;
+  display: flex;
+  gap: 18rpx;
+}
+
+.food-image {
+  border-radius: 22rpx;
+  flex-shrink: 0;
+  height: 120rpx;
+  width: 120rpx;
+}
+
+.food-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .food-name {
   color: #2f2a24;
   font-size: 36rpx;
   font-weight: 700;
-  margin-top: 18rpx;
 }
 
 .food-meta {

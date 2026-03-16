@@ -12,10 +12,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import java.util.List;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,19 +70,21 @@ public class FoodController {
         return ApiResponse.success(foodService.delete(userId, id));
     }
 
-    @Operation(summary = "查询食物列表", description = "按关键字模糊查询食物列表")
+    @Operation(summary = "查询食物列表", description = "按关键字、分类和分页查询食物列表")
     @GetMapping
     public ApiResponse<FoodListResponse> findAll(
             @Parameter(description = "食物关键字，可为空") @RequestParam(required = false) String keyword,
+            @Parameter(description = "分类筛选，支持分类 key 或中文分类名，可为空") @RequestParam(required = false) String category,
             @Parameter(description = "查询范围，ALL 为全部可见食物，CUSTOM 为仅当前用户自定义")
             @RequestParam(required = false, defaultValue = FoodService.SCOPE_ALL) String scope,
+            @Parameter(description = "页码，从 1 开始") @RequestParam(required = false, defaultValue = "1") int page,
+            @Parameter(description = "每页条数，默认 50，最大 100") @RequestParam(required = false, defaultValue = "50") int size,
             HttpServletRequest httpServletRequest
     ) {
         String normalizedScope = String.valueOf(scope).trim().toUpperCase();
         Long userId = FoodService.SCOPE_CUSTOM.equals(normalizedScope)
                 ? authContextService.resolveUserId(httpServletRequest, null)
                 : authContextService.getCurrentUserId(httpServletRequest);
-        List<FoodResponse> foods = foodService.findAll(userId, keyword, normalizedScope);
-        return ApiResponse.success(new FoodListResponse(foods, foods.size()));
+        return ApiResponse.success(foodService.findAll(userId, keyword, category, page, size, normalizedScope));
     }
 }
