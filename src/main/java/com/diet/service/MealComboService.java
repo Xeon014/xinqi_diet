@@ -5,6 +5,8 @@ import com.diet.domain.combo.MealCombo;
 import com.diet.domain.combo.MealComboItem;
 import com.diet.domain.combo.MealComboRepository;
 import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodCalorieUnit;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.combo.CreateMealComboItemRequest;
@@ -115,9 +117,11 @@ public class MealComboService {
                             item.getFoodId(),
                             food.getName(),
                             food.getCaloriesPer100g(),
+                            food.getCalorieUnit() == null ? FoodCalorieUnit.KCAL : food.getCalorieUnit(),
                             food.getProteinPer100g(),
                             food.getCarbsPer100g(),
                             food.getFatPer100g(),
+                            food.getQuantityUnit() == null ? FoodQuantityUnit.G : food.getQuantityUnit(),
                             item.getQuantityInGram()
                     );
                 })

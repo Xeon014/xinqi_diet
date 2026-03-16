@@ -46,10 +46,11 @@
             <view class="food-name">{{item.foodName}}</view>
             <view class="food-remove" data-index="{{index}}" bindtap="handleRemoveFood">删除</view>
           </view>
+          <view class="food-meta">{{item.caloriesPer100gDisplay}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
           <view class="food-row">
             <view class="quantity-box">
               <input class="quantity-input" type="digit" value="{{item.quantityInGram}}" data-index="{{index}}" bindinput="handleQuantityInput" />
-              <view class="unit">g</view>
+              <view class="unit">{{item.quantityUnitLabel}}</view>
             </view>
             <view class="kcal">{{item.totalCalories}} kcal</view>
           </view>

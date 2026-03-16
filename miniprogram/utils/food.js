@@ -1,3 +1,5 @@
+const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("./constants");
+
 const FOOD_CATEGORIES = [
   { key: "ALL", label: "\u5168\u90e8" },
   { key: "STAPLE", label: "\u4e3b\u98df" },
@@ -22,6 +24,21 @@ const CATEGORY_LABEL_MAP = FOOD_CATEGORIES.reduce((result, item) => {
   result[item.key] = item.label;
   return result;
 }, {});
+
+function normalizeCalorieUnit(rawUnit) {
+  const unit = String(rawUnit || "KCAL").toUpperCase();
+  return CALORIE_UNIT_LABELS[unit] ? unit : "KCAL";
+}
+
+function normalizeQuantityUnit(rawUnit) {
+  const unit = String(rawUnit || "G").toUpperCase();
+  return QUANTITY_UNIT_LABELS[unit] ? unit : "G";
+}
+
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
 
 function normalizeFoodCategoryKey(rawCategory) {
   const categoryText = String(rawCategory || "").trim();
@@ -50,9 +67,16 @@ function decorateFood(food) {
   const isBuiltin = hasExplicitBuiltinFlag
     ? Boolean(food.isBuiltin ?? food.builtin)
     : food.userId === null || food.userId === undefined;
+  const calorieUnit = normalizeCalorieUnit(food.calorieUnit);
+  const quantityUnit = normalizeQuantityUnit(food.quantityUnit);
   return {
     ...food,
     isBuiltin,
+    calorieUnit,
+    calorieUnitLabel: CALORIE_UNIT_LABELS[calorieUnit],
+    quantityUnit,
+    quantityUnitLabel: QUANTITY_UNIT_LABELS[quantityUnit],
+    displayCaloriesPer100: toNumber(food.displayCaloriesPer100 ?? food.caloriesPer100g),
     category: food.category || getFoodCategoryLabel(food.category),
     categoryKey: normalizeFoodCategoryKey(food.category),
     categoryLabel: getFoodCategoryLabel(food.category),
@@ -96,5 +120,7 @@ module.exports = {
   getFoodCategoryLabel,
   isBuiltinFood,
   isCustomFood,
+  normalizeCalorieUnit,
   normalizeFoodCategoryKey,
+  normalizeQuantityUnit,
 };

@@ -67,7 +67,7 @@
           >
             <view class="food-top">
               <view class="food-name">{{item.name}}</view>
-              <view class="food-calories">{{item.caloriesPer100g}} kcal</view>
+              <view class="food-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
             </view>
           </view>
         </view>
@@ -135,7 +135,7 @@
 
     <view wx:if="{{editorType === 'FOOD'}}">
       <view class="editor-food-name">{{editorFoodName || '食物'}}</view>
-      <view class="editor-food-meta">{{editorCaloriesPer100g}} kcal / 100g</view>
+      <view class="editor-food-meta">{{editorCaloriesPer100Display}} {{editorCalorieUnitLabel}} / 100{{editorQuantityUnitLabel}}</view>
     </view>
 
     <view wx:else>
@@ -145,17 +145,17 @@
 
     <view wx:if="{{editorType === 'FOOD'}}">
       <view class="editor-row">
-        <view class="field-label">重量</view>
+        <view class="field-label">数量</view>
         <view class="quantity-wrap">
           <input class="quantity-input" type="digit" value="{{editorQuantityInGram}}" bindinput="handleEditorQuantityInput" />
-          <view class="quantity-unit">g</view>
+          <view class="quantity-unit">{{editorQuantityUnitLabel}}</view>
         </view>
       </view>
 
       <view class="nutrition-grid">
         <view class="nutrition-item">
           <view class="nutrition-label">热量</view>
-          <view class="nutrition-value">{{editorTotalCalories}} kcal</view>
+          <view class="nutrition-value">{{editorTotalCalories}} {{editorCalorieUnitLabel}}</view>
         </view>
         <view class="nutrition-item">
           <view class="nutrition-label">蛋白</view>
@@ -177,10 +177,10 @@
         <view wx:for="{{editorComboItems}}" wx:key="index" class="combo-editor-item">
           <view class="combo-editor-head">
             <view class="combo-editor-name">{{item.foodName}}</view>
-            <view class="combo-editor-calories">{{item.caloriesPer100g}} kcal / 100g</view>
+            <view class="combo-editor-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
           </view>
           <view class="combo-editor-row">
-            <view class="combo-editor-label">克数</view>
+            <view class="combo-editor-label">数量</view>
             <view class="quantity-wrap">
               <input
                 class="quantity-input"
@@ -189,7 +189,7 @@
                 data-index="{{index}}"
                 bindinput="handleComboItemQuantityInput"
               />
-              <view class="quantity-unit">g</view>
+              <view class="quantity-unit">{{item.quantityUnitLabel}}</view>
             </view>
           </view>
         </view>

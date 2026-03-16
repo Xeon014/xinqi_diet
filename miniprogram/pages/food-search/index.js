@@ -2,6 +2,7 @@ const { searchFoods } = require("../../services/food");
 const { getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
 const { createRecord, createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
+const { CALORIE_UNIT_LABELS, MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
 const { decorateFood, filterFoodsByCategory, FOOD_CATEGORIES, isBuiltinFood, isCustomFood } = require("../../utils/food");
 const { getRecentFoods, saveRecentFood } = require("../../utils/recent-foods");
@@ -21,16 +22,6 @@ const FILTER_KEYS = {
   CUSTOM: "CUSTOM",
   COMBO: "COMBO",
 };
-const MEAL_TYPE_LABELS = {
-  BREAKFAST: "早餐",
-  LUNCH: "午餐",
-  DINNER: "晚餐",
-  SNACK: "加餐",
-};
-const MEAL_TYPE_OPTIONS = Object.keys(MEAL_TYPE_LABELS).map((key) => ({
-  key,
-  label: MEAL_TYPE_LABELS[key],
-}));
 const EDITOR_TYPES = {
   FOOD: "FOOD",
   COMBO: "COMBO",
@@ -76,13 +67,41 @@ function toInteger(value) {
   return Math.round(toNumber(value));
 }
 
+function normalizeCalorieUnit(rawUnit) {
+  const normalized = String(rawUnit || "KCAL").toUpperCase();
+  return CALORIE_UNIT_LABELS[normalized] ? normalized : "KCAL";
+}
+
+function normalizeQuantityUnit(rawUnit) {
+  const normalized = String(rawUnit || "G").toUpperCase();
+  return QUANTITY_UNIT_LABELS[normalized] ? normalized : "G";
+}
+
+function convertCaloriesFromKcal(caloriesPer100Kcal, calorieUnit) {
+  if (calorieUnit === "KJ") {
+    return toNumber(caloriesPer100Kcal) * 4.184;
+  }
+  return toNumber(caloriesPer100Kcal);
+}
+
 function normalizeFood(food) {
+  const calorieUnit = normalizeCalorieUnit(food.calorieUnit);
+  const quantityUnit = normalizeQuantityUnit(food.quantityUnit);
+  const caloriesPer100g = toNumber(food.caloriesPer100g);
+  const displayCaloriesPer100 = food.displayCaloriesPer100 == null
+    ? convertCaloriesFromKcal(caloriesPer100g, calorieUnit)
+    : toNumber(food.displayCaloriesPer100);
   return {
     ...food,
-    caloriesPer100g: toInteger(food.caloriesPer100g),
+    caloriesPer100g,
+    displayCaloriesPer100: toInteger(displayCaloriesPer100),
+    calorieUnit,
+    calorieUnitLabel: CALORIE_UNIT_LABELS[calorieUnit] || "kcal",
     proteinPer100g: toInteger(food.proteinPer100g),
     carbsPer100g: toInteger(food.carbsPer100g),
     fatPer100g: toInteger(food.fatPer100g),
+    quantityUnit,
+    quantityUnitLabel: QUANTITY_UNIT_LABELS[quantityUnit] || "g",
   };
 }
 
@@ -109,10 +128,10 @@ function getKeywordFromConfirmEvent(event, fallbackKeyword) {
   return fallbackKeyword;
 }
 
-function resolveTotalNutrients({ quantityInGram, caloriesPer100g, proteinPer100g, carbsPer100g, fatPer100g }) {
+function resolveTotalNutrients({ quantityInGram, displayCaloriesPer100, proteinPer100g, carbsPer100g, fatPer100g }) {
   const quantity = Math.max(toNumber(quantityInGram), 0);
   return {
-    totalCalories: toInteger((toNumber(caloriesPer100g) * quantity) / 100),
+    totalCalories: toInteger((toNumber(displayCaloriesPer100) * quantity) / 100),
     totalProtein: toInteger((toNumber(proteinPer100g) * quantity) / 100),
     totalCarbs: toInteger((toNumber(carbsPer100g) * quantity) / 100),
     totalFat: toInteger((toNumber(fatPer100g) * quantity) / 100),
@@ -141,15 +160,21 @@ function decorateCombo(combo) {
 }
 
 function normalizeComboEditorItem(item) {
+  const normalized = normalizeFood(item);
   return {
-    foodId: item.foodId,
-    foodName: item.foodName || "食物",
-    quantityInGram: String(toNumber(item.quantityInGram) || DEFAULT_QUANTITY),
-    caloriesPer100g: toInteger(item.caloriesPer100g),
-    proteinPer100g: toInteger(item.proteinPer100g),
-    carbsPer100g: toInteger(item.carbsPer100g),
-    fatPer100g: toInteger(item.fatPer100g),
-    category: item.category || "",
+    foodId: normalized.foodId,
+    foodName: normalized.foodName || normalized.name || "食物",
+    quantityInGram: String(toNumber(normalized.quantityInGram) || DEFAULT_QUANTITY),
+    caloriesPer100g: toNumber(normalized.caloriesPer100g),
+    displayCaloriesPer100: toInteger(normalized.displayCaloriesPer100),
+    calorieUnit: normalized.calorieUnit,
+    calorieUnitLabel: normalized.calorieUnitLabel,
+    proteinPer100g: toInteger(normalized.proteinPer100g),
+    carbsPer100g: toInteger(normalized.carbsPer100g),
+    fatPer100g: toInteger(normalized.fatPer100g),
+    quantityUnit: normalized.quantityUnit,
+    quantityUnitLabel: normalized.quantityUnitLabel,
+    category: normalized.category || "",
   };
 }
 
@@ -199,10 +224,15 @@ Page({
     editorComboName: "",
     editorComboItems: [],
     editorCaloriesPer100g: 0,
+    editorCaloriesPer100Display: 0,
+    editorCalorieUnit: "KCAL",
+    editorCalorieUnitLabel: "kcal",
     editorProteinPer100g: 0,
     editorCarbsPer100g: 0,
     editorFatPer100g: 0,
     editorQuantityInGram: String(DEFAULT_QUANTITY),
+    editorQuantityUnit: "G",
+    editorQuantityUnitLabel: "g",
     editorTotalCalories: 0,
     editorTotalProtein: 0,
     editorTotalCarbs: 0,
@@ -490,10 +520,15 @@ Page({
       editorFoodName: "",
       editorCategoryLabel: "",
       editorCaloriesPer100g: 0,
+      editorCaloriesPer100Display: 0,
+      editorCalorieUnit: "KCAL",
+      editorCalorieUnitLabel: "kcal",
       editorProteinPer100g: 0,
       editorCarbsPer100g: 0,
       editorFatPer100g: 0,
       editorQuantityInGram: String(DEFAULT_QUANTITY),
+      editorQuantityUnit: "G",
+      editorQuantityUnitLabel: "g",
       editorTotalCalories: summary.totalCalories,
       editorTotalProtein: 0,
       editorTotalCarbs: 0,
@@ -530,9 +565,11 @@ Page({
             category: "",
             categoryLabel: "",
             caloriesPer100g: targetRecord.caloriesPer100g,
+            calorieUnit: targetRecord.calorieUnit,
             proteinPer100g: targetRecord.proteinPer100g,
             carbsPer100g: targetRecord.carbsPer100g,
             fatPer100g: targetRecord.fatPer100g,
+            quantityUnit: targetRecord.quantityUnit,
           },
           String(toNumber(targetRecord.quantityInGram) || DEFAULT_QUANTITY),
           {
@@ -559,7 +596,7 @@ Page({
     const editorMealType = options.mealType || this.data.mealType;
     const totals = resolveTotalNutrients({
       quantityInGram: nextQuantity,
-      caloriesPer100g: normalizedFood.caloriesPer100g,
+      displayCaloriesPer100: normalizedFood.displayCaloriesPer100,
       proteinPer100g: normalizedFood.proteinPer100g,
       carbsPer100g: normalizedFood.carbsPer100g,
       fatPer100g: normalizedFood.fatPer100g,
@@ -582,11 +619,16 @@ Page({
       editorComboId: null,
       editorComboName: "",
       editorComboItems: [],
-      editorCaloriesPer100g: toInteger(normalizedFood.caloriesPer100g),
+      editorCaloriesPer100g: toNumber(normalizedFood.caloriesPer100g),
+      editorCaloriesPer100Display: toInteger(normalizedFood.displayCaloriesPer100),
+      editorCalorieUnit: normalizedFood.calorieUnit || "KCAL",
+      editorCalorieUnitLabel: normalizedFood.calorieUnitLabel || "kcal",
       editorProteinPer100g: toInteger(normalizedFood.proteinPer100g),
       editorCarbsPer100g: toInteger(normalizedFood.carbsPer100g),
       editorFatPer100g: toInteger(normalizedFood.fatPer100g),
       editorQuantityInGram: nextQuantity,
+      editorQuantityUnit: normalizedFood.quantityUnit || "G",
+      editorQuantityUnitLabel: normalizedFood.quantityUnitLabel || "g",
       editorTotalCalories: totals.totalCalories,
       editorTotalProtein: totals.totalProtein,
       editorTotalCarbs: totals.totalCarbs,
@@ -629,7 +671,7 @@ Page({
     const editorQuantityInGram = event.detail.value;
     const totals = resolveTotalNutrients({
       quantityInGram: editorQuantityInGram,
-      caloriesPer100g: this.data.editorCaloriesPer100g,
+      displayCaloriesPer100: this.data.editorCaloriesPer100Display,
       proteinPer100g: this.data.editorProteinPer100g,
       carbsPer100g: this.data.editorCarbsPer100g,
       fatPer100g: this.data.editorFatPer100g,
@@ -669,7 +711,7 @@ Page({
 
   validateEditorQuantity() {
     if (toNumber(this.data.editorQuantityInGram) <= 0) {
-      wx.showToast({ title: "请输入正确重量", icon: "none" });
+      wx.showToast({ title: "请输入正确数量", icon: "none" });
       return false;
     }
     return true;
@@ -683,7 +725,7 @@ Page({
 
     const invalidItem = this.data.editorComboItems.find((item) => toNumber(item.quantityInGram) <= 0);
     if (invalidItem) {
-      wx.showToast({ title: `请检查 ${invalidItem.foodName} 的克数`, icon: "none" });
+      wx.showToast({ title: `请检查 ${invalidItem.foodName} 的数量`, icon: "none" });
       return false;
     }
     return true;
@@ -712,9 +754,12 @@ Page({
         id: item.foodId,
         name: item.foodName,
         caloriesPer100g: item.caloriesPer100g,
+        calorieUnit: item.calorieUnit,
+        displayCaloriesPer100: item.displayCaloriesPer100,
         proteinPer100g: item.proteinPer100g,
         carbsPer100g: item.carbsPer100g,
         fatPer100g: item.fatPer100g,
+        quantityUnit: item.quantityUnit,
         category: item.category || "",
       });
     });
@@ -770,9 +815,12 @@ Page({
             foodId: this.data.editorFoodId,
             foodName: this.data.editorFoodName,
             caloriesPer100g: this.data.editorCaloriesPer100g,
+            calorieUnit: this.data.editorCalorieUnit,
+            displayCaloriesPer100: this.data.editorCaloriesPer100Display,
             proteinPer100g: this.data.editorProteinPer100g,
             carbsPer100g: this.data.editorCarbsPer100g,
             fatPer100g: this.data.editorFatPer100g,
+            quantityUnit: this.data.editorQuantityUnit,
             category: this.data.editorCategoryLabel,
           }]);
         }
@@ -862,10 +910,15 @@ Page({
       editorComboName: "",
       editorComboItems: [],
       editorCaloriesPer100g: 0,
+      editorCaloriesPer100Display: 0,
+      editorCalorieUnit: "KCAL",
+      editorCalorieUnitLabel: "kcal",
       editorProteinPer100g: 0,
       editorCarbsPer100g: 0,
       editorFatPer100g: 0,
       editorQuantityInGram: String(DEFAULT_QUANTITY),
+      editorQuantityUnit: "G",
+      editorQuantityUnitLabel: "g",
       editorTotalCalories: 0,
       editorTotalProtein: 0,
       editorTotalCarbs: 0,

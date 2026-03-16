@@ -1,7 +1,7 @@
 <view class="item">
   <view class="main">
     <view class="name">{{record.foodName}}</view>
-    <view class="meta">{{record.mealTypeLabel}} 路 {{record.quantityInGram}}g</view>
+    <view class="meta">{{record.mealTypeLabel}} · {{displayQuantity}}{{quantityUnitLabel}}</view>
   </view>
   <view class="side">
     <view class="calories">{{displayCalories}}</view>

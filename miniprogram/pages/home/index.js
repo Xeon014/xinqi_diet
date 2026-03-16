@@ -3,22 +3,19 @@ const { getDailyHealthDiary } = require("../../services/health-diary");
 const { createBodyMetricRecord } = require("../../services/body-metric");
 const { getRecords } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
+const { MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS, getRecommendedMealType: getRecommendedMealTypeByTime } = require("../../utils/constants");
 const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
 
-const MEAL_TYPE_LABELS = {
-  BREAKFAST: "早餐",
-  LUNCH: "午餐",
-  DINNER: "晚餐",
-  SNACK: "加餐",
-};
-
 const DIET_GROUPS = [
-  { key: "BREAKFAST", label: "早餐", type: "DIET", mealType: "BREAKFAST" },
-  { key: "LUNCH", label: "午餐", type: "DIET", mealType: "LUNCH" },
-  { key: "DINNER", label: "晚餐", type: "DIET", mealType: "DINNER" },
-  { key: "SNACK", label: "加餐", type: "DIET", mealType: "SNACK" },
+  { key: "BREAKFAST", label: MEAL_TYPE_LABELS.BREAKFAST, type: "DIET", mealType: "BREAKFAST" },
+  { key: "MORNING_SNACK", label: MEAL_TYPE_LABELS.MORNING_SNACK, type: "DIET", mealType: "MORNING_SNACK" },
+  { key: "LUNCH", label: MEAL_TYPE_LABELS.LUNCH, type: "DIET", mealType: "LUNCH" },
+  { key: "AFTERNOON_SNACK", label: MEAL_TYPE_LABELS.AFTERNOON_SNACK, type: "DIET", mealType: "AFTERNOON_SNACK" },
+  { key: "DINNER", label: MEAL_TYPE_LABELS.DINNER, type: "DIET", mealType: "DINNER" },
+  { key: "LATE_NIGHT_SNACK", label: MEAL_TYPE_LABELS.LATE_NIGHT_SNACK, type: "DIET", mealType: "LATE_NIGHT_SNACK" },
+  { key: "OTHER", label: MEAL_TYPE_LABELS.OTHER, type: "DIET", mealType: "OTHER" },
 ];
 
 const EXERCISE_GROUP = { key: "EXERCISE", label: "运动", type: "EXERCISE", mealType: "" };
@@ -33,17 +30,7 @@ function toInteger(value) {
 }
 
 function getRecommendedMealType() {
-  const hour = new Date().getHours();
-  if (hour < 10) {
-    return "BREAKFAST";
-  }
-  if (hour < 15) {
-    return "LUNCH";
-  }
-  if (hour < 20) {
-    return "DINNER";
-  }
-  return "SNACK";
+  return getRecommendedMealTypeByTime(new Date());
 }
 
 function resolveDateLabel(recordDate) {
@@ -64,7 +51,8 @@ function resolveDateLabel(recordDate) {
 
 function formatDietTitle(record) {
   const quantity = toInteger(record.quantityInGram);
-  return `${record.foodName || "食物"} ${quantity}g`;
+  const quantityUnit = QUANTITY_UNIT_LABELS[String(record.quantityUnit || "G").toUpperCase()] || "g";
+  return `${record.foodName || "食物"} ${quantity}${quantityUnit}`;
 }
 
 function formatExerciseTitle(record) {
@@ -130,13 +118,10 @@ function normalizeDiary(diary) {
 }
 
 function buildRecordGroups(records) {
-  const groupedRecords = {
-    BREAKFAST: [],
-    LUNCH: [],
-    DINNER: [],
-    SNACK: [],
-    EXERCISE: [],
-  };
+  const groupedRecords = DIET_GROUPS.reduce((result, group) => {
+    result[group.key] = [];
+    return result;
+  }, { EXERCISE: [] });
 
   (records || []).forEach((record) => {
     if (record.recordType === "DIET") {

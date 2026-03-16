@@ -6,6 +6,7 @@ import com.diet.domain.exercise.ExerciseRecord;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.Food;
+import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
@@ -53,16 +54,40 @@ public class UserProfileService {
 
     private static final Map<MealType, BigDecimal> MEAL_TARGET_RATIO = Map.of(
             MealType.BREAKFAST, BigDecimal.valueOf(0.25),
-            MealType.LUNCH, BigDecimal.valueOf(0.35),
-            MealType.DINNER, BigDecimal.valueOf(0.30),
-            MealType.SNACK, BigDecimal.valueOf(0.10)
+            MealType.MORNING_SNACK, BigDecimal.valueOf(0.10),
+            MealType.LUNCH, BigDecimal.valueOf(0.30),
+            MealType.AFTERNOON_SNACK, BigDecimal.valueOf(0.10),
+            MealType.DINNER, BigDecimal.valueOf(0.20),
+            MealType.LATE_NIGHT_SNACK, BigDecimal.valueOf(0.05)
     );
 
     private static final Map<MealType, String> MEAL_LABELS = Map.of(
-            MealType.BREAKFAST, "??",
-            MealType.LUNCH, "??",
-            MealType.DINNER, "??",
-            MealType.SNACK, "??"
+            MealType.BREAKFAST, "早餐",
+            MealType.MORNING_SNACK, "上午加餐",
+            MealType.LUNCH, "午餐",
+            MealType.AFTERNOON_SNACK, "下午加餐",
+            MealType.DINNER, "晚餐",
+            MealType.LATE_NIGHT_SNACK, "夜宵",
+            MealType.OTHER, "其他"
+    );
+
+    private static final List<MealType> RECOMMENDED_MEAL_TYPES = List.of(
+            MealType.BREAKFAST,
+            MealType.MORNING_SNACK,
+            MealType.LUNCH,
+            MealType.AFTERNOON_SNACK,
+            MealType.DINNER,
+            MealType.LATE_NIGHT_SNACK
+    );
+
+    private static final List<MealType> MEAL_PROGRESS_ORDER = List.of(
+            MealType.BREAKFAST,
+            MealType.MORNING_SNACK,
+            MealType.LUNCH,
+            MealType.AFTERNOON_SNACK,
+            MealType.DINNER,
+            MealType.LATE_NIGHT_SNACK,
+            MealType.OTHER
     );
 
     private final UserProfileRepository userProfileRepository;
@@ -342,14 +367,15 @@ public class UserProfileService {
             intakeByMeal.merge(mealRecord.getMealType(), mealRecord.getTotalCalories(), BigDecimal::add);
         }
 
-        return List.of(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER, MealType.SNACK)
+        return MEAL_PROGRESS_ORDER
                 .stream()
                 .map(mealType -> {
                     BigDecimal intake = intakeByMeal.getOrDefault(mealType, BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
-                    BigDecimal target = dailyTargetCalories == null
+                    BigDecimal mealTargetRatio = MEAL_TARGET_RATIO.get(mealType);
+                    BigDecimal target = dailyTargetCalories == null || mealTargetRatio == null
                             ? null
                             : BigDecimal.valueOf(dailyTargetCalories)
-                            .multiply(MEAL_TARGET_RATIO.get(mealType))
+                            .multiply(mealTargetRatio)
                             .setScale(2, RoundingMode.HALF_UP);
                     BigDecimal remaining = target == null ? null : target.subtract(intake).setScale(2, RoundingMode.HALF_UP);
 
@@ -386,7 +412,7 @@ public class UserProfileService {
 
         startDate.datesUntil(endDate.plusDays(1)).forEach(date -> {
             List<MealRecord> sameDayRecords = recordsByDate.getOrDefault(date, List.of());
-            for (MealType mealType : MealType.values()) {
+            for (MealType mealType : RECOMMENDED_MEAL_TYPES) {
                 BigDecimal dayIntake = sameDayRecords.stream()
                         .filter(record -> record.getMealType() == mealType)
                         .map(MealRecord::getTotalCalories)
@@ -418,15 +444,18 @@ public class UserProfileService {
             boolean noRecords,
             int totalRecords
     ) {
-        int recordedMeals = (int) mealProgress.stream().filter(MealProgressResponse::recorded).count();
-        double completeness = mealProgress.isEmpty()
+        List<MealProgressResponse> recommendedMealProgress = mealProgress.stream()
+                .filter(progress -> MEAL_TARGET_RATIO.containsKey(progress.mealType()))
+                .toList();
+        int recordedMeals = (int) recommendedMealProgress.stream().filter(MealProgressResponse::recorded).count();
+        double completeness = recommendedMealProgress.isEmpty()
                 ? 0d
                 : BigDecimal.valueOf(recordedMeals)
-                        .divide(BigDecimal.valueOf(mealProgress.size()), 2, RoundingMode.HALF_UP)
+                        .divide(BigDecimal.valueOf(recommendedMealProgress.size()), 2, RoundingMode.HALF_UP)
                         .doubleValue();
 
         List<ActionSuggestionResponse> suggestions = new ArrayList<>();
-        MealProgressResponse firstMissingMeal = mealProgress.stream()
+        MealProgressResponse firstMissingMeal = recommendedMealProgress.stream()
                 .filter(progress -> !progress.recorded())
                 .findFirst()
                 .orElse(null);
@@ -546,6 +575,7 @@ public class UserProfileService {
                 record.getRecordDate(),
                 record.getCreatedAt(),
                 record.getMealType(),
+                food.getQuantityUnit() == null ? FoodQuantityUnit.G : food.getQuantityUnit(),
                 food.getName(),
                 record.getQuantityInGram(),
                 null,
@@ -561,6 +591,7 @@ public class UserProfileService {
                 record.getId(),
                 record.getRecordDate(),
                 record.getCreatedAt(),
+                null,
                 null,
                 null,
                 null,
