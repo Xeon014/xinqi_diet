@@ -40,16 +40,13 @@ public class DataInitializer {
             JdbcTemplate jdbcTemplate
     ) {
         return args -> {
-            seedBuiltinFoodsIfNeeded(foodRepository, jdbcTemplate);
+            seedBuiltinFoodsIfNeeded(jdbcTemplate);
             seedBuiltinExercisesIfNeeded(exerciseRepository, jdbcTemplate);
             seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository, exerciseRecordRepository);
         };
     }
 
-    private void seedBuiltinFoodsIfNeeded(FoodRepository foodRepository, JdbcTemplate jdbcTemplate) {
-        if (foodRepository.countBuiltin() >= 3000) {
-            return;
-        }
+    private void seedBuiltinFoodsIfNeeded(JdbcTemplate jdbcTemplate) {
         importSql(jdbcTemplate, "builtin_food_seed.sql");
     }
 

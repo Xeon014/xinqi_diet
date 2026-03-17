@@ -24,6 +24,11 @@
         created_at
     </sql>
 
+    <sql id="visibleBuiltinScope">
+        is_builtin = 1
+        AND source IN ('CURATED_CN', 'CURATED_GLOBAL')
+    </sql>
+
     <sql id="accessScope">
         <choose>
             <when test="customOnly">
@@ -31,13 +36,13 @@
                 AND is_builtin = 0
             </when>
             <when test="builtinOnly">
-                is_builtin = 1
+                <include refid="visibleBuiltinScope"/>
             </when>
             <when test="userId != null">
-                (is_builtin = 1 OR user_id = #{userId})
+                (<include refid="visibleBuiltinScope"/> OR user_id = #{userId})
             </when>
             <otherwise>
-                is_builtin = 1
+                <include refid="visibleBuiltinScope"/>
             </otherwise>
         </choose>
     </sql>
@@ -112,10 +117,10 @@
             LOWER(name) = LOWER(#{name})
             <choose>
                 <when test="userId != null">
-                    AND (is_builtin = 1 OR user_id = #{userId})
+                    AND (<include refid="visibleBuiltinScope"/> OR user_id = #{userId})
                 </when>
                 <otherwise>
-                    AND is_builtin = 1
+                    AND <include refid="visibleBuiltinScope"/>
                 </otherwise>
             </choose>
         </where>
@@ -129,10 +134,10 @@
         <where>
             <choose>
                 <when test="userId != null">
-                    (is_builtin = 1 OR user_id = #{userId})
+                    (<include refid="visibleBuiltinScope"/> OR user_id = #{userId})
                 </when>
                 <otherwise>
-                    is_builtin = 1
+                    <include refid="visibleBuiltinScope"/>
                 </otherwise>
             </choose>
             <if test="keyword != null and keyword != ''">

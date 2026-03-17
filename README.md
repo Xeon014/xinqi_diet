@@ -33,8 +33,9 @@
 ## 食物冷启动数据
 
 - 项目内置 `src/main/resources/builtin_food_seed.sql`。
-- 启动时若食物库少于 300 条，将自动导入并 upsert 内置食物数据。
-- 生成脚本：`scripts/generate-builtin-food-seed.ps1`。
+- 启动时会同步内置食物种子，按内置词条名称更新已有数据并补齐缺失词条。
+- 原始数据表：`scripts/data/builtin-food-raw.tsv`
+- 生成脚本：`scripts/generate-builtin-food-seed.js`
 
 ## 联调说明
 
