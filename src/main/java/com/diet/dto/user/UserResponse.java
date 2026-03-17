@@ -2,6 +2,7 @@ package com.diet.dto.user;
 
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
@@ -51,6 +52,12 @@ public record UserResponse(
 
         @Schema(description = "目标热量差值，单位 kcal")
         Integer goalCalorieDelta,
+
+        @Schema(description = "预期达到目标体重的日期")
+        LocalDate goalTargetDate,
+
+        @Schema(description = "目标热量策略：SMART/MANUAL")
+        GoalCalorieStrategy goalCalorieStrategy,
 
         @Schema(description = "BMI 指数")
         BigDecimal bmi,

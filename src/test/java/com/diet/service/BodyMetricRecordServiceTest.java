@@ -13,6 +13,8 @@ import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.metric.BodyMetricType;
 import com.diet.domain.metric.BodyMetricUnit;
+import com.diet.domain.user.GoalCalorieStrategy;
+import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.metric.BodyMetricRecordResponse;
@@ -21,6 +23,8 @@ import com.diet.dto.metric.BodyMetricTrendMetricKey;
 import com.diet.dto.metric.BodyMetricTrendResponse;
 import com.diet.dto.metric.CreateBodyMetricRecordRequest;
 import com.diet.dto.metric.MetricTrendRangeType;
+import com.diet.dto.user.GoalPlanPreviewResponse;
+import com.diet.dto.user.GoalWarningLevel;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -40,11 +44,14 @@ class BodyMetricRecordServiceTest {
     @Mock
     private UserProfileRepository userProfileRepository;
 
+    @Mock
+    private GoalPlanningService goalPlanningService;
+
     private BodyMetricRecordService bodyMetricRecordService;
 
     @BeforeEach
     void setUp() {
-        bodyMetricRecordService = new BodyMetricRecordService(bodyMetricRecordRepository, userProfileRepository);
+        bodyMetricRecordService = new BodyMetricRecordService(bodyMetricRecordRepository, userProfileRepository, goalPlanningService);
     }
 
     @Test
@@ -71,6 +78,41 @@ class BodyMetricRecordServiceTest {
         assertThat(response.id()).isEqualTo(100L);
         assertThat(response.metricValue()).isEqualByComparingTo("61.50");
         assertThat(user.getCurrentWeight()).isEqualByComparingTo("61.50");
+        verify(userProfileRepository).update(user);
+    }
+
+    @Test
+    void shouldRefreshSmartGoalSnapshotWhenCreateTodayWeightRecord() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        user.setGoalCalorieStrategy(GoalCalorieStrategy.SMART);
+        user.setGoalTargetDate(LocalDate.now().plusDays(21));
+        user.setTargetWeight(new BigDecimal("58.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(goalPlanningService.preview(any())).thenReturn(new GoalPlanPreviewResponse(
+                1650,
+                -350,
+                GoalMode.LOSE,
+                new BigDecimal("-0.32"),
+                GoalWarningLevel.NONE,
+                "",
+                true
+        ));
+
+        bodyMetricRecordService.create(
+                1L,
+                new CreateBodyMetricRecordRequest(
+                        null,
+                        BodyMetricType.WEIGHT,
+                        new BigDecimal("61.20"),
+                        BodyMetricUnit.KG,
+                        LocalDate.now()
+                )
+        );
+
+        assertThat(user.getCurrentWeight()).isEqualByComparingTo("61.20");
+        assertThat(user.getDailyCalorieTarget()).isEqualTo(1650);
+        assertThat(user.getGoalCalorieDelta()).isEqualTo(-350);
+        assertThat(user.getGoalMode()).isEqualTo(GoalMode.LOSE);
         verify(userProfileRepository).update(user);
     }
 

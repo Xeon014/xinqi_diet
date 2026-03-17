@@ -4,6 +4,7 @@ import com.diet.auth.AuthContextService;
 import com.diet.common.ApiResponse;
 import com.diet.dto.user.CreateUserRequest;
 import com.diet.dto.user.DailySummaryResponse;
+import com.diet.dto.user.GoalPlanPreviewResponse;
 import com.diet.dto.user.ProgressSummaryResponse;
 import com.diet.dto.user.UpdateUserRequest;
 import com.diet.dto.user.UserListResponse;
@@ -22,8 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -75,6 +76,17 @@ public class UserProfileController {
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
         return ApiResponse.success(userProfileService.update(userId, request));
+    }
+
+    @Operation(summary = "预览目标计划", description = "根据当前资料与目标设置预览推荐目标热量和风险提示")
+    @PostMapping("/{id}/goal-plan-preview")
+    public ApiResponse<GoalPlanPreviewResponse> previewGoalPlan(
+            @Parameter(description = "用户 ID") @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.resolveUserId(httpServletRequest, id);
+        return ApiResponse.success(userProfileService.previewGoalPlan(userId, request));
     }
 
     @Operation(summary = "查询每日汇总", description = "查询指定用户在某一天的热量摄入与营养汇总")

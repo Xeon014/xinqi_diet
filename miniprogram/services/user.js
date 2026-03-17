@@ -10,7 +10,7 @@ function withUserId(executor) {
   return ensureLogin().then(() => {
     const userId = getCurrentUserId();
     if (!userId) {
-      return Promise.reject(new Error("当前用户未登录"));
+      return Promise.reject(new Error("???????"));
     }
     return executor(userId);
   });
@@ -18,28 +18,37 @@ function withUserId(executor) {
 
 function getCurrentUser() {
   return withUserId((userId) => request({
-    url: `/api/users/${userId}`,
+    url: "/api/users/" + userId,
   }));
 }
 
 function getDailySummary(date) {
   return withUserId((userId) => request({
-    url: `/api/users/${userId}/daily-summary?date=${date}`,
+    url: "/api/users/" + userId + "/daily-summary?date=" + date,
   }));
 }
 
 function getProgress({ startDate, endDate }) {
   return withUserId((userId) => request({
-    url: `/api/users/${userId}/progress?startDate=${startDate}&endDate=${endDate}`,
+    url: "/api/users/" + userId + "/progress?startDate=" + startDate + "&endDate=" + endDate,
   }));
 }
 
 function updateProfile(payload) {
   return withUserId((userId) => request({
-    url: `/api/users/${userId}`,
+    url: "/api/users/" + userId,
     method: "PUT",
     data: payload,
-    loadingTitle: "保存中",
+    loadingTitle: "???",
+  }));
+}
+
+function previewGoalPlan(payload) {
+  return withUserId((userId) => request({
+    url: "/api/users/" + userId + "/goal-plan-preview",
+    method: "POST",
+    data: payload,
+    showLoading: false,
   }));
 }
 
@@ -48,4 +57,5 @@ module.exports = {
   getDailySummary,
   getProgress,
   updateProfile,
+  previewGoalPlan,
 };

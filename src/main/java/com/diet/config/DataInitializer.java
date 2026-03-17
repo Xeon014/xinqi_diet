@@ -9,6 +9,7 @@ import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
@@ -91,7 +92,9 @@ public class DataInitializer {
                 1350,
                 null,
                 null,
-                null
+                null,
+                null,
+                GoalCalorieStrategy.MANUAL
         );
         userProfileRepository.save(user);
 

@@ -77,6 +77,8 @@ public class AuthService {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
         user.setOpenId(openId);

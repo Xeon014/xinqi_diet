@@ -76,6 +76,12 @@ public class UserProfile {
     @TableField("goal_calorie_delta")
     private Integer goalCalorieDelta;
 
+    @TableField("goal_target_date")
+    private LocalDate goalTargetDate;
+
+    @TableField("goal_calorie_strategy")
+    private GoalCalorieStrategy goalCalorieStrategy;
+
     @TableField("last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -94,7 +100,9 @@ public class UserProfile {
             Integer customBmr,
             Integer customTdee,
             GoalMode goalMode,
-            Integer goalCalorieDelta
+            Integer goalCalorieDelta,
+            LocalDate goalTargetDate,
+            GoalCalorieStrategy goalCalorieStrategy
     ) {
         this.name = name;
         this.gender = gender;
@@ -108,6 +116,8 @@ public class UserProfile {
         this.customTdee = customTdee;
         this.goalMode = goalMode;
         this.goalCalorieDelta = goalCalorieDelta;
+        this.goalTargetDate = goalTargetDate;
+        this.goalCalorieStrategy = goalCalorieStrategy;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -123,7 +133,9 @@ public class UserProfile {
             Integer customBmr,
             Integer customTdee,
             GoalMode goalMode,
-            Integer goalCalorieDelta
+            Integer goalCalorieDelta,
+            LocalDate goalTargetDate,
+            GoalCalorieStrategy goalCalorieStrategy
     ) {
         this.name = name;
         this.gender = gender;
@@ -137,6 +149,8 @@ public class UserProfile {
         this.customTdee = customTdee;
         this.goalMode = goalMode;
         this.goalCalorieDelta = goalCalorieDelta;
+        this.goalTargetDate = goalTargetDate;
+        this.goalCalorieStrategy = goalCalorieStrategy;
     }
 
     public Integer calculateAge() {
@@ -193,6 +207,10 @@ public class UserProfile {
 
     public GoalMode resolveGoalMode() {
         return goalMode != null ? goalMode : GoalMode.MAINTAIN;
+    }
+
+    public GoalCalorieStrategy resolveGoalCalorieStrategy() {
+        return goalCalorieStrategy != null ? goalCalorieStrategy : GoalCalorieStrategy.MANUAL;
     }
 
     public int resolveGoalCalorieDelta() {

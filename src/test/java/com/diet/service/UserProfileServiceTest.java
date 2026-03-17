@@ -11,9 +11,11 @@ import static org.mockito.Mockito.when;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.FoodRepository;
+import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
@@ -23,9 +25,9 @@ import com.diet.dto.user.UserResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -47,8 +49,22 @@ class UserProfileServiceTest {
     @Mock
     private ExerciseRepository exerciseRepository;
 
-    @InjectMocks
+    @Mock
+    private BodyMetricRecordRepository bodyMetricRecordRepository;
+
     private UserProfileService userProfileService;
+
+    @BeforeEach
+    void setUp() {
+        userProfileService = new UserProfileService(
+                userProfileRepository,
+                mealRecordRepository,
+                foodRepository,
+                exerciseRecordRepository,
+                exerciseRepository,
+                new GoalPlanningService(bodyMetricRecordRepository)
+        );
+    }
 
     @Test
     void shouldKeepNameWhenUpdateNameIsNull() {
@@ -66,6 +82,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null,
                 null,
                 null
@@ -95,6 +113,8 @@ class UserProfileServiceTest {
                 existing.getCustomTdee(),
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -120,6 +140,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null,
                 null,
                 null
@@ -151,7 +173,9 @@ class UserProfileServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                GoalCalorieStrategy.MANUAL
         );
 
         UserResponse response = userProfileService.create(request);
@@ -176,6 +200,8 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 null,
                 existing.getCustomTdee(),
+                null,
+                null,
                 null,
                 null,
                 true
@@ -237,6 +263,8 @@ class UserProfileServiceTest {
                 2100,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -267,6 +295,8 @@ class UserProfileServiceTest {
                 2100,
                 GoalMode.LOSE,
                 -300,
+                null,
+                null,
                 null
         );
 
@@ -296,6 +326,8 @@ class UserProfileServiceTest {
                 2100,
                 GoalMode.GAIN,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -319,7 +351,9 @@ class UserProfileServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                GoalCalorieStrategy.MANUAL
         );
         user.setId(1L);
         return user;

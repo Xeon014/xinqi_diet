@@ -38,53 +38,65 @@
     </view>
 
     <view wx:if="{{steps[currentStep].key === 'height'}}" class="field-wrap">
-      <input
-        class="field-input"
-        type="digit"
-        value="{{form.height}}"
-        data-field="height"
-        bindinput="handleInput"
-        placeholder="请输入身高(cm)"
-      />
+      <input class="field-input" type="digit" value="{{form.height}}" data-field="height" bindinput="handleInput" placeholder="请输入身高(cm)" />
     </view>
 
     <view wx:if="{{steps[currentStep].key === 'currentWeight'}}" class="field-wrap">
-      <input
-        class="field-input"
-        type="digit"
-        value="{{form.currentWeight}}"
-        data-field="currentWeight"
-        bindinput="handleInput"
-        placeholder="请输入体重(kg)"
-      />
+      <input class="field-input" type="digit" value="{{form.currentWeight}}" data-field="currentWeight" bindinput="handleInput" placeholder="请输入当前体重(kg)" />
+    </view>
+
+    <view wx:if="{{steps[currentStep].key === 'targetWeight'}}" class="field-wrap">
+      <input class="field-input" type="digit" value="{{form.targetWeight}}" data-field="targetWeight" bindinput="handleInput" placeholder="请输入目标体重(kg)" />
+    </view>
+
+    <view wx:if="{{steps[currentStep].key === 'goalTargetDate'}}" class="field-wrap">
+      <picker mode="date" value="{{form.goalTargetDate}}" start="{{minGoalDate}}" bindchange="handleGoalDateChange">
+        <view class="field-picker">{{form.goalTargetDate || '请选择预期日期'}}</view>
+      </picker>
+      <view class="formula-tip">若目标体重和当前体重基本一致，可以先不设置日期。</view>
     </view>
 
     <view wx:if="{{steps[currentStep].key === 'bmr'}}" class="field-wrap">
-      <input
-        class="field-input"
-        type="number"
-        value="{{form.bmr}}"
-        data-field="bmr"
-        bindinput="handleInput"
-        placeholder="请输入基础代谢(kcal/天)"
-      />
+      <input class="field-input" type="number" value="{{form.bmr}}" data-field="bmr" bindinput="handleInput" placeholder="请输入基础代谢(kcal/天)" />
       <view class="recommend-btn" bindtap="handleUseRecommendedBmr">使用推荐值 {{formulaBmrPreview}}</view>
+      <view class="formula-tip">{{baseCaloriesHint}}</view>
     </view>
 
-    <view wx:if="{{steps[currentStep].key === 'goal'}}" class="field-wrap">
-      <view class="field-wrap goal-input-wrap">
-        <input
-          class="field-input"
-          type="number"
-          value="{{form.dailyCalorieTarget}}"
-          data-field="dailyCalorieTarget"
-          bindinput="handleInput"
-          placeholder="请输入目标热量(kcal/天)"
-        />
+    <view wx:if="{{steps[currentStep].key === 'goalPlan'}}" class="field-wrap">
+      <view class="strategy-row">
+        <view
+          wx:for="{{goalStrategies}}"
+          wx:key="value"
+          wx:for-item="strategy"
+          class="strategy-chip {{form.goalCalorieStrategy === strategy.value ? 'active' : ''}}"
+          data-value="{{strategy.value}}"
+          bindtap="handleGoalStrategySelect"
+        >
+          {{strategy.label}}
+        </view>
       </view>
 
-      <view class="formula-tip">
-        <view>{{baseCaloriesHint}}</view>
+      <view wx:if="{{form.goalCalorieStrategy === 'MANUAL'}}" class="field-wrap manual-input-wrap">
+        <view class="field-label">目标热量 (kcal/天)</view>
+        <input class="field-input" type="number" value="{{form.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" placeholder="请输入目标热量" />
+      </view>
+
+      <view class="goal-preview-card">
+        <view class="goal-preview-head">
+          <view class="goal-preview-title">{{goalPreview.title}}</view>
+          <view wx:if="{{goalPreview.warningLevel === 'EXTREME'}}" class="preview-pill danger">偏激进</view>
+          <view wx:elif="{{goalPreview.status === 'ready'}}" class="preview-pill">已生成</view>
+        </view>
+        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算推荐热量...</view>
+        <view wx:elif="{{goalPreview.status === 'ready'}}">
+          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
+          <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
+          <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
+          <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
+          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
+        </view>
+        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
+        <view wx:else class="goal-preview-tip">完善目标体重、预期日期和 BMR 后，会自动生成目标热量。</view>
       </view>
     </view>
   </view>

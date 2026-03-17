@@ -72,6 +72,109 @@
   flex: 1;
 }
 
+.field-picker {
+  align-items: center;
+  background: #fffef9;
+  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  border-radius: 22rpx;
+  color: #2f2a24;
+  display: flex;
+  font-size: 28rpx;
+  height: 88rpx;
+  padding: 0 24rpx;
+}
+
+.strategy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.strategy-chip {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2rpx solid rgba(30, 90, 79, 0.16);
+  border-radius: 999rpx;
+  color: #1e5a4f;
+  display: inline-flex;
+  font-size: 26rpx;
+  font-weight: 700;
+  height: 76rpx;
+  justify-content: center;
+  min-width: 170rpx;
+  padding: 0 22rpx;
+}
+
+.strategy-chip.active {
+  background: rgba(30, 90, 79, 0.15);
+  border-color: rgba(30, 90, 79, 0.3);
+}
+
+.goal-preview-card {
+  background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(255, 253, 248, 0.98) 78%);
+  border: 2rpx solid rgba(30, 90, 79, 0.18);
+  border-radius: 24rpx;
+  margin-top: 24rpx;
+  padding: 24rpx;
+}
+
+.goal-preview-head {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+  justify-content: space-between;
+}
+
+.goal-preview-title {
+  color: #2f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.preview-pill {
+  background: rgba(30, 90, 79, 0.14);
+  border-radius: 999rpx;
+  color: #1e5a4f;
+  font-size: 22rpx;
+  font-weight: 700;
+  padding: 10rpx 18rpx;
+}
+
+.preview-pill.danger {
+  background: rgba(185, 94, 58, 0.14);
+  color: #b95e3a;
+}
+
+.goal-preview-main {
+  color: #183f38;
+  font-size: 40rpx;
+  font-weight: 800;
+  margin-top: 18rpx;
+}
+
+.goal-preview-meta {
+  color: #5d5146;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.goal-preview-tip,
+.goal-preview-warning,
+.goal-preview-loading {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 18rpx;
+  color: #2f2a24;
+  font-size: 24rpx;
+  line-height: 1.6;
+  margin-top: 16rpx;
+  padding: 18rpx 20rpx;
+}
+
+.goal-preview-warning {
+  background: rgba(185, 94, 58, 0.12);
+  color: #8c4327;
+}
+
 .setting-entry-card {
   align-items: center;
   background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(255, 253, 248, 0.98) 78%);
@@ -135,13 +238,6 @@
   color: #2f2a24;
   font-size: 34rpx;
   font-weight: 800;
-}
-
-.sheet-current {
-  color: #6f6559;
-  font-size: 23rpx;
-  line-height: 1.5;
-  margin-top: 10rpx;
 }
 
 .sheet-close {
