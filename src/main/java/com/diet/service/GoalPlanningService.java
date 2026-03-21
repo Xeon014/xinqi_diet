@@ -7,6 +7,7 @@ import com.diet.domain.user.Gender;
 import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import com.diet.dto.user.GoalPlanPreviewResponse;
+import com.diet.dto.user.GoalWarningMessage;
 import com.diet.dto.user.GoalWarningLevel;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,7 +24,7 @@ public class GoalPlanningService {
 
     private static final BigDecimal CALORIES_PER_KG = new BigDecimal("7700");
 
-    private static final BigDecimal MAINTAIN_WEIGHT_GAP = new BigDecimal("0.10");
+    private static final BigDecimal MAINTAIN_WEIGHT_GAP = new BigDecimal("0.30");
 
     private static final BigDecimal MAX_TREND_ADJUSTMENT = new BigDecimal("150");
 
@@ -82,6 +83,7 @@ public class GoalPlanningService {
                     GoalMode.MAINTAIN,
                     BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                     effectiveBmr,
+                    GoalCalorieStrategy.SMART,
                     false
             );
         }
@@ -110,6 +112,7 @@ public class GoalPlanningService {
                 goalMode,
                 plannedWeeklyChangeKg,
                 effectiveBmr,
+                GoalCalorieStrategy.SMART,
                 adjustment.usedTrendAdjustment()
         );
     }
@@ -160,6 +163,7 @@ public class GoalPlanningService {
                 resolvedGoalMode,
                 plannedWeeklyChangeKg,
                 effectiveBmr,
+                GoalCalorieStrategy.MANUAL,
                 false
         );
     }
@@ -170,9 +174,16 @@ public class GoalPlanningService {
             GoalMode goalMode,
             BigDecimal plannedWeeklyChangeKg,
             BigDecimal effectiveBmr,
+            GoalCalorieStrategy goalCalorieStrategy,
             boolean usedTrendAdjustment
     ) {
-        GoalWarning warning = evaluateWarning(targetCalories, goalCalorieDelta, plannedWeeklyChangeKg, effectiveBmr);
+        GoalWarning warning = evaluateWarning(
+                targetCalories,
+                goalCalorieDelta,
+                plannedWeeklyChangeKg,
+                effectiveBmr,
+                goalCalorieStrategy
+        );
         return new GoalPlanPreviewResponse(
                 targetCalories,
                 goalCalorieDelta,
@@ -188,27 +199,68 @@ public class GoalPlanningService {
             Integer targetCalories,
             Integer goalCalorieDelta,
             BigDecimal plannedWeeklyChangeKg,
-            BigDecimal effectiveBmr
+            BigDecimal effectiveBmr,
+            GoalCalorieStrategy goalCalorieStrategy
     ) {
         if (goalCalorieDelta == null) {
             return new GoalWarning(GoalWarningLevel.NONE, "");
         }
+
+        GoalCalorieStrategy strategy = goalCalorieStrategy == null ? GoalCalorieStrategy.MANUAL : goalCalorieStrategy;
+        if (strategy == GoalCalorieStrategy.MANUAL) {
+            return evaluateManualWarning(targetCalories, goalCalorieDelta, plannedWeeklyChangeKg, effectiveBmr);
+        }
+        return evaluateSmartWarning(targetCalories, goalCalorieDelta, plannedWeeklyChangeKg, effectiveBmr);
+    }
+
+    private GoalWarning evaluateManualWarning(
+            Integer targetCalories,
+            Integer goalCalorieDelta,
+            BigDecimal plannedWeeklyChangeKg,
+            BigDecimal effectiveBmr
+    ) {
         if (effectiveBmr != null
                 && targetCalories != null
                 && BigDecimal.valueOf(targetCalories).compareTo(effectiveBmr.setScale(0, RoundingMode.HALF_UP)) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, "当前目标热量已低于基础代谢，建议放宽目标日期。");
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_BELOW_BMR.text());
         }
         if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("-1.00")) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, "按当前计划每周减重偏快，建议放宽目标日期。");
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_WEEKLY_LOSS_TOO_FAST.text());
         }
         if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("0.50")) > 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, "按当前计划每周增重偏快，建议重新确认目标。");
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_WEEKLY_GAIN_TOO_FAST.text());
         }
         if (goalCalorieDelta <= -900) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, "当前每日热量缺口偏大，建议放宽目标日期。");
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_DAILY_DEFICIT_TOO_LARGE.text());
         }
         if (goalCalorieDelta >= 500) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, "当前每日热量盈余偏大，建议重新确认目标。");
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_DAILY_SURPLUS_TOO_LARGE.text());
+        }
+        return new GoalWarning(GoalWarningLevel.NONE, "");
+    }
+
+    private GoalWarning evaluateSmartWarning(
+            Integer targetCalories,
+            Integer goalCalorieDelta,
+            BigDecimal plannedWeeklyChangeKg,
+            BigDecimal effectiveBmr
+    ) {
+        if (effectiveBmr != null
+                && targetCalories != null
+                && BigDecimal.valueOf(targetCalories).compareTo(effectiveBmr.setScale(0, RoundingMode.HALF_UP)) < 0) {
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_BELOW_BMR.text());
+        }
+        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("-1.00")) < 0) {
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_WEEKLY_LOSS_TOO_FAST.text());
+        }
+        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("0.50")) > 0) {
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_WEEKLY_GAIN_TOO_FAST.text());
+        }
+        if (goalCalorieDelta <= -900) {
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_DAILY_DEFICIT_TOO_LARGE.text());
+        }
+        if (goalCalorieDelta >= 500) {
+            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_DAILY_SURPLUS_TOO_LARGE.text());
         }
         return new GoalWarning(GoalWarningLevel.NONE, "");
     }

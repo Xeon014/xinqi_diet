@@ -64,14 +64,14 @@ class GoalPlanningServiceTest {
     }
 
     @Test
-    void shouldTreatNearlySameTargetWeightAsMaintain() {
+    void shouldTreatTargetWeightWithinPointThreeKgAsMaintain() {
         GoalPlanPreviewResponse response = goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
                 null,
                 Gender.FEMALE,
                 LocalDate.of(2000, 1, 1),
                 new BigDecimal("165.00"),
                 new BigDecimal("60.00"),
-                new BigDecimal("60.05"),
+                new BigDecimal("60.30"),
                 null,
                 null,
                 null,
@@ -87,6 +87,30 @@ class GoalPlanningServiceTest {
         assertThat(response.goalMode()).isEqualTo(GoalMode.MAINTAIN);
         assertThat(response.recommendedGoalCalorieDelta()).isZero();
         assertThat(response.warningLevel()).isEqualTo(GoalWarningLevel.NONE);
+    }
+
+    @Test
+    void shouldRequireGoalDateWhenTargetWeightExceedsMaintainGap() {
+        assertThatThrownBy(() -> goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
+                null,
+                Gender.FEMALE,
+                LocalDate.of(2000, 1, 1),
+                new BigDecimal("165.00"),
+                new BigDecimal("60.00"),
+                new BigDecimal("60.31"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                GoalCalorieStrategy.SMART
+        )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("预期达成日期");
     }
 
     @Test
@@ -148,7 +172,33 @@ class GoalPlanningServiceTest {
         ));
 
         assertThat(response.warningLevel()).isEqualTo(GoalWarningLevel.EXTREME);
-        assertThat(response.warningMessage()).isNotBlank();
+        assertThat(response.warningMessage()).contains("提高目标热量");
+        assertThat(response.warningMessage()).doesNotContain("放宽目标日期");
+    }
+
+    @Test
+    void shouldWarnSmartPlanBelowBmrToRelaxGoalDate() {
+        GoalPlanPreviewResponse response = goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
+                null,
+                Gender.FEMALE,
+                LocalDate.of(2000, 1, 1),
+                new BigDecimal("165.00"),
+                new BigDecimal("60.00"),
+                new BigDecimal("55.00"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                LocalDate.now().plusDays(7),
+                GoalCalorieStrategy.SMART
+        ));
+
+        assertThat(response.warningLevel()).isEqualTo(GoalWarningLevel.EXTREME);
+        assertThat(response.warningMessage()).contains("放宽目标日期");
     }
 
     @Test

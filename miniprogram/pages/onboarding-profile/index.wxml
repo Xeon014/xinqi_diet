@@ -1,10 +1,14 @@
 <view class="page-shell onboarding-page">
   <view class="panel header-panel">
     <view class="header-row">
-      <view>
+      <view class="header-copy">
         <view class="section-title">开始建档</view>
         <view class="step-meta">第 {{currentStep + 1}} / {{steps.length}} 步</view>
       </view>
+      <view wx:if="{{steps[currentStep].optional}}" class="skip-link" bindtap="handleSkipOptionalStep">稍后完善</view>
+    </view>
+    <view class="progress-track">
+      <view class="progress-fill" style="width: {{progressPercent}}%;"></view>
     </view>
   </view>
 
@@ -12,99 +16,173 @@
     <view class="step-title">{{steps[currentStep].title}}</view>
     <view wx:if="{{steps[currentStep].description}}" class="step-desc">{{steps[currentStep].description}}</view>
 
-    <view wx:if="{{steps[currentStep].key === 'gender'}}" class="gender-list">
-      <view
-        wx:for="{{genderOptions}}"
-        wx:key="value"
-        wx:for-item="option"
-        class="gender-chip {{form.gender === option.value ? 'active' : ''}}"
-        data-value="{{option.value}}"
-        bindtap="handleGenderSelect"
-      >
-        {{option.label}}
+    <block wx:if="{{steps[currentStep].key === 'basic'}}">
+      <view class="step-stack">
+        <view class="field-block">
+          <view class="field-label">性别</view>
+          <view class="gender-list">
+            <view
+              wx:for="{{genderOptions}}"
+              wx:key="value"
+              wx:for-item="option"
+              class="gender-chip {{form.gender === option.value ? 'active' : ''}}"
+              data-value="{{option.value}}"
+              bindtap="handleGenderSelect"
+            >
+              {{option.label}}
+            </view>
+          </view>
+        </view>
+
+        <view class="field-block">
+          <view class="field-label">生日</view>
+          <picker
+            mode="multiSelector"
+            range="{{birthDateColumns}}"
+            value="{{birthDateColumnIndex}}"
+            bindcolumnchange="handleBirthDateColumnChange"
+            bindchange="handleBirthDateConfirm"
+          >
+            <view class="field-picker tall-picker">{{birthDateDisplay || '请选择生日'}}</view>
+          </picker>
+        </view>
       </view>
-    </view>
+    </block>
 
-    <view wx:if="{{steps[currentStep].key === 'birthDate'}}" class="field-wrap">
-      <picker
-        mode="multiSelector"
-        range="{{birthDateColumns}}"
-        value="{{birthDateColumnIndex}}"
-        bindcolumnchange="handleBirthDateColumnChange"
-        bindchange="handleBirthDateConfirm"
-      >
-        <view class="field-picker">{{birthDateDisplay || '请选择生日'}}</view>
-      </picker>
-    </view>
+    <block wx:elif="{{steps[currentStep].key === 'body'}}">
+      <view class="step-stack body-stack">
+        <view class="field-block">
+          <view class="field-label">身高（厘米）</view>
+          <input
+            class="field-input tall-input"
+            type="digit"
+            value="{{form.height}}"
+            data-field="height"
+            bindinput="handleInput"
+            placeholder="请输入身高 (cm)"
+          />
+        </view>
 
-    <view wx:if="{{steps[currentStep].key === 'height'}}" class="field-wrap">
-      <input class="field-input" type="digit" value="{{form.height}}" data-field="height" bindinput="handleInput" placeholder="请输入身高(cm)" />
-    </view>
+        <view class="field-block">
+          <view class="field-label">当前体重（千克）</view>
+          <input
+            class="field-input tall-input"
+            type="digit"
+            value="{{form.currentWeight}}"
+            data-field="currentWeight"
+            bindinput="handleInput"
+            placeholder="请输入当前体重 (kg)"
+          />
+        </view>
+      </view>
+    </block>
 
-    <view wx:if="{{steps[currentStep].key === 'currentWeight'}}" class="field-wrap">
-      <input class="field-input" type="digit" value="{{form.currentWeight}}" data-field="currentWeight" bindinput="handleInput" placeholder="请输入当前体重(kg)" />
-    </view>
+    <block wx:elif="{{steps[currentStep].key === 'bmr'}}">
+      <view class="field-block">
+          <view class="field-label">基础代谢（千卡/天）</view>
+        <input
+          class="field-input tall-input"
+          type="number"
+          value="{{form.bmr}}"
+          data-field="bmr"
+          bindinput="handleInput"
+          placeholder="请输入基础代谢 (kcal/天)"
+        />
+        <view class="recommend-btn" bindtap="handleUseRecommendedBmr">使用推荐值 {{formulaBmrPreview}}</view>
+      </view>
+    </block>
 
-    <view wx:if="{{steps[currentStep].key === 'targetWeight'}}" class="field-wrap">
-      <input class="field-input" type="digit" value="{{form.targetWeight}}" data-field="targetWeight" bindinput="handleInput" placeholder="请输入目标体重(kg)" />
-    </view>
+    <block wx:elif="{{steps[currentStep].key === 'goalTarget'}}">
+      <view class="step-stack">
+        <view class="field-block">
+          <view class="field-label">目标体重（千克）</view>
+          <input
+            class="field-input tall-input"
+            type="digit"
+            value="{{form.targetWeight}}"
+            data-field="targetWeight"
+            bindinput="handleInput"
+            placeholder="选填，留空可稍后设置"
+          />
+        </view>
 
-    <view wx:if="{{steps[currentStep].key === 'goalTargetDate'}}" class="field-wrap">
-      <picker mode="date" value="{{form.goalTargetDate}}" start="{{minGoalDate}}" bindchange="handleGoalDateChange">
-        <view class="field-picker">{{form.goalTargetDate || '请选择预期日期'}}</view>
-      </picker>
-      <view class="formula-tip">若目标体重和当前体重基本一致，可以先不设置日期。</view>
-    </view>
+        <view class="field-block">
+          <view class="field-label">预期日期</view>
+          <picker mode="date" value="{{form.goalTargetDate}}" start="{{minGoalDate}}" bindchange="handleGoalDateChange">
+            <view class="field-picker tall-picker">{{form.goalTargetDate || '请选择预期日期'}}</view>
+          </picker>
+        </view>
+      </view>
+    </block>
 
-    <view wx:if="{{steps[currentStep].key === 'bmr'}}" class="field-wrap">
-      <input class="field-input" type="number" value="{{form.bmr}}" data-field="bmr" bindinput="handleInput" placeholder="请输入基础代谢(kcal/天)" />
-      <view class="recommend-btn" bindtap="handleUseRecommendedBmr">使用推荐值 {{formulaBmrPreview}}</view>
-      <view class="formula-tip">{{baseCaloriesHint}}</view>
-    </view>
-
-    <view wx:if="{{steps[currentStep].key === 'goalPlan'}}" class="field-wrap">
-      <view class="strategy-row">
-        <view
-          wx:for="{{goalStrategies}}"
-          wx:key="value"
-          wx:for-item="strategy"
-          class="strategy-chip {{form.goalCalorieStrategy === strategy.value ? 'active' : ''}}"
-          data-value="{{strategy.value}}"
-          bindtap="handleGoalStrategySelect"
-        >
-          {{strategy.label}}
+    <block wx:elif="{{steps[currentStep].key === 'goalPlan'}}">
+      <view class="field-block">
+        <view class="field-label">目标模式</view>
+        <view class="strategy-row">
+          <view
+            wx:for="{{goalStrategiesVisible}}"
+            wx:key="value"
+            wx:for-item="strategy"
+            class="strategy-chip {{form.goalCalorieStrategy === strategy.value ? 'active' : ''}}"
+            data-value="{{strategy.value}}"
+            bindtap="handleGoalStrategySelect"
+          >
+            {{strategy.label}}
+          </view>
         </view>
       </view>
 
-      <view wx:if="{{form.goalCalorieStrategy === 'MANUAL'}}" class="field-wrap manual-input-wrap">
-        <view class="field-label">目标热量 (kcal/天)</view>
-        <input class="field-input" type="number" value="{{form.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" placeholder="请输入目标热量" />
+      <view wx:if="{{form.goalCalorieStrategy === 'MANUAL'}}" class="field-block manual-input-wrap">
+        <view class="field-label">目标热量</view>
+        <input
+          class="field-input tall-input"
+          type="number"
+          value="{{form.dailyCalorieTarget}}"
+          data-field="dailyCalorieTarget"
+          bindinput="handleInput"
+          placeholder="请输入目标热量 (kcal/天)"
+        />
       </view>
 
       <view class="goal-preview-card">
         <view class="goal-preview-head">
           <view class="goal-preview-title">{{goalPreview.title}}</view>
           <view wx:if="{{goalPreview.warningLevel === 'EXTREME'}}" class="preview-pill danger">偏激进</view>
-          <view wx:elif="{{goalPreview.status === 'ready'}}" class="preview-pill">已生成</view>
+          <view wx:elif="{{goalPreview.status === 'ready' && form.goalCalorieStrategy === 'SMART'}}" class="preview-pill">已生成</view>
         </view>
-        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算推荐热量...</view>
-        <view wx:elif="{{goalPreview.status === 'ready'}}">
-          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
-          <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
-          <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
-          <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
-          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
-        </view>
-        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
-        <view wx:else class="goal-preview-tip">完善目标体重、预期日期和 BMR 后，会自动生成目标热量。</view>
+
+        <block wx:if="{{form.goalCalorieStrategy === 'MANUAL'}}">
+          <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在更新目标热量...</view>
+          <view wx:elif="{{goalPreview.status === 'ready'}}">
+            <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
+            <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
+          </view>
+          <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
+          <view wx:else class="goal-preview-tip">请输入目标热量。</view>
+        </block>
+
+        <block wx:else>
+          <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算目标热量...</view>
+          <view wx:elif="{{goalPreview.status === 'ready'}}">
+            <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
+            <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
+            <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
+            <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
+            <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
+          </view>
+          <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
+          <view wx:else class="goal-preview-tip">完善信息后自动生成目标热量。</view>
+        </block>
       </view>
-    </view>
+    </block>
   </view>
 
-  <view class="action-row">
-    <view wx:if="{{currentStep > 0}}" class="ghost-button" bindtap="handlePrevStep">上一步</view>
-    <view class="primary-button action-primary" bindtap="handleNextStep">
-      {{currentStep === steps.length - 1 ? (submitting ? '保存中...' : '完成') : '下一步'}}
+  <view class="action-dock">
+    <view class="action-row">
+      <view wx:if="{{currentStep > 0}}" class="ghost-button action-secondary" bindtap="handlePrevStep">上一步</view>
+      <view class="primary-button action-primary {{currentStep === 0 ? 'full' : ''}}" bindtap="handleNextStep">
+        {{currentStep === steps.length - 1 ? (submitting ? '保存中...' : '完成') : '下一步'}}
+      </view>
     </view>
   </view>
 </view>

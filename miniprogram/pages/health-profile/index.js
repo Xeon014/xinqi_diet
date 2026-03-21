@@ -133,7 +133,7 @@ function shouldRequireGoalDate(settings) {
   if (!Number.isFinite(currentWeight) || !Number.isFinite(targetWeight)) {
     return false;
   }
-  return Math.abs(currentWeight - targetWeight) > 0.1;
+  return Math.abs(currentWeight - targetWeight) > 0.3;
 }
 
 function isFutureGoalDate(goalTargetDate) {
@@ -348,7 +348,7 @@ Page({
         inputValue: this.data.metrics.bmrLabel === '--' ? '' : this.data.metrics.bmrLabel,
         smartValue: bmrEstimate == null ? '--' : String(bmrEstimate),
         smartAvailable: bmrEstimate != null,
-        hint: bmrEstimate == null ? '请先完善生日、身高和当前体重。' : '可直接使用系统估算值。',
+        hint: bmrEstimate == null ? '请先完善生日、身高和当前体重。' : '推荐值按性别、年龄、身高、体重计算。',
         saving: false,
       },
     });
@@ -396,10 +396,17 @@ Page({
     if (!preview || preview.warningLevel !== 'EXTREME') {
       return Promise.resolve(true);
     }
+    const fallbackContent = this.data.settings.goalCalorieStrategy === 'MANUAL'
+      ? '按当前目标热量执行会偏激进，建议先调高或重新确认目标热量。'
+      : '按当前设置达到目标会比较激进，建议延后日期或调整目标体重。';
     return new Promise((resolve) => {
       wx.showModal({
         title: '目标可能过急',
         content: preview.warningMessage || '按当前设置达到目标会比较激进，建议延后日期或调整目标体重。',
+        cancelText: '调整目标',
+        confirmText: '仍然保存',
+        title: '目标可能过激',
+        content: preview.warningMessage || fallbackContent,
         cancelText: '调整目标',
         confirmText: '仍然保存',
         success: (result) => resolve(!!result.confirm),
@@ -457,7 +464,7 @@ Page({
       }
     }
     if (!this.buildPreviewPayload()) {
-      wx.showToast({ title: '??????????????', icon: 'none' });
+      wx.showToast({ title: '请先完善目标计划', icon: 'none' });
       return;
     }
     this.refreshGoalPreview(true)

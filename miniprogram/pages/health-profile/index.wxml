@@ -71,18 +71,31 @@
       <view class="goal-preview-head">
         <view class="goal-preview-title">{{settings.goalCalorieStrategy === 'MANUAL' ? '当前手动目标' : '智能推荐目标'}}</view>
         <view wx:if="{{goalPreview.warningLevel === 'EXTREME'}}" class="preview-pill danger">偏激进</view>
-        <view wx:elif="{{goalPreview.status === 'ready'}}" class="preview-pill">已生成</view>
+        <view wx:elif="{{goalPreview.status === 'ready' && settings.goalCalorieStrategy === 'SMART'}}" class="preview-pill">已生成</view>
       </view>
-      <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算目标热量...</view>
-      <view wx:elif="{{goalPreview.status === 'ready'}}">
-        <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
-        <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
-        <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
-        <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
-        <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
-      </view>
-      <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
-      <view wx:else class="goal-preview-tip">完善体重、日期和目标模式后，会自动生成目标热量。</view>
+
+      <block wx:if="{{settings.goalCalorieStrategy === 'MANUAL'}}">
+        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在更新目标热量...</view>
+        <view wx:elif="{{goalPreview.status === 'ready'}}">
+          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
+          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
+        </view>
+        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
+        <view wx:else class="goal-preview-tip">请输入目标热量。</view>
+      </block>
+
+      <block wx:else>
+        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算目标热量...</view>
+        <view wx:elif="{{goalPreview.status === 'ready'}}">
+          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
+          <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
+          <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
+          <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
+          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
+        </view>
+        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
+        <view wx:else class="goal-preview-tip">完善信息后自动生成目标热量。</view>
+      </block>
     </view>
 
     <view class="setting-entry-card" bindtap="handleOpenBmrSheet">
