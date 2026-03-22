@@ -1,4 +1,4 @@
-const { createBodyMetricRecord, getBodyMetricTrend } = require("../../services/body-metric");
+const { createBodyMetricRecord, getBodyMetricHistory } = require("../../services/body-metric");
 const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
@@ -31,18 +31,28 @@ function toOneDecimal(value) {
   return number.toFixed(1);
 }
 
-function normalizePointsDesc(points, metricUnit) {
-  return (points || [])
+function formatTime(dateTimeText) {
+  const text = String(dateTimeText || "").trim();
+  if (!text) {
+    return "--";
+  }
+  const match = text.replace("T", " ").match(/(\d{2}:\d{2})/);
+  return match ? match[1] : "--";
+}
+
+function normalizeRecords(records, fallbackUnit) {
+  return (records || [])
     .map((item) => ({
-      date: item && item.date ? item.date : "",
-      value: item && item.value != null ? Number(item.value) : NaN,
+      id: item && item.id != null ? Number(item.id) : NaN,
+      date: item && item.recordDate ? item.recordDate : "",
+      time: formatTime(item && item.createdAt),
+      value: item && item.metricValue != null ? Number(item.metricValue) : NaN,
+      unit: fallbackUnit,
     }))
-    .filter((item) => item.date && Number.isFinite(item.value))
-    .sort((a, b) => (a.date === b.date ? 0 : (a.date < b.date ? 1 : -1)))
+    .filter((item) => Number.isFinite(item.id) && item.date && Number.isFinite(item.value))
     .map((item) => ({
       ...item,
       valueLabel: toOneDecimal(item.value),
-      unit: metricUnit,
     }));
 }
 
@@ -50,10 +60,10 @@ function mergeHistory(existingList, incomingList) {
   const merged = [];
   const seen = new Set();
   [...(existingList || []), ...(incomingList || [])].forEach((item) => {
-    if (!item || !item.date || seen.has(item.date)) {
+    if (!item || !Number.isFinite(item.id) || seen.has(item.id)) {
       return;
     }
-    seen.add(item.date);
+    seen.add(item.id);
     merged.push(item);
   });
   return merged;
@@ -105,13 +115,13 @@ Page({
       nextCursorId: null,
     });
 
-    getBodyMetricTrend({
+    getBodyMetricHistory({
       metricKey: this.data.metricKey,
-      rangeType: "ALL",
       pageSize: ALL_PAGE_SIZE,
     })
       .then((response) => {
-        const list = normalizePointsDesc(response && response.points, this.data.metricUnit);
+        const responseUnit = response && response.unit ? String(response.unit) : "";
+        const list = normalizeRecords(response && response.records, responseUnit || this.data.metricUnit);
         this.setData({
           records: list,
           hasMore: Boolean(response && response.hasMore),
@@ -136,15 +146,15 @@ Page({
     }
 
     this.setData({ loading: true });
-    getBodyMetricTrend({
+    getBodyMetricHistory({
       metricKey: this.data.metricKey,
-      rangeType: "ALL",
       pageSize: ALL_PAGE_SIZE,
       cursorDate: this.data.nextCursorDate,
       cursorId: this.data.nextCursorId,
     })
       .then((response) => {
-        const incoming = normalizePointsDesc(response && response.points, this.data.metricUnit);
+        const responseUnit = response && response.unit ? String(response.unit) : "";
+        const incoming = normalizeRecords(response && response.records, responseUnit || this.data.metricUnit);
         this.setData({
           records: mergeHistory(this.data.records, incoming),
           hasMore: Boolean(response && response.hasMore),

@@ -52,4 +52,15 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     ) {
         return bodyMetricRecordMapper.findDailyLatestByMetricTypeWithCursor(userId, metricType, cursorDate, cursorId, limit);
     }
+
+    @Override
+    public List<BodyMetricRecord> findByMetricTypeWithCursor(
+            Long userId,
+            BodyMetricType metricType,
+            LocalDate cursorDate,
+            Long cursorId,
+            int limit
+    ) {
+        return bodyMetricRecordMapper.findByMetricTypeWithCursor(userId, metricType, cursorDate, cursorId, limit);
+    }
 }

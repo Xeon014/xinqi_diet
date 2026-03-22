@@ -22,11 +22,20 @@
     0 -8rpx 22rpx rgba(34, 27, 21, 0.06),
     0 -28rpx 56rpx rgba(34, 27, 21, 0.18),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
+  display: flex;
+  flex-direction: column;
   left: 0;
-  padding: 24rpx 26rpx calc(34rpx + env(safe-area-inset-bottom));
+  max-height: calc(100vh - 88rpx);
+  padding: 24rpx 26rpx calc(26rpx + env(safe-area-inset-bottom));
   position: fixed;
   right: 0;
+  transition: bottom 160ms ease;
   z-index: 121;
+}
+
+.sheet-body {
+  flex: 1;
+  min-height: 0;
 }
 
 .sheet-head {
@@ -57,6 +66,12 @@
 
 .sheet-close:active {
   opacity: 0.8;
+}
+
+.sheet-actions {
+  background: linear-gradient(180deg, rgba(255, 249, 241, 0) 0%, rgba(255, 249, 241, 0.96) 18%, rgba(255, 249, 241, 1) 100%);
+  margin-top: 22rpx;
+  padding-top: 12rpx;
 }
 
 .sheet-date,
@@ -111,7 +126,6 @@
   font-weight: 700;
   height: 88rpx;
   justify-content: center;
-  margin-top: 24rpx;
 }
 
 .sheet-submit-btn.disabled {

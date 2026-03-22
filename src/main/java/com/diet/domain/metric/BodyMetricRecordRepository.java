@@ -24,4 +24,12 @@ public interface BodyMetricRecordRepository {
             Long cursorId,
             int limit
     );
+
+    List<BodyMetricRecord> findByMetricTypeWithCursor(
+            Long userId,
+            BodyMetricType metricType,
+            LocalDate cursorDate,
+            Long cursorId,
+            int limit
+    );
 }

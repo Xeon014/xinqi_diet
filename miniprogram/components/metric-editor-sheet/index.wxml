@@ -1,27 +1,40 @@
 <view wx:if="{{visible}}" class="sheet-overlay" bindtap="handleClose"></view>
-<view wx:if="{{visible}}" class="bottom-sheet panel" catchtouchmove="noop">
-  <view class="sheet-head">
-    <view class="sheet-title">{{title}}</view>
-    <view class="sheet-close" bindtap="handleClose">✕</view>
+<view
+  wx:if="{{visible}}"
+  class="bottom-sheet panel"
+  style="bottom: {{keyboardHeight}}px;"
+  catchtouchmove="noop"
+>
+  <view class="sheet-body">
+    <view class="sheet-head">
+      <view class="sheet-title">{{title}}</view>
+      <view class="sheet-close" bindtap="handleClose">✕</view>
+    </view>
+
+    <picker wx:if="{{dateEditable}}" mode="date" value="{{date}}" bindchange="handleDateChange" disabled="{{loading}}">
+      <view class="sheet-date-picker">{{dateLabel}}{{date}}</view>
+    </picker>
+    <view wx:else class="sheet-date">{{dateLabel}}{{date}}</view>
+
+    <view class="sheet-input-row">
+      <input
+        class="sheet-input"
+        type="digit"
+        value="{{value}}"
+        placeholder="{{placeholder}}"
+        bindinput="handleInput"
+        bindblur="handleInputBlur"
+        adjust-position="{{false}}"
+        cursor-spacing="140"
+        confirm-type="done"
+      />
+      <view wx:if="{{unit}}" class="sheet-unit">{{unit}}</view>
+    </view>
   </view>
 
-  <picker wx:if="{{dateEditable}}" mode="date" value="{{date}}" bindchange="handleDateChange" disabled="{{loading}}">
-    <view class="sheet-date-picker">{{dateLabel}}{{date}}</view>
-  </picker>
-  <view wx:else class="sheet-date">{{dateLabel}}{{date}}</view>
-
-  <view class="sheet-input-row">
-    <input
-      class="sheet-input"
-      type="digit"
-      value="{{value}}"
-      placeholder="{{placeholder}}"
-      bindinput="handleInput"
-    />
-    <view wx:if="{{unit}}" class="sheet-unit">{{unit}}</view>
-  </view>
-
-  <view class="sheet-submit-btn {{loading ? 'disabled' : ''}}" bindtap="handleSubmit">
-    {{loading ? loadingText : submitText}}
+  <view class="sheet-actions">
+    <view class="sheet-submit-btn {{loading ? 'disabled' : ''}}" bindtap="handleSubmit">
+      {{loading ? loadingText : submitText}}
+    </view>
   </view>
 </view>

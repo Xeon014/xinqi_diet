@@ -25,7 +25,6 @@
 .header-row {
   align-items: flex-start;
   display: flex;
-  gap: 18rpx;
   justify-content: space-between;
   position: relative;
   z-index: 1;
@@ -42,6 +41,14 @@
   margin-top: 10rpx;
 }
 
+.header-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14rpx;
+  position: relative;
+  z-index: 2;
+}
+
 .skip-link {
   align-items: center;
   background: rgba(30, 90, 79, 0.08);
@@ -56,15 +63,12 @@
   height: 64rpx;
   justify-content: center;
   line-height: 1;
+  min-width: 160rpx;
   padding: 0 24rpx;
   position: relative;
-  z-index: 2;
+  z-index: 3;
 }
 
-
-.skip-link-active {
-  opacity: 0.82;
-}
 
 .progress-track {
   background: rgba(30, 90, 79, 0.1);

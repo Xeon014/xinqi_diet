@@ -17,6 +17,7 @@ import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
 import com.diet.dto.metric.BodyMetricSnapshotResponse;
 import com.diet.dto.metric.BodyMetricTrendMetricKey;
@@ -27,6 +28,7 @@ import com.diet.dto.user.GoalPlanPreviewResponse;
 import com.diet.dto.user.GoalWarningLevel;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -255,6 +257,43 @@ class BodyMetricRecordServiceTest {
     }
 
     @Test
+    void shouldReturnHistoryRecordsWithMultipleItemsInSameDay() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        List<BodyMetricRecord> records = List.of(
+                buildRecord(15L, BodyMetricType.WEIGHT, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 20, 10)),
+                buildRecord(14L, BodyMetricType.WEIGHT, new BigDecimal("61.20"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 7, 30)),
+                buildRecord(13L, BodyMetricType.WEIGHT, new BigDecimal("61.50"), LocalDate.of(2026, 3, 14), LocalDateTime.of(2026, 3, 14, 8, 0))
+        );
+        when(bodyMetricRecordRepository.findByMetricTypeWithCursor(
+                1L,
+                BodyMetricType.WEIGHT,
+                null,
+                null,
+                3
+        )).thenReturn(records);
+
+        BodyMetricHistoryResponse response = bodyMetricRecordService.getHistory(
+                1L,
+                BodyMetricTrendMetricKey.WEIGHT,
+                null,
+                null,
+                2
+        );
+
+        assertThat(response.hasMore()).isTrue();
+        assertThat(response.nextCursorDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.nextCursorId()).isEqualTo(14L);
+        assertThat(response.records()).hasSize(2);
+        assertThat(response.records().get(0).id()).isEqualTo(15L);
+        assertThat(response.records().get(0).recordDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.records().get(0).createdAt()).isEqualTo(LocalDateTime.of(2026, 3, 15, 20, 10));
+        assertThat(response.records().get(1).id()).isEqualTo(14L);
+        assertThat(response.records().get(1).recordDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+    }
+
+    @Test
     void shouldReturnAllTrendWithCursorAndBmiCalculation() {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         user.setHeight(new BigDecimal("170.00"));
@@ -293,6 +332,39 @@ class BodyMetricRecordServiceTest {
     }
 
     @Test
+    void shouldReturnTrendUsingLatestRecordOfSameDay() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        List<BodyMetricRecord> records = List.of(
+                buildRecord(21L, BodyMetricType.WEIGHT, new BigDecimal("60.60"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 20, 0)),
+                buildRecord(19L, BodyMetricType.WEIGHT, new BigDecimal("61.10"), LocalDate.of(2026, 3, 14), LocalDateTime.of(2026, 3, 14, 8, 0))
+        );
+        when(bodyMetricRecordRepository.findDailyLatestByMetricTypeWithCursor(
+                1L,
+                BodyMetricType.WEIGHT,
+                null,
+                null,
+                121
+        )).thenReturn(records);
+
+        BodyMetricTrendResponse response = bodyMetricRecordService.getTrend(
+                1L,
+                BodyMetricTrendMetricKey.WEIGHT,
+                MetricTrendRangeType.ALL,
+                null,
+                null,
+                120
+        );
+
+        assertThat(response.points()).hasSize(2);
+        assertThat(response.points().get(0).date()).isEqualTo(LocalDate.of(2026, 3, 14));
+        assertThat(response.points().get(0).value()).isEqualByComparingTo("61.10");
+        assertThat(response.points().get(1).date()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.points().get(1).value()).isEqualByComparingTo("60.60");
+    }
+
+    @Test
     void shouldRejectWhenAllRangeCursorIsIncomplete() {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -317,11 +389,23 @@ class BodyMetricRecordServiceTest {
     }
 
     private BodyMetricRecord buildRecord(Long id, BodyMetricType metricType, BigDecimal metricValue, LocalDate recordDate) {
+        return buildRecord(id, metricType, metricValue, recordDate, LocalDateTime.of(recordDate.getYear(), recordDate.getMonth(), recordDate.getDayOfMonth(), 8, 0));
+    }
+
+    private BodyMetricRecord buildRecord(
+            Long id,
+            BodyMetricType metricType,
+            BigDecimal metricValue,
+            LocalDate recordDate,
+            LocalDateTime createdAt
+    ) {
         BodyMetricRecord record = new BodyMetricRecord();
         record.setId(id);
         record.setMetricType(metricType);
         record.setMetricValue(metricValue);
         record.setRecordDate(recordDate);
+        record.setCreatedAt(createdAt);
+        record.setUnit(metricType == BodyMetricType.WEIGHT ? BodyMetricUnit.KG : BodyMetricUnit.CM);
         return record;
     }
 }

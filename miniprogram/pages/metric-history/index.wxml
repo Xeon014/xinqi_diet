@@ -5,9 +5,10 @@
   </view>
 
   <view wx:if="{{records.length}}" class="history-list">
-    <view wx:for="{{records}}" wx:key="date" wx:for-item="item" class="panel history-item">
+    <view wx:for="{{records}}" wx:key="id" wx:for-item="item" class="panel history-item">
       <view class="history-item-left">
         <view class="history-item-date">{{item.date}}</view>
+        <view class="history-item-time">{{item.time}}</view>
       </view>
       <view class="history-item-right">
         <view class="history-item-value">{{item.valueLabel}}</view>
@@ -28,27 +29,18 @@
     <view wx:if="{{canCreate}}" class="history-empty-btn" bindtap="handleOpenEditor">去记录</view>
   </view>
 
-  <view wx:if="{{editorVisible}}" class="sheet-overlay" bindtap="handleCloseEditor"></view>
-  <view wx:if="{{editorVisible}}" class="bottom-sheet panel" catchtouchmove="noop">
-    <view class="sheet-head">
-      <view class="sheet-title">记录{{metricLabel}}</view>
-      <view class="sheet-close" bindtap="handleCloseEditor">✕</view>
-    </view>
-    <picker mode="date" value="{{editorDate}}" bindchange="handleEditorDateChange" disabled="{{editorLoading}}">
-      <view class="sheet-date-picker">日期：{{editorDate}}</view>
-    </picker>
-    <view class="sheet-input-row">
-      <input
-        class="sheet-input"
-        type="digit"
-        value="{{editorValue}}"
-        placeholder="请输入数值"
-        bindinput="handleEditorInput"
-      />
-      <view class="sheet-unit">{{metricUnit}}</view>
-    </view>
-    <view class="sheet-submit-btn {{editorLoading ? 'disabled' : ''}}" bindtap="handleSubmitEditor">
-      {{editorLoading ? '保存中...' : '保存'}}
-    </view>
-  </view>
+  <metric-editor-sheet
+    visible="{{editorVisible}}"
+    loading="{{editorLoading}}"
+    title="记录{{metricLabel}}"
+    date="{{editorDate}}"
+    dateEditable="{{true}}"
+    value="{{editorValue}}"
+    placeholder="请输入数值"
+    unit="{{metricUnit}}"
+    bind:close="handleCloseEditor"
+    bind:datechange="handleEditorDateChange"
+    bind:input="handleEditorInput"
+    bind:submit="handleSubmitEditor"
+  />
 </view>

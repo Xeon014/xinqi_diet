@@ -76,4 +76,27 @@
         LIMIT #{limit}
     </select>
 
+    <select id="findByMetricTypeWithCursor" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE user_id = #{userId}
+          AND metric_type = #{metricType}
+        <if test="cursorDate != null and cursorId != null">
+          AND (
+                record_date <![CDATA[<]]> #{cursorDate}
+                OR (record_date = #{cursorDate} AND id <![CDATA[<]]> #{cursorId})
+          )
+        </if>
+        ORDER BY record_date DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -8,6 +8,8 @@ import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.metric.BodyMetricHistoryRecordResponse;
+import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
 import com.diet.dto.metric.BodyMetricSnapshotItemResponse;
 import com.diet.dto.metric.BodyMetricSnapshotResponse;
@@ -88,6 +90,61 @@ public class BodyMetricRecordService {
                 .map(metricKey -> buildSnapshotItem(user, metricKey))
                 .toList();
         return new BodyMetricSnapshotResponse(items);
+    }
+
+    @Transactional(readOnly = true)
+    public BodyMetricHistoryResponse getHistory(
+            Long userId,
+            BodyMetricTrendMetricKey metricKey,
+            LocalDate cursorDate,
+            Long cursorId,
+            Integer pageSize
+    ) {
+        UserProfile user = getUser(userId);
+        if (metricKey == BodyMetricTrendMetricKey.BMI && !hasValidHeight(user.getHeight())) {
+            return new BodyMetricHistoryResponse(
+                    metricKey,
+                    metricKey.unitLabel(),
+                    List.of(),
+                    false,
+                    null,
+                    null
+            );
+        }
+        if ((cursorDate == null) != (cursorId == null)) {
+            throw new IllegalArgumentException("cursorDate and cursorId must be provided together");
+        }
+
+        int resolvedPageSize = resolvePageSize(pageSize);
+        BodyMetricType sourceMetricType = resolveSourceMetricType(metricKey);
+        List<BodyMetricRecord> queryResult = bodyMetricRecordRepository.findByMetricTypeWithCursor(
+                user.getId(),
+                sourceMetricType,
+                cursorDate,
+                cursorId,
+                resolvedPageSize + 1
+        );
+        boolean hasMore = queryResult.size() > resolvedPageSize;
+        List<BodyMetricRecord> pageRecords = hasMore
+                ? queryResult.subList(0, resolvedPageSize)
+                : queryResult;
+
+        LocalDate nextCursorDate = null;
+        Long nextCursorId = null;
+        if (hasMore && !pageRecords.isEmpty()) {
+            BodyMetricRecord oldestInPage = pageRecords.get(pageRecords.size() - 1);
+            nextCursorDate = oldestInPage.getRecordDate();
+            nextCursorId = oldestInPage.getId();
+        }
+
+        return new BodyMetricHistoryResponse(
+                metricKey,
+                metricKey.unitLabel(),
+                toHistoryRecords(metricKey, user, pageRecords),
+                hasMore,
+                nextCursorDate,
+                nextCursorId
+        );
     }
 
     @Transactional(readOnly = true)
@@ -184,6 +241,41 @@ public class BodyMetricRecordService {
                 record.getRecordDate(),
                 record.getCreatedAt()
         );
+    }
+
+    private List<BodyMetricHistoryRecordResponse> toHistoryRecords(
+            BodyMetricTrendMetricKey metricKey,
+            UserProfile user,
+            List<BodyMetricRecord> records
+    ) {
+        if (metricKey == BodyMetricTrendMetricKey.BMI) {
+            return records.stream()
+                    .map(record -> {
+                        BigDecimal bmi = calculateBmi(record.getMetricValue(), user.getHeight());
+                        if (bmi == null) {
+                            return null;
+                        }
+                        return new BodyMetricHistoryRecordResponse(
+                                record.getId(),
+                                record.getRecordDate(),
+                                record.getCreatedAt(),
+                                bmi,
+                                metricKey.unit()
+                        );
+                    })
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+        }
+
+        return records.stream()
+                .map(record -> new BodyMetricHistoryRecordResponse(
+                        record.getId(),
+                        record.getRecordDate(),
+                        record.getCreatedAt(),
+                        record.getMetricValue(),
+                        record.getUnit()
+                ))
+                .toList();
     }
 
     private BodyMetricSnapshotItemResponse buildSnapshotItem(UserProfile user, BodyMetricTrendMetricKey metricKey) {
