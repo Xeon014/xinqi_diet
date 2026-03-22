@@ -5,7 +5,7 @@
         <view class="section-title">开始建档</view>
         <view class="step-meta">第 {{currentStep + 1}} / {{steps.length}} 步</view>
       </view>
-      <view wx:if="{{steps[currentStep].optional}}" class="skip-link" bindtap="handleSkipOptionalStep">稍后完善</view>
+      <view wx:if="{{steps[currentStep].optional}}" class="skip-link" hover-class="skip-link-active" catchtap="handleSkipOptionalStep">稍后完善</view>
     </view>
     <view class="progress-track">
       <view class="progress-fill" style="width: {{progressPercent}}%;"></view>
@@ -102,7 +102,7 @@
             value="{{form.targetWeight}}"
             data-field="targetWeight"
             bindinput="handleInput"
-            placeholder="选填，留空可稍后设置"
+            placeholder="请输入目标体重"
           />
         </view>
 

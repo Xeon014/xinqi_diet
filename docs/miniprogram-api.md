@@ -154,7 +154,7 @@
     },
     {
       "recordType": "EXERCISE",
-      "exerciseName": "Jogging",
+      "exerciseName": "慢跑",
       "durationMinutes": 30,
       "intensityLevel": "MEDIUM",
       "totalCalories": 240

@@ -27,9 +27,12 @@
   display: flex;
   gap: 18rpx;
   justify-content: space-between;
+  position: relative;
+  z-index: 1;
 }
 
 .header-copy {
+  flex: 1;
   min-width: 0;
 }
 
@@ -40,12 +43,27 @@
 }
 
 .skip-link {
+  align-items: center;
+  background: rgba(30, 90, 79, 0.08);
+  border: 1rpx solid rgba(30, 90, 79, 0.16);
+  border-radius: 999rpx;
+  box-sizing: border-box;
   color: #1e5a4f;
+  display: inline-flex;
   flex-shrink: 0;
   font-size: 24rpx;
   font-weight: 700;
-  line-height: 1.2;
-  padding: 8rpx 0;
+  height: 64rpx;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 24rpx;
+  position: relative;
+  z-index: 2;
+}
+
+
+.skip-link-active {
+  opacity: 0.82;
 }
 
 .progress-track {
