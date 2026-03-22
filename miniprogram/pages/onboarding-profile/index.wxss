@@ -13,7 +13,7 @@
 }
 
 .header-panel::after {
-  background: linear-gradient(90deg, rgba(30, 90, 79, 0.26), rgba(185, 94, 58, 0.08));
+  background: linear-gradient(90deg, rgba(107, 144, 132, 0.24), rgba(196, 167, 140, 0.1));
   content: "";
   height: 6rpx;
   left: 24rpx;
@@ -36,7 +36,7 @@
 }
 
 .step-meta {
-  color: #786d61;
+  color: #7d7c74;
   font-size: 23rpx;
   margin-top: 10rpx;
 }
@@ -50,10 +50,10 @@
 
 .skip-card {
   align-items: center;
-  background: linear-gradient(135deg, rgba(30, 90, 79, 0.09) 0%, rgba(255, 252, 246, 0.96) 70%);
-  border: 1rpx solid rgba(30, 90, 79, 0.12);
+  background: linear-gradient(135deg, rgba(107, 144, 132, 0.1) 0%, rgba(252, 249, 243, 0.96) 70%);
+  border: 1rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 24rpx;
-  box-shadow: 0 10rpx 26rpx rgba(30, 90, 79, 0.08);
+  box-shadow: 0 10rpx 26rpx rgba(107, 144, 132, 0.08);
   display: flex;
   gap: 18rpx;
   justify-content: space-between;
@@ -68,9 +68,9 @@
 
 .skip-badge {
   align-items: center;
-  background: rgba(30, 90, 79, 0.14);
+  background: rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: inline-flex;
   font-size: 21rpx;
   font-weight: 700;
@@ -79,7 +79,7 @@
 }
 
 .skip-tip {
-  color: #665b50;
+  color: #7d7c74;
   font-size: 23rpx;
   line-height: 1.45;
   margin-top: 10rpx;
@@ -87,11 +87,11 @@
 
 .skip-link {
   align-items: center;
-  background: linear-gradient(135deg, #1e5a4f 0%, #2f7b6d 100%);
+  background: linear-gradient(135deg, #6f968b 0%, #5d8378 100%);
   border: 0;
   border-radius: 999rpx;
   box-sizing: border-box;
-  box-shadow: 0 10rpx 24rpx rgba(30, 90, 79, 0.18);
+  box-shadow: 0 10rpx 24rpx rgba(107, 144, 132, 0.16);
   color: #fffdf8;
   display: inline-flex;
   flex-shrink: 0;
@@ -112,7 +112,7 @@
 }
 
 .progress-track {
-  background: rgba(30, 90, 79, 0.1);
+  background: rgba(107, 144, 132, 0.12);
   border-radius: 999rpx;
   height: 12rpx;
   margin-top: 18rpx;
@@ -120,27 +120,27 @@
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #1e5a4f 0%, #2f7b6d 68%, rgba(185, 94, 58, 0.92) 100%);
+  background: linear-gradient(90deg, #6f968b 0%, #7d9f93 68%, rgba(196, 167, 140, 0.9) 100%);
   border-radius: 999rpx;
   height: 100%;
   transition: width 200ms ease;
 }
 
 .content-panel {
-  border-left: 8rpx solid rgba(30, 90, 79, 0.56);
+  border-left: 8rpx solid rgba(107, 144, 132, 0.42);
   min-height: 560rpx;
   padding: 28rpx 28rpx 32rpx;
 }
 
 .step-title {
-  color: #2f2a24;
+  color: #37423d;
   font-size: 40rpx;
   font-weight: 800;
   letter-spacing: 1rpx;
 }
 
 .step-desc {
-  color: #6f6559;
+  color: #7d7c74;
   font-size: 24rpx;
   line-height: 1.45;
   margin-top: 10rpx;
@@ -175,10 +175,10 @@
 .gender-chip,
 .strategy-chip {
   align-items: center;
-  background: rgba(255, 255, 255, 0.96);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
+  background: rgba(252, 250, 245, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.16);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: inline-flex;
   font-size: 28rpx;
   font-weight: 700;
@@ -194,17 +194,17 @@
 
 .gender-chip.active,
 .strategy-chip.active {
-  background: rgba(30, 90, 79, 0.15);
-  border-color: rgba(30, 90, 79, 0.3);
-  box-shadow: inset 0 0 0 1rpx rgba(30, 90, 79, 0.08);
+  background: rgba(107, 144, 132, 0.15);
+  border-color: rgba(107, 144, 132, 0.26);
+  box-shadow: inset 0 0 0 1rpx rgba(107, 144, 132, 0.08);
 }
 
 .field-picker {
   align-items: center;
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  background: rgba(252, 250, 245, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 24rpx;
-  color: #2f2a24;
+  color: #37423d;
   display: flex;
   font-size: 30rpx;
   min-height: 96rpx;
@@ -221,7 +221,7 @@
 }
 
 .formula-tip {
-  color: #6b6257;
+  color: #7d7c74;
   font-size: 23rpx;
   line-height: 1.5;
   margin-top: 14rpx;
@@ -230,10 +230,10 @@
 
 .recommend-btn {
   align-items: center;
-  background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(30, 90, 79, 0.08) 100%);
-  border: 2rpx solid rgba(30, 90, 79, 0.24);
+  background: linear-gradient(135deg, rgba(107, 144, 132, 0.12) 0%, rgba(107, 144, 132, 0.08) 100%);
+  border: 2rpx solid rgba(107, 144, 132, 0.22);
   border-radius: 18rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 28rpx;
   font-weight: 700;
@@ -248,8 +248,8 @@
 }
 
 .goal-preview-card {
-  background: linear-gradient(138deg, rgba(30, 90, 79, 0.12) 0%, rgba(255, 253, 248, 0.98) 76%);
-  border: 2rpx solid rgba(30, 90, 79, 0.16);
+  background: linear-gradient(138deg, rgba(107, 144, 132, 0.12) 0%, rgba(252, 249, 243, 0.98) 76%);
+  border: 2rpx solid rgba(107, 144, 132, 0.16);
   border-radius: 26rpx;
   margin-top: 24rpx;
   padding: 24rpx;
@@ -263,34 +263,34 @@
 }
 
 .goal-preview-title {
-  color: #2f2a24;
+  color: #37423d;
   font-size: 28rpx;
   font-weight: 700;
 }
 
 .preview-pill {
-  background: rgba(30, 90, 79, 0.14);
+  background: rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 22rpx;
   font-weight: 700;
   padding: 10rpx 18rpx;
 }
 
 .preview-pill.danger {
-  background: rgba(185, 94, 58, 0.14);
-  color: #b95e3a;
+  background: rgba(187, 134, 108, 0.14);
+  color: #bb866c;
 }
 
 .goal-preview-main {
-  color: #183f38;
+  color: #37423d;
   font-size: 40rpx;
   font-weight: 800;
   margin-top: 18rpx;
 }
 
 .goal-preview-meta {
-  color: #5d5146;
+  color: #7d7c74;
   font-size: 24rpx;
   margin-top: 10rpx;
 }
@@ -298,9 +298,9 @@
 .goal-preview-tip,
 .goal-preview-warning,
 .goal-preview-loading {
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(252, 250, 245, 0.84);
   border-radius: 18rpx;
-  color: #2f2a24;
+  color: #37423d;
   font-size: 24rpx;
   line-height: 1.6;
   margin-top: 16rpx;
@@ -308,8 +308,8 @@
 }
 
 .goal-preview-warning {
-  background: rgba(185, 94, 58, 0.12);
-  color: #8c4327;
+  background: rgba(187, 134, 108, 0.12);
+  color: #9a6a54;
 }
 
 .action-dock {

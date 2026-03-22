@@ -12,9 +12,10 @@
   </view>
 
   <view class="hero panel">
-    <view class="hero-strip"></view>
     <view class="hero-head">
-      <view class="hero-title">今日净热量</view>
+      <view>
+        <view class="hero-title">今日净热量</view>
+      </view>
     </view>
 
     <view class="hero-main">
@@ -64,33 +65,35 @@
           <view class="group-accent"></view>
           <view class="group-title">{{group.label}}</view>
         </view>
-        <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
-          <view
-            class="group-action-btn group-action-nutrition"
-            data-meal-type="{{group.mealType}}"
-            bindtap="handleOpenMealNutrition"
-          >
-            <view class="nutrition-icon">
-              <view class="nutrition-bar nutrition-bar-1"></view>
-              <view class="nutrition-bar nutrition-bar-2"></view>
-              <view class="nutrition-bar nutrition-bar-3"></view>
+        <view class="group-side">
+          <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
+            <view
+              class="group-action-btn group-action-nutrition"
+              data-meal-type="{{group.mealType}}"
+              bindtap="handleOpenMealNutrition"
+            >
+              <view class="nutrition-icon">
+                <view class="nutrition-bar nutrition-bar-1"></view>
+                <view class="nutrition-bar nutrition-bar-2"></view>
+                <view class="nutrition-bar nutrition-bar-3"></view>
+              </view>
+            </view>
+            <view
+              class="group-action-btn group-action-add"
+              data-meal-type="{{group.mealType}}"
+              bindtap="handleQuickAddMeal"
+            >
+              +
             </view>
           </view>
-          <view
-            class="group-action-btn group-action-add"
-            data-meal-type="{{group.mealType}}"
-            bindtap="handleQuickAddMeal"
-          >
-            +
-          </view>
-        </view>
-        <view wx:else class="group-actions">
-          <view
-            class="group-action-btn group-action-exercise"
-            bindtap="handleQuickAddExercise"
-          >
-            <view class="group-exercise-icon">
-              <view class="group-exercise-stroke"></view>
+          <view wx:else class="group-actions">
+            <view
+              class="group-action-btn group-action-exercise"
+              bindtap="handleQuickAddExercise"
+            >
+              <view class="group-exercise-icon">
+                <view class="group-exercise-stroke"></view>
+              </view>
             </view>
           </view>
         </view>

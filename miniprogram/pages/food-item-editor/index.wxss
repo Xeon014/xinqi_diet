@@ -4,7 +4,7 @@
 }
 
 .overlay {
-  background: rgba(38, 29, 22, 0.36);
+  background: rgba(54, 66, 61, 0.22);
   inset: 0;
   position: fixed;
 }
@@ -29,22 +29,22 @@
 }
 
 .sheet-title {
-  color: #2f2a24;
+  color: #37423d;
   font-size: 30rpx;
   font-weight: 700;
 }
 
 .sheet-subtitle {
-  color: #75695d;
+  color: #7d7c74;
   font-size: 22rpx;
   margin-top: 8rpx;
 }
 
 .sheet-close {
   align-items: center;
-  background: rgba(70, 57, 47, 0.08);
+  background: rgba(107, 144, 132, 0.1);
   border-radius: 999rpx;
-  color: #6f6255;
+  color: #6d7f78;
   display: flex;
   font-size: 26rpx;
   font-weight: 700;
@@ -77,13 +77,13 @@
 }
 
 .food-name {
-  color: #2f2a24;
+  color: #37423d;
   font-size: 36rpx;
   font-weight: 700;
 }
 
 .food-meta {
-  color: #75695d;
+  color: #7d7c74;
   font-size: 24rpx;
   margin-top: 10rpx;
 }
@@ -98,8 +98,8 @@
 }
 
 .quantity-input {
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.14);
+  background: rgba(252, 250, 245, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.14);
   border-radius: 18rpx;
   font-size: 30rpx;
   height: 84rpx;
@@ -109,7 +109,7 @@
 }
 
 .quantity-unit {
-  color: #6f6255;
+  color: #7d7c74;
   font-size: 25rpx;
   margin-left: 12rpx;
 }
@@ -122,25 +122,25 @@
 }
 
 .nutrition-item {
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(252, 250, 245, 0.84);
   border-radius: 16rpx;
   padding: 12rpx;
 }
 
 .nutrition-label {
-  color: #74685c;
+  color: #7d7c74;
   font-size: 22rpx;
 }
 
 .nutrition-value {
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 26rpx;
   font-weight: 700;
   margin-top: 8rpx;
 }
 
 .delete-row {
-  color: #b95e3a;
+  color: #bb866c;
   font-size: 25rpx;
   font-weight: 600;
   margin-top: 20rpx;
@@ -166,15 +166,15 @@
 }
 
 .action-btn.primary {
-  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
-  border: 1rpx solid rgba(19, 62, 54, 0.22);
-  color: #fffef8;
+  background: linear-gradient(128deg, #6f968b 0%, #5d8378 100%);
+  border: 1rpx solid rgba(93, 131, 120, 0.24);
+  color: #fffdfa;
 }
 
 .action-btn.secondary {
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
-  color: #1e5a4f;
+  background: rgba(107, 144, 132, 0.12);
+  border: 1rpx solid rgba(107, 144, 132, 0.2);
+  color: #5d8378;
 }
 
 .action-btn.disabled {

@@ -17,19 +17,19 @@
               ],
     "window":  {
                    "navigationBarTitleText":  "心栖轻食",
-                   "navigationBarBackgroundColor":  "#f3efe7",
+                   "navigationBarBackgroundColor":  "#f2efe9",
                    "navigationBarTextStyle":  "black",
-                   "backgroundColor":  "#f3efe7",
+                   "backgroundColor":  "#f2efe9",
                    "backgroundTextStyle":  "light"
                },
     "style":  "v2",
     "lazyCodeLoading":  "requiredComponents",
     "sitemapLocation":  "sitemap.json",
     "tabBar":  {
-                   "color":  "#75695d",
-                   "selectedColor":  "#1e5a4f",
-                   "backgroundColor":  "#fffdf8",
-                   "borderStyle":  "black",
+                   "color":  "#7b746c",
+                   "selectedColor":  "#486c63",
+                   "backgroundColor":  "#faf7f1",
+                   "borderStyle":  "white",
                    "list":  [
                                 {
                                     "pagePath":  "pages/home/index",

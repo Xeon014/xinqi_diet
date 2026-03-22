@@ -14,17 +14,17 @@
 }
 
 .history-title {
-  color: #2f2a24;
+  color: #37423d;
   font-size: 32rpx;
   font-weight: 700;
 }
 
 .history-add-btn {
   align-items: center;
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.12);
+  border: 1rpx solid rgba(107, 144, 132, 0.2);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 34rpx;
   font-weight: 600;
@@ -60,12 +60,12 @@
 }
 
 .history-item-date {
-  color: #6f6458;
+  color: #7d7c74;
   font-size: 24rpx;
 }
 
 .history-item-time {
-  color: #a08f7f;
+  color: #9b958a;
   font-size: 22rpx;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .history-item-value {
-  color: #2f2a24;
+  color: #37423d;
   font-family: "DIN Alternate", "PingFang SC", sans-serif;
   font-size: 36rpx;
   font-weight: 800;
@@ -84,7 +84,7 @@
 }
 
 .history-item-unit {
-  color: #7d7062;
+  color: #7d7c74;
   font-size: 22rpx;
 }
 
@@ -95,10 +95,10 @@
 }
 
 .history-more-btn {
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.12);
+  border: 1rpx solid rgba(107, 144, 132, 0.2);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 22rpx;
   font-weight: 600;
   line-height: 1;
@@ -110,7 +110,7 @@
 }
 
 .history-more-end {
-  color: #908273;
+  color: #9b958a;
   font-size: 22rpx;
   padding: 14rpx 8rpx 8rpx;
 }
@@ -126,16 +126,16 @@
 }
 
 .history-empty-text {
-  color: #8f8373;
+  color: #9b958a;
   font-size: 24rpx;
 }
 
 .history-empty-btn {
   align-items: center;
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.12);
+  border: 1rpx solid rgba(107, 144, 132, 0.2);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 24rpx;
   font-weight: 600;

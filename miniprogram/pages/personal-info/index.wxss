@@ -5,14 +5,14 @@
 }
 
 .personal-panel {
-  border-right: 8rpx solid rgba(30, 90, 79, 0.64);
+  border-right: 8rpx solid rgba(107, 144, 132, 0.42);
   padding: 28rpx;
 }
 
 .age-chip {
-  background: rgba(30, 90, 79, 0.12);
+  background: rgba(107, 144, 132, 0.12);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: inline-flex;
   font-size: 22rpx;
   font-weight: 700;
@@ -26,10 +26,10 @@
 
 .field-picker {
   align-items: center;
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  background: rgba(252, 250, 245, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 22rpx;
-  color: #2f2a24;
+  color: #37423d;
   display: flex;
   font-size: 28rpx;
   min-height: 88rpx;

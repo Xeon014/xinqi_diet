@@ -1,19 +1,23 @@
 .empty {
   align-items: center;
-  border: 1rpx dashed rgba(70, 57, 47, 0.22);
+  background:
+    linear-gradient(180deg, rgba(252, 249, 244, 0.9) 0%, rgba(247, 242, 235, 0.84) 100%),
+    #fcfaf5;
+  border: 1rpx dashed rgba(107, 144, 132, 0.18);
+  border-radius: 28rpx;
   display: flex;
   flex-direction: column;
-  padding: 48rpx 28rpx;
+  padding: 52rpx 28rpx;
 }
 
 .empty-title {
-  color: #3b3128;
+  color: #3b4842;
   font-size: 30rpx;
   font-weight: 700;
 }
 
 .empty-description {
-  color: #7d7062;
+  color: #7d7c74;
   font-size: 24rpx;
   line-height: 1.6;
   margin-top: 10rpx;

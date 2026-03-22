@@ -20,8 +20,8 @@
 }
 
 .diary-textarea {
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.12);
+  background: rgba(253, 251, 247, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 20rpx;
   font-size: 28rpx;
   height: 260rpx;
@@ -32,7 +32,7 @@
 }
 
 .word-count {
-  color: #8a7f74;
+  color: #8a877f;
   font-size: 22rpx;
   margin-top: 12rpx;
   text-align: right;
@@ -49,7 +49,7 @@
 }
 
 .image-count {
-  color: #7a6e61;
+  color: #78776f;
   font-size: 22rpx;
 }
 
@@ -69,7 +69,7 @@
 }
 
 .image-item {
-  border: 1rpx solid rgba(70, 57, 47, 0.14);
+  border: 1rpx solid rgba(107, 144, 132, 0.12);
   position: relative;
 }
 
@@ -79,7 +79,7 @@
 }
 
 .remove-image {
-  background: rgba(47, 42, 36, 0.7);
+  background: rgba(50, 56, 53, 0.72);
   border-radius: 999rpx;
   color: #fff;
   font-size: 20rpx;
@@ -91,9 +91,9 @@
 
 .add-image {
   align-items: center;
-  background: rgba(30, 90, 79, 0.08);
-  border: 2rpx dashed rgba(30, 90, 79, 0.22);
-  color: #1e5a4f;
+  background: rgba(107, 144, 132, 0.08);
+  border: 2rpx dashed rgba(107, 144, 132, 0.2);
+  color: #5d8378;
   display: flex;
   font-size: 24rpx;
   font-weight: 600;
@@ -102,10 +102,10 @@
 
 .danger-button {
   align-items: center;
-  background: rgba(185, 94, 58, 0.12);
-  border: 1rpx solid rgba(185, 94, 58, 0.24);
+  background: rgba(176, 114, 93, 0.12);
+  border: 1rpx solid rgba(176, 114, 93, 0.22);
   border-radius: 999rpx;
-  color: #b95e3a;
+  color: #b0725d;
   display: flex;
   font-size: 26rpx;
   font-weight: 600;

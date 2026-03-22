@@ -6,14 +6,15 @@
 
 .search-bar {
   align-items: center;
-  border: 1rpx solid rgba(70, 57, 47, 0.14);
+  border: 1rpx solid rgba(107, 144, 132, 0.1);
   display: flex;
   padding: 18rpx;
 }
 
 .search-input {
-  background: #fffef9;
+  background: rgba(253, 251, 247, 0.96);
   border-radius: 999rpx;
+  color: #323b38;
   flex: 1;
   font-size: 28rpx;
   height: 82rpx;
@@ -36,7 +37,7 @@
 
 .category-item {
   border-radius: 20rpx;
-  color: #675b4f;
+  color: #6f6b64;
   font-size: 24rpx;
   font-weight: 600;
   padding: 18rpx 12rpx;
@@ -44,13 +45,13 @@
 }
 
 .category-item.active {
-  background: rgba(30, 90, 79, 0.14);
-  color: #1e5a4f;
+  background: rgba(107, 144, 132, 0.1);
+  color: #5d8378;
   font-weight: 700;
 }
 
 .category-divider {
-  border-top: 1rpx solid rgba(70, 57, 47, 0.18);
+  border-top: 1rpx solid rgba(107, 144, 132, 0.12);
   margin: 8rpx 10rpx;
 }
 
@@ -76,7 +77,7 @@
 }
 
 .section-title-small {
-  color: #2f2a24;
+  color: #394541;
   font-size: 27rpx;
   font-weight: 700;
 }
@@ -88,10 +89,10 @@
 }
 
 .section-title-tag {
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 24rpx;
   font-weight: 700;
   line-height: 1;
@@ -100,10 +101,10 @@
 
 .section-add-btn {
   align-items: center;
-  background: rgba(30, 90, 79, 0.08);
-  border: 1rpx solid rgba(30, 90, 79, 0.2);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 22rpx;
   font-weight: 700;
@@ -114,7 +115,7 @@
 }
 
 .clear-btn {
-  color: #7d7062;
+  color: #7b746c;
   font-size: 23rpx;
 }
 
@@ -126,9 +127,9 @@
 }
 
 .history-chip {
-  background: rgba(93, 76, 58, 0.08);
+  background: rgba(107, 144, 132, 0.08);
   border-radius: 999rpx;
-  color: #5d4c3a;
+  color: #5b665f;
   font-size: 22rpx;
   font-weight: 600;
   max-width: 100%;
@@ -149,7 +150,7 @@
 }
 
 .exercise-item {
-  border-bottom: 1rpx solid rgba(70, 57, 47, 0.1);
+  border-bottom: 1rpx solid rgba(107, 144, 132, 0.08);
   padding: 18rpx 0;
 }
 
@@ -165,25 +166,25 @@
 }
 
 .exercise-name {
-  color: #2f2a24;
+  color: #394541;
   font-size: 30rpx;
   font-weight: 700;
 }
 
 .exercise-met {
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 24rpx;
   font-weight: 700;
 }
 
 .exercise-meta {
-  color: #75695d;
+  color: #78776f;
   font-size: 22rpx;
   margin-top: 8rpx;
 }
 
 .editor-overlay {
-  background: rgba(38, 29, 22, 0.36);
+  background: rgba(40, 43, 42, 0.3);
   inset: 0;
   position: fixed;
   z-index: 20;
@@ -209,7 +210,7 @@
 }
 
 .editor-title {
-  color: #2f2a24;
+  color: #394541;
   font-size: 30rpx;
   font-weight: 700;
 }
@@ -229,7 +230,7 @@
 }
 
 .icon-action {
-  color: #7d7062;
+  color: #7b746c;
   font-size: 28rpx;
   font-weight: 700;
   height: 60rpx;
@@ -237,8 +238,8 @@
 }
 
 .editor-delete {
-  background: rgba(185, 94, 58, 0.12);
-  color: #b95e3a;
+  background: rgba(176, 114, 93, 0.12);
+  color: #b0725d;
   font-size: 22rpx;
   font-weight: 700;
   height: 54rpx;
@@ -252,7 +253,7 @@
 }
 
 .editor-exercise-name {
-  color: #2f2a24;
+  color: #394541;
   font-size: 36rpx;
   font-weight: 700;
   margin-top: 18rpx;
@@ -266,10 +267,10 @@
 
 .editor-top-chip {
   align-items: center;
-  background: rgba(93, 76, 58, 0.08);
-  border: 1rpx solid rgba(70, 57, 47, 0.1);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.1);
   border-radius: 999rpx;
-  color: #5d4c3a;
+  color: #5b665f;
   display: inline-flex;
   font-size: 22rpx;
   font-weight: 600;
@@ -280,7 +281,7 @@
 }
 
 .editor-exercise-meta {
-  color: #75695d;
+  color: #78776f;
   font-size: 24rpx;
   margin-top: 10rpx;
 }
@@ -295,8 +296,8 @@
 }
 
 .duration-input {
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.14);
+  background: rgba(253, 251, 247, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.12);
   border-radius: 18rpx;
   font-size: 30rpx;
   height: 84rpx;
@@ -306,17 +307,17 @@
 }
 
 .duration-unit {
-  color: #6f6255;
+  color: #78776f;
   font-size: 25rpx;
   margin-left: 12rpx;
 }
 
 .intensity-chip {
   align-items: center;
-  background: rgba(30, 90, 79, 0.08);
-  border: 1rpx solid rgba(30, 90, 79, 0.2);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: inline-flex;
   font-size: 24rpx;
   font-weight: 700;
@@ -325,19 +326,19 @@
 }
 
 .editor-summary-card {
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(252, 249, 244, 0.82);
   border-radius: 18rpx;
   margin-top: 20rpx;
   padding: 16rpx;
 }
 
 .summary-label {
-  color: #74685c;
+  color: #78776f;
   font-size: 22rpx;
 }
 
 .summary-value {
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 30rpx;
   font-weight: 700;
   margin-top: 10rpx;
@@ -349,8 +350,8 @@
 
 .editor-submit-btn {
   align-items: center;
-  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
-  border: 1rpx solid rgba(19, 62, 54, 0.22);
+  background: linear-gradient(135deg, #6f968b 0%, #5d8378 100%);
+  border: 1rpx solid rgba(107, 144, 132, 0.2);
   border-radius: 999rpx;
   color: #fffef8;
   display: flex;

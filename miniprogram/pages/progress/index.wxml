@@ -16,7 +16,9 @@
 
   <view class="panel chart-panel">
     <view class="chart-head">
-      <view class="chart-latest">{{currentLatestText}}</view>
+      <view>
+        <view class="chart-latest">{{currentLatestText}}</view>
+      </view>
       <view class="chart-add-btn {{currentMetricCanCreate ? '' : 'disabled'}}" bindtap="handleOpenCurrentMetricEditor">+</view>
     </view>
 
