@@ -145,6 +145,8 @@ const USE_CLOUD_CONTAINER = RUNTIME_CONFIG.useCloudContainer;
 const AUTH_TOKEN_KEY = "xinqi_access_token";
 const USER_ID_KEY = "xinqi_user_id";
 const CLIENT_USER_KEY = "xinqi_client_user_key";
+const STORAGE_SCHEMA_VERSION_KEY = "xinqi_storage_schema_version";
+const STORAGE_SCHEMA_VERSION = 2;
 const MEAL_TYPE_LABELS = {
   BREAKFAST: "早餐",
   MORNING_SNACK: "上午加餐",
@@ -198,6 +200,8 @@ module.exports = {
   MEAL_TYPE_OPTIONS,
   QUANTITY_UNIT_LABELS,
   RUNTIME_ENV_VERSION,
+  STORAGE_SCHEMA_VERSION,
+  STORAGE_SCHEMA_VERSION_KEY,
   USE_CLOUD_CONTAINER,
   USER_ID_KEY,
 };
