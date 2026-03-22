@@ -238,12 +238,10 @@
 }
 
 .editor-delete {
-  background: rgba(176, 114, 93, 0.12);
-  color: #b0725d;
-  font-size: 22rpx;
-  font-weight: 700;
-  height: 54rpx;
-  padding: 0 18rpx;
+  background: #d59889;
+  box-shadow: 0 8rpx 14rpx rgba(213, 152, 137, 0.18);
+  height: 60rpx;
+  width: 60rpx;
 }
 
 .icon-action.disabled,

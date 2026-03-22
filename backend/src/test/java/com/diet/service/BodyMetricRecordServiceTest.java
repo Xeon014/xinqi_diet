@@ -18,6 +18,7 @@ import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
+import com.diet.dto.metric.BodyMetricDeleteResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
 import com.diet.dto.metric.BodyMetricSnapshotResponse;
 import com.diet.dto.metric.BodyMetricTrendMetricKey;
@@ -379,6 +380,39 @@ class BodyMetricRecordServiceTest {
         ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("cursorDate and cursorId must be provided together");
+    }
+
+    @Test
+    void shouldDeleteOwnedBodyMetricRecord() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        BodyMetricRecord existing = buildRecord(21L, BodyMetricType.WAIST_CIRCUMFERENCE, new BigDecimal("75.20"), LocalDate.of(2026, 3, 15));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findByIdAndUserId(21L, 1L)).thenReturn(Optional.of(existing));
+
+        BodyMetricDeleteResponse response = bodyMetricRecordService.delete(1L, 21L);
+
+        assertThat(response.deleted()).isTrue();
+        verify(bodyMetricRecordRepository).deleteById(21L);
+        verify(userProfileRepository, never()).update(any(UserProfile.class));
+    }
+
+    @Test
+    void shouldSeedInitialWeightRecordOnlyWhenHistoryMissing() {
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT)).thenReturn(Optional.empty());
+
+        bodyMetricRecordService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
+
+        verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
+    }
+
+    @Test
+    void shouldSkipSeedInitialWeightRecordWhenWeightHistoryExists() {
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(11L, BodyMetricType.WEIGHT, new BigDecimal("61.00"), LocalDate.of(2026, 3, 14))));
+
+        bodyMetricRecordService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
+
+        verify(bodyMetricRecordRepository, never()).save(any(BodyMetricRecord.class));
     }
 
     private UserProfile buildUser(Long id, BigDecimal currentWeight) {

@@ -2,6 +2,7 @@ package com.diet.controller;
 
 import com.diet.auth.AuthContextService;
 import com.diet.common.ApiResponse;
+import com.diet.dto.metric.BodyMetricDeleteResponse;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
 import com.diet.dto.metric.BodyMetricSnapshotResponse;
@@ -19,7 +20,9 @@ import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,6 +62,16 @@ public class BodyMetricRecordController {
     public ApiResponse<BodyMetricSnapshotResponse> getSnapshot(HttpServletRequest httpServletRequest) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(bodyMetricRecordService.getSnapshot(userId));
+    }
+
+    @Operation(summary = "删除身体指标记录", description = "删除当前登录用户的一条身体指标记录")
+    @DeleteMapping("/{id}")
+    public ApiResponse<BodyMetricDeleteResponse> delete(
+            @Parameter(description = "记录 ID") @PathVariable Long id,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(bodyMetricRecordService.delete(userId, id));
     }
 
     @Operation(summary = "查询身体指标历史明细", description = "按指标查询历史明细列表，支持游标分页，同一天可返回多条记录")

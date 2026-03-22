@@ -32,4 +32,8 @@ public interface BodyMetricRecordRepository {
             Long cursorId,
             int limit
     );
+
+    Optional<BodyMetricRecord> findByIdAndUserId(Long id, Long userId);
+
+    void deleteById(Long id);
 }

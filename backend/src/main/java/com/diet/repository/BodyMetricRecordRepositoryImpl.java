@@ -63,4 +63,14 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     ) {
         return bodyMetricRecordMapper.findByMetricTypeWithCursor(userId, metricType, cursorDate, cursorId, limit);
     }
+
+    @Override
+    public Optional<BodyMetricRecord> findByIdAndUserId(Long id, Long userId) {
+        return Optional.ofNullable(bodyMetricRecordMapper.findByIdAndUserId(id, userId));
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        bodyMetricRecordMapper.deleteById(id);
+    }
 }

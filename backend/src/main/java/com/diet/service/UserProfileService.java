@@ -8,6 +8,10 @@ import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
+import com.diet.domain.metric.BodyMetricRecord;
+import com.diet.domain.metric.BodyMetricRecordRepository;
+import com.diet.domain.metric.BodyMetricType;
+import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
@@ -105,13 +109,16 @@ public class UserProfileService {
 
     private final GoalPlanningService goalPlanningService;
 
+    private final BodyMetricRecordRepository bodyMetricRecordRepository;
+
     public UserProfileService(
             UserProfileRepository userProfileRepository,
             MealRecordRepository mealRecordRepository,
             FoodRepository foodRepository,
             ExerciseRecordRepository exerciseRecordRepository,
             ExerciseRepository exerciseRepository,
-            GoalPlanningService goalPlanningService
+            GoalPlanningService goalPlanningService,
+            BodyMetricRecordRepository bodyMetricRecordRepository
     ) {
         this.userProfileRepository = userProfileRepository;
         this.mealRecordRepository = mealRecordRepository;
@@ -119,6 +126,7 @@ public class UserProfileService {
         this.exerciseRecordRepository = exerciseRecordRepository;
         this.exerciseRepository = exerciseRepository;
         this.goalPlanningService = goalPlanningService;
+        this.bodyMetricRecordRepository = bodyMetricRecordRepository;
     }
 
     public UserResponse create(CreateUserRequest request) {
@@ -286,6 +294,7 @@ public class UserProfileService {
                 nextGoalCalorieStrategy
         );
         userProfileRepository.update(user);
+        seedInitialWeightRecordIfNeeded(user, request, nextCurrentWeight);
         return toResponse(user);
     }
 
@@ -933,6 +942,22 @@ public class UserProfileService {
                     false
             );
         }
+    }
+
+    private void seedInitialWeightRecordIfNeeded(UserProfile user, UpdateUserRequest request, BigDecimal nextCurrentWeight) {
+        if (!Boolean.TRUE.equals(request.seedInitialWeightRecord()) || nextCurrentWeight == null) {
+            return;
+        }
+        if (bodyMetricRecordRepository.findLatestByMetricType(user.getId(), BodyMetricType.WEIGHT).isPresent()) {
+            return;
+        }
+        bodyMetricRecordRepository.save(new BodyMetricRecord(
+                user.getId(),
+                BodyMetricType.WEIGHT,
+                nextCurrentWeight,
+                BodyMetricUnit.KG,
+                LocalDate.now()
+        ));
     }
 
     private GoalPlanningService.GoalPlanningProfile buildGoalPlanningProfile(UserProfile user, UpdateUserRequest request) {

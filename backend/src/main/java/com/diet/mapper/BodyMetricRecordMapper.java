@@ -38,4 +38,9 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
             @Param("cursorId") Long cursorId,
             @Param("limit") int limit
     );
+
+    BodyMetricRecord findByIdAndUserId(
+            @Param("id") Long id,
+            @Param("userId") Long userId
+    );
 }

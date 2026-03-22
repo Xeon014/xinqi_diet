@@ -99,4 +99,20 @@
         LIMIT #{limit}
     </select>
 
+    <select id="findByIdAndUserId" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE id = #{id}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
 </mapper>

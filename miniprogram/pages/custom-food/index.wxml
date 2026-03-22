@@ -4,18 +4,45 @@
     <view class="action-btn" bindtap="handleStartCreate">新建</view>
   </view>
 
-  <view wx:if="{{displayedFoods.length}}" class="panel list-panel">
+  <view wx:if="{{displayedFoods.length}}" class="panel list-panel" bindtap="handleListBackgroundTap">
     <view class="list-head">
       <view class="list-count">共 {{displayedFoods.length}} 项</view>
     </view>
-    <view wx:for="{{displayedFoods}}" wx:key="id" class="item-row">
-      <view class="item-main">
-        <view class="item-name">{{item.name}}</view>
-        <view class="item-meta">{{item.categoryLabel}} · {{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
+    <view
+      wx:for="{{displayedFoods}}"
+      wx:key="id"
+      class="swipe-cell"
+      data-id="{{item.id}}"
+      bindtouchstart="handleFoodTouchStart"
+      bindtouchmove="handleFoodTouchMove"
+      bindtouchend="handleFoodTouchEnd"
+      bindtouchcancel="handleFoodTouchEnd"
+    >
+      <view class="swipe-action-track">
+        <view class="swipe-action-shell">
+          <view class="danger-icon-btn swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDelete">
+            <view class="trash-icon">
+              <view class="trash-icon-handle"></view>
+              <view class="trash-icon-lid"></view>
+              <view class="trash-icon-body">
+                <view class="trash-icon-line left"></view>
+                <view class="trash-icon-line center"></view>
+                <view class="trash-icon-line right"></view>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
-      <view class="item-actions">
-        <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
-        <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+      <view class="swipe-content" style="{{item.swipeContentStyle}}" catchtap="handleSwipeContentTap">
+        <view class="item-row">
+          <view class="item-main">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-meta">{{item.categoryLabel}} · {{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
+          </view>
+          <view class="item-actions">
+            <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -27,7 +54,17 @@
     <view class="sheet-head">
       <view class="sheet-title">{{editMode === 'edit' ? '编辑自定义食物' : '新建自定义食物'}}</view>
       <view class="sheet-actions">
-        <view wx:if="{{editMode === 'edit'}}" class="mini-action danger" data-id="{{editForm.id}}" bindtap="handleDelete">删除</view>
+        <view wx:if="{{editMode === 'edit'}}" class="danger-icon-btn" data-id="{{editForm.id}}" bindtap="handleDelete">
+          <view class="trash-icon">
+            <view class="trash-icon-handle"></view>
+            <view class="trash-icon-lid"></view>
+            <view class="trash-icon-body">
+              <view class="trash-icon-line left"></view>
+              <view class="trash-icon-line center"></view>
+              <view class="trash-icon-line right"></view>
+            </view>
+          </view>
+        </view>
         <view class="sheet-close" bindtap="handleCancelEdit">✕</view>
       </view>
     </view>

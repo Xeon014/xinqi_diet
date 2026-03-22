@@ -1,8 +1,11 @@
-const { createBodyMetricRecord, getBodyMetricHistory } = require("../../services/body-metric");
+const { createBodyMetricRecord, deleteBodyMetricRecord, getBodyMetricHistory } = require("../../services/body-metric");
 const { getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const ALL_PAGE_SIZE = 120;
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 
 const METRIC_OPTIONS = [
   { key: "WEIGHT", label: "体重", unit: "kg", saveUnit: "KG", canCreate: true },
@@ -53,6 +56,8 @@ function normalizeRecords(records, fallbackUnit) {
     .map((item) => ({
       ...item,
       valueLabel: toOneDecimal(item.value),
+      offsetX: 0,
+      contentStyle: "transform: translateX(0);",
     }));
 }
 
@@ -69,6 +74,30 @@ function mergeHistory(existingList, incomingList) {
   return merged;
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applySwipeState(records, swipedRecordId, swipingRecordId, swipeOffsetX) {
+  return (records || []).map((item) => {
+    const isSwiping = item.id === swipingRecordId;
+    const isOpened = item.id === swipedRecordId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      offsetX,
+      contentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 Page({
   data: {
     metricKey: "WEIGHT",
@@ -80,6 +109,10 @@ Page({
     nextCursorDate: "",
     nextCursorId: null,
     records: [],
+    swipedRecordId: null,
+    swipingRecordId: null,
+    swipeOffsetX: 0,
+    deletingRecordId: null,
     editorVisible: false,
     editorLoading: false,
     editorValue: "",
@@ -113,6 +146,9 @@ Page({
       hasMore: false,
       nextCursorDate: "",
       nextCursorId: null,
+      swipedRecordId: null,
+      swipingRecordId: null,
+      swipeOffsetX: 0,
     });
 
     getBodyMetricHistory({
@@ -123,7 +159,7 @@ Page({
         const responseUnit = response && response.unit ? String(response.unit) : "";
         const list = normalizeRecords(response && response.records, responseUnit || this.data.metricUnit);
         this.setData({
-          records: list,
+          records: applySwipeState(list, null, null, 0),
           hasMore: Boolean(response && response.hasMore),
           nextCursorDate: response && response.nextCursorDate ? response.nextCursorDate : "",
           nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
@@ -155,11 +191,18 @@ Page({
       .then((response) => {
         const responseUnit = response && response.unit ? String(response.unit) : "";
         const incoming = normalizeRecords(response && response.records, responseUnit || this.data.metricUnit);
+        const merged = mergeHistory(this.data.records, incoming).map((item) => Object.assign({}, item, {
+          offsetX: 0,
+          contentStyle: "transform: translateX(0);",
+        }));
         this.setData({
-          records: mergeHistory(this.data.records, incoming),
+          records: applySwipeState(merged, null, null, 0),
           hasMore: Boolean(response && response.hasMore),
           nextCursorDate: response && response.nextCursorDate ? response.nextCursorDate : "",
           nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
+          swipedRecordId: null,
+          swipingRecordId: null,
+          swipeOffsetX: 0,
         });
       })
       .catch((error) => {
@@ -171,6 +214,7 @@ Page({
   },
 
   handleOpenEditor() {
+    this.closeSwipeActions();
     if (!this.data.canCreate) {
       wx.showToast({ title: "该指标不支持直接记录", icon: "none" });
       return;
@@ -203,7 +247,143 @@ Page({
     });
   },
 
+  handleRecordTouchStart(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const currentOpenedId = this.data.swipedRecordId;
+    const nextOpenedId = currentOpenedId === id ? id : null;
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.swipeBaseOffsetX = this.data.swipedRecordId === id ? DELETE_ACTION_WIDTH : 0;
+    this.swipeMode = "";
+    this.setData({
+      swipingRecordId: id,
+      swipeOffsetX: this.swipeBaseOffsetX,
+      swipedRecordId: nextOpenedId,
+      records: applySwipeState(this.data.records, nextOpenedId, id, this.swipeBaseOffsetX),
+    });
+  },
+
+  handleRecordTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch || this.data.swipingRecordId !== id || !Number.isFinite(this.swipeStartX)) {
+      return;
+    }
+    const deltaX = this.swipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.swipeStartY || 0) - touch.clientY);
+    if (!this.swipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.swipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.swipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.swipeBaseOffsetX + deltaX);
+    this.setData({
+      swipeOffsetX: nextOffsetX,
+      records: applySwipeState(this.data.records, this.data.swipedRecordId, id, nextOffsetX),
+    });
+  },
+
+  handleRecordTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!Number.isFinite(id) || this.data.swipingRecordId !== id) {
+      return;
+    }
+    if (this.swipeMode !== "horizontal") {
+      this.swipeStartX = null;
+      this.swipeStartY = null;
+      this.swipeBaseOffsetX = 0;
+      this.swipeMode = "";
+      this.setData({
+        swipingRecordId: null,
+        swipeOffsetX: 0,
+        records: applySwipeState(this.data.records, this.data.swipedRecordId, null, 0),
+      });
+      return;
+    }
+    const shouldOpen = this.data.swipeOffsetX >= SWIPE_OPEN_THRESHOLD;
+    this.finishSwipe(id, shouldOpen);
+  },
+
+  finishSwipe(id, shouldOpen) {
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+    this.setData({
+      swipedRecordId: shouldOpen ? id : null,
+      swipingRecordId: null,
+      swipeOffsetX: 0,
+      records: applySwipeState(this.data.records, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeSwipeActions() {
+    if (this.data.swipedRecordId == null && this.data.swipingRecordId == null) {
+      return;
+    }
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+    this.setData({
+      swipedRecordId: null,
+      swipingRecordId: null,
+      swipeOffsetX: 0,
+      records: applySwipeState(this.data.records, null, null, 0),
+    });
+  },
+
+  handleItemTap() {
+    if (this.data.swipedRecordId != null) {
+      this.closeSwipeActions();
+    }
+  },
+
+  handleBackgroundTap() {
+    this.closeSwipeActions();
+  },
+
+  handleDeleteRecord(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!Number.isFinite(id) || this.data.deletingRecordId != null) {
+      return;
+    }
+
+    wx.showModal({
+      title: "删除记录",
+      content: "删除后不可恢复。",
+      confirmText: "删除",
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+        this.setData({ deletingRecordId: id });
+        deleteBodyMetricRecord(id)
+          .then(() => {
+            wx.showToast({ title: "已删除", icon: "success" });
+            this.closeSwipeActions();
+            this.loadList(false);
+          })
+          .catch((error) => {
+            wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+          })
+          .finally(() => {
+            this.setData({ deletingRecordId: null });
+          });
+      },
+    });
+  },
+
   handleSubmitEditor() {
+    this.closeSwipeActions();
     if (this.data.editorLoading) {
       return;
     }

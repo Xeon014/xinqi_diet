@@ -11,10 +11,19 @@
       <view class="sheet-close" bindtap="handleClose">✕</view>
     </view>
 
-    <picker wx:if="{{dateEditable}}" mode="date" value="{{date}}" bindchange="handleDateChange" disabled="{{loading}}">
-      <view class="sheet-date-picker">{{dateLabel}}{{date}}</view>
-    </picker>
-    <view wx:else class="sheet-date">{{dateLabel}}{{date}}</view>
+    <view class="sheet-date-row">
+      <picker
+        wx:if="{{dateEditable}}"
+        class="sheet-date-trigger"
+        mode="date"
+        value="{{date}}"
+        bindchange="handleDateChange"
+        disabled="{{loading}}"
+      >
+        <view class="sheet-date-picker">{{dateLabel}}{{date}}</view>
+      </picker>
+      <view wx:else class="sheet-date">{{dateLabel}}{{date}}</view>
+    </view>
 
     <view class="sheet-input-row">
       <input

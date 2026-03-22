@@ -3,6 +3,10 @@ const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/const
 const { FOOD_CREATION_CATEGORIES, decorateFood } = require("../../utils/food");
 const { pickErrorMessage } = require("../../utils/request");
 
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
+
 function buildEmptyForm() {
   return {
     id: null,
@@ -40,6 +44,30 @@ function normalizeFood(food) {
   };
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applySwipeState(items, swipedId, swipingId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.id) === swipingId;
+    const isOpened = Number(item.id) === swipedId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 Page({
   data: {
     categories: FOOD_CREATION_CATEGORIES,
@@ -56,6 +84,9 @@ Page({
     keyword: "",
     loading: false,
     saving: false,
+    swipedFoodId: null,
+    swipingFoodId: null,
+    swipeOffsetX: 0,
     sheetVisible: false,
     launchedFromSelector: false,
     editMode: "create",
@@ -104,7 +135,12 @@ Page({
       }
       return String(item.name || "").toLowerCase().includes(keyword);
     });
-    this.setData({ displayedFoods });
+    this.setData({
+      displayedFoods: applySwipeState(displayedFoods, null, null, 0),
+      swipedFoodId: null,
+      swipingFoodId: null,
+      swipeOffsetX: 0,
+    });
   },
 
   handleKeywordInput(event) {
@@ -114,6 +150,7 @@ Page({
   },
 
   handleStartCreate() {
+    this.closeSwipeActions();
     this.setData({
       sheetVisible: true,
       editMode: "create",
@@ -123,6 +160,7 @@ Page({
   },
 
   handleEdit(event) {
+    this.closeSwipeActions();
     const foodId = Number(event.currentTarget.dataset.id);
     const target = this.data.foods.find((item) => Number(item.id) === foodId);
     if (!target) {
@@ -164,6 +202,106 @@ Page({
   },
 
   noop() {},
+
+  handleFoodTouchStart(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const nextOpenedId = this.data.swipedFoodId === id ? id : null;
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.swipeBaseOffsetX = this.data.swipedFoodId === id ? DELETE_ACTION_WIDTH : 0;
+    this.swipeMode = "";
+    this.setData({
+      swipingFoodId: id,
+      swipeOffsetX: this.swipeBaseOffsetX,
+      swipedFoodId: nextOpenedId,
+      displayedFoods: applySwipeState(this.data.displayedFoods, nextOpenedId, id, this.swipeBaseOffsetX),
+    });
+  },
+
+  handleFoodTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch || this.data.swipingFoodId !== id || !Number.isFinite(this.swipeStartX)) {
+      return;
+    }
+    const deltaX = this.swipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.swipeStartY || 0) - touch.clientY);
+    if (!this.swipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.swipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.swipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.swipeBaseOffsetX + deltaX);
+    this.setData({
+      swipeOffsetX: nextOffsetX,
+      displayedFoods: applySwipeState(this.data.displayedFoods, this.data.swipedFoodId, id, nextOffsetX),
+    });
+  },
+
+  handleFoodTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!Number.isFinite(id) || this.data.swipingFoodId !== id) {
+      return;
+    }
+    if (this.swipeMode !== "horizontal") {
+      this.resetSwipeGesture();
+      this.setData({
+        swipingFoodId: null,
+        swipeOffsetX: 0,
+        displayedFoods: applySwipeState(this.data.displayedFoods, this.data.swipedFoodId, null, 0),
+      });
+      return;
+    }
+    this.finishSwipe(id, this.data.swipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  resetSwipeGesture() {
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+  },
+
+  finishSwipe(id, shouldOpen) {
+    this.resetSwipeGesture();
+    this.setData({
+      swipedFoodId: shouldOpen ? id : null,
+      swipingFoodId: null,
+      swipeOffsetX: 0,
+      displayedFoods: applySwipeState(this.data.displayedFoods, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeSwipeActions() {
+    if (this.data.swipedFoodId == null && this.data.swipingFoodId == null) {
+      return;
+    }
+    this.resetSwipeGesture();
+    this.setData({
+      swipedFoodId: null,
+      swipingFoodId: null,
+      swipeOffsetX: 0,
+      displayedFoods: applySwipeState(this.data.displayedFoods, null, null, 0),
+    });
+  },
+
+  handleSwipeContentTap() {
+    if (this.data.swipedFoodId != null) {
+      this.closeSwipeActions();
+    }
+  },
+
+  handleListBackgroundTap() {
+    this.closeSwipeActions();
+  },
 
   closeSheet() {
     this.setData({
@@ -216,6 +354,7 @@ Page({
   },
 
   handleSubmit() {
+    this.closeSwipeActions();
     if (this.data.saving) {
       return;
     }
@@ -255,6 +394,7 @@ Page({
   },
 
   handleDelete(event) {
+    this.closeSwipeActions();
     const foodId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
     const target = this.data.foods.find((item) => Number(item.id) === foodId);
     if (!target) {

@@ -81,6 +81,79 @@ picker {
   opacity: 0.86;
 }
 
+.danger-icon-btn {
+  align-items: center;
+  background: #c65f4b;
+  border-radius: 999rpx;
+  box-shadow: 0 10rpx 18rpx rgba(198, 95, 75, 0.22);
+  display: inline-flex;
+  height: 56rpx;
+  justify-content: center;
+  width: 56rpx;
+}
+
+.danger-icon-btn.disabled {
+  opacity: 0.6;
+}
+
+.trash-icon {
+  height: 26rpx;
+  position: relative;
+  width: 22rpx;
+}
+
+.trash-icon-lid {
+  border: 2rpx solid #fffaf6;
+  border-bottom: 0;
+  border-radius: 6rpx 6rpx 0 0;
+  height: 6rpx;
+  left: 3rpx;
+  position: absolute;
+  top: 0;
+  width: 16rpx;
+}
+
+.trash-icon-handle {
+  background: #fffaf6;
+  border-radius: 999rpx;
+  height: 3rpx;
+  left: 7rpx;
+  position: absolute;
+  top: -2rpx;
+  width: 8rpx;
+}
+
+.trash-icon-body {
+  border: 2rpx solid #fffaf6;
+  border-radius: 0 0 6rpx 6rpx;
+  bottom: 0;
+  left: 2rpx;
+  position: absolute;
+  width: 18rpx;
+  height: 18rpx;
+}
+
+.trash-icon-line {
+  background: #fffaf6;
+  border-radius: 999rpx;
+  height: 10rpx;
+  position: absolute;
+  top: 3rpx;
+  width: 2rpx;
+}
+
+.trash-icon-line.left {
+  left: 4rpx;
+}
+
+.trash-icon-line.center {
+  left: 8rpx;
+}
+
+.trash-icon-line.right {
+  left: 12rpx;
+}
+
 .pill {
   border-radius: 999rpx;
   font-size: 22rpx;

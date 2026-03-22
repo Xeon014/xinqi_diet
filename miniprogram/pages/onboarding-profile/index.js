@@ -689,7 +689,9 @@ Page({
       return;
     }
     this.setData({ submitting: true });
-    updateProfile(payload)
+    updateProfile(Object.assign({}, payload, {
+      seedInitialWeightRecord: true,
+    }))
       .then(() => {
         wx.showToast({ title: '已保存', icon: 'success' });
         setTimeout(() => {

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.diet.domain.metric.BodyMetricRecord;
+import com.diet.domain.metric.BodyMetricType;
+import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.FoodRepository;
@@ -62,7 +65,8 @@ class UserProfileServiceTest {
                 foodRepository,
                 exerciseRecordRepository,
                 exerciseRepository,
-                new GoalPlanningService(bodyMetricRecordRepository)
+                new GoalPlanningService(bodyMetricRecordRepository),
+                bodyMetricRecordRepository
         );
     }
 
@@ -82,6 +86,7 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
                 null,
                 null,
                 null,
@@ -115,6 +120,7 @@ class UserProfileServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -140,6 +146,7 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
                 null,
                 null,
                 null,
@@ -200,6 +207,7 @@ class UserProfileServiceTest {
                 existing.getTargetWeight(),
                 null,
                 existing.getCustomTdee(),
+                null,
                 null,
                 null,
                 null,
@@ -265,6 +273,7 @@ class UserProfileServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -295,6 +304,7 @@ class UserProfileServiceTest {
                 2100,
                 GoalMode.LOSE,
                 -300,
+                null,
                 null,
                 null,
                 null
@@ -328,6 +338,7 @@ class UserProfileServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -336,6 +347,67 @@ class UserProfileServiceTest {
         assertThat(response.goalMode()).isEqualTo(GoalMode.GAIN);
         assertThat(response.goalCalorieDelta()).isEqualTo(300);
         assertThat(response.dailyCalorieTarget()).isEqualTo(2400);
+    }
+
+    @Test
+    void shouldSeedInitialWeightRecordWhenRequestedAndNoWeightHistory() {
+        UserProfile existing = buildUser("旧昵称");
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT)).thenReturn(Optional.empty());
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                existing.getDailyCalorieTarget(),
+                new BigDecimal("59.50"),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                existing.getCustomTdee(),
+                null,
+                null,
+                null,
+                null,
+                true,
+                null
+        );
+
+        userProfileService.update(1L, request);
+
+        verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
+    }
+
+    @Test
+    void shouldNotSeedInitialWeightRecordWhenWeightHistoryExists() {
+        UserProfile existing = buildUser("旧昵称");
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildWeightRecord(8L, new BigDecimal("60.00"))));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                existing.getDailyCalorieTarget(),
+                new BigDecimal("59.50"),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                existing.getCustomTdee(),
+                null,
+                null,
+                null,
+                null,
+                true,
+                null
+        );
+
+        userProfileService.update(1L, request);
+
+        verify(bodyMetricRecordRepository, never()).save(any(BodyMetricRecord.class));
     }
 
     private UserProfile buildUser(String name) {
@@ -357,5 +429,15 @@ class UserProfileServiceTest {
         );
         user.setId(1L);
         return user;
+    }
+
+    private BodyMetricRecord buildWeightRecord(Long id, BigDecimal metricValue) {
+        BodyMetricRecord record = new BodyMetricRecord();
+        record.setId(id);
+        record.setMetricType(BodyMetricType.WEIGHT);
+        record.setMetricValue(metricValue);
+        record.setUnit(BodyMetricUnit.KG);
+        record.setRecordDate(LocalDate.now());
+        return record;
     }
 }

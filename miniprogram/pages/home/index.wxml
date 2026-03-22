@@ -53,7 +53,7 @@
     <view class="section-title">记录</view>
   </view>
 
-  <view wx:if="{{recordGroups.length}}" class="record-groups">
+  <view wx:if="{{recordGroups.length}}" class="record-groups" bindtap="handleRecordListTap">
     <view
       wx:for="{{recordGroups}}"
       wx:key="key"
@@ -99,22 +99,54 @@
         </view>
       </view>
 
-      <view wx:if="{{group.records.length}}" class="group-list">
+      <view wx:if="{{group.records.length}}" class="group-list" catchtap="noop">
         <view
           wx:for="{{group.records}}"
           wx:key="recordKey"
           wx:for-item="record"
-          class="stream-item"
+          class="stream-swipe-cell"
+          data-record-key="{{record.recordKey}}"
+          bindtouchstart="handleRecordTouchStart"
+          bindtouchmove="handleRecordTouchMove"
+          bindtouchend="handleRecordTouchEnd"
+          bindtouchcancel="handleRecordTouchEnd"
+        >
+          <view class="stream-action-track">
+            <view class="stream-action-shell">
+              <view
+                class="danger-icon-btn stream-delete-btn"
+                data-record-type="{{record.recordType}}"
+                data-record-id="{{record.recordId}}"
+                catchtap="handleDeleteHomeRecord"
+              >
+                <view class="trash-icon">
+                  <view class="trash-icon-handle"></view>
+                  <view class="trash-icon-lid"></view>
+                  <view class="trash-icon-body">
+                    <view class="trash-icon-line left"></view>
+                    <view class="trash-icon-line center"></view>
+                    <view class="trash-icon-line right"></view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view
+            class="stream-swipe-content"
+            style="{{record.swipeContentStyle}}"
           data-record-type="{{record.recordType}}"
           data-record-id="{{record.recordId}}"
           data-meal-type="{{record.mealType}}"
           data-record-date="{{record.recordDate}}"
-          bindtap="handleOpenRecord"
-        >
-          <view class="stream-main">
-            <view class="stream-title">{{record.title}}</view>
+            catchtap="handleRecordTap"
+          >
+            <view class="stream-item">
+              <view class="stream-main">
+                <view class="stream-title">{{record.title}}</view>
+              </view>
+              <view class="stream-calories {{record.isDiet ? 'diet' : 'exercise'}}">{{record.signedCalories}}</view>
+            </view>
           </view>
-          <view class="stream-calories {{record.isDiet ? 'diet' : 'exercise'}}">{{record.signedCalories}}</view>
         </view>
       </view>
     </view>

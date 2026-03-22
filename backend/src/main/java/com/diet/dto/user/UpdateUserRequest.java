@@ -68,6 +68,9 @@ public record UpdateUserRequest(
         @Schema(description = "目标热量策略：SMART/MANUAL")
         GoalCalorieStrategy goalCalorieStrategy,
 
+        @Schema(description = "是否在初始引导完成时补写首条体重记录，true 时仅在当前无体重历史时写入")
+        Boolean seedInitialWeightRecord,
+
         @Schema(description = "是否切换为公式计算 BMR，true 时清空 customBmr")
         Boolean useFormulaBmr
 ) {

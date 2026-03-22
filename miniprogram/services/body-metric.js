@@ -55,9 +55,18 @@ function getBodyMetricHistory(params) {
   });
 }
 
+function deleteBodyMetricRecord(id) {
+  return request({
+    url: `/api/body-metrics/${encodeURIComponent(id)}`,
+    method: "DELETE",
+    loadingTitle: "删除中...",
+  });
+}
+
 module.exports = {
   createBodyMetricRecord,
   getBodyMetricSnapshot,
   getBodyMetricTrend,
   getBodyMetricHistory,
+  deleteBodyMetricRecord,
 };

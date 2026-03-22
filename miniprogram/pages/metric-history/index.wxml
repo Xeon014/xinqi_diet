@@ -1,18 +1,47 @@
 <view class="page-shell metric-history-page">
-  <view class="panel history-head">
+  <view class="panel history-head" bindtap="handleBackgroundTap">
     <view class="history-title">{{metricLabel}}记录</view>
     <view class="history-add-btn {{canCreate ? '' : 'disabled'}}" bindtap="handleOpenEditor">+</view>
   </view>
 
-  <view wx:if="{{records.length}}" class="history-list">
-    <view wx:for="{{records}}" wx:key="id" wx:for-item="item" class="panel history-item">
-      <view class="history-item-left">
-        <view class="history-item-date">{{item.date}}</view>
-        <view class="history-item-time">{{item.time}}</view>
+  <view wx:if="{{records.length}}" class="history-list" bindtap="handleBackgroundTap">
+    <view
+      wx:for="{{records}}"
+      wx:key="id"
+      wx:for-item="item"
+      class="history-swipe-cell"
+      data-id="{{item.id}}"
+      bindtouchstart="handleRecordTouchStart"
+      bindtouchmove="handleRecordTouchMove"
+      bindtouchend="handleRecordTouchEnd"
+      bindtouchcancel="handleRecordTouchEnd"
+    >
+      <view class="history-action-track">
+        <view class="history-action-shell">
+          <view class="danger-icon-btn history-delete-action" data-id="{{item.id}}" catchtap="handleDeleteRecord">
+            <view class="trash-icon">
+              <view class="trash-icon-handle"></view>
+              <view class="trash-icon-lid"></view>
+              <view class="trash-icon-body">
+                <view class="trash-icon-line left"></view>
+                <view class="trash-icon-line center"></view>
+                <view class="trash-icon-line right"></view>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
-      <view class="history-item-right">
-        <view class="history-item-value">{{item.valueLabel}}</view>
-        <view wx:if="{{item.unit}}" class="history-item-unit">{{item.unit}}</view>
+      <view class="history-swipe-content" style="{{item.contentStyle}}" catchtap="handleItemTap">
+        <view class="history-item">
+          <view class="history-item-left">
+            <view class="history-item-date">{{item.date}}</view>
+            <view class="history-item-time">{{item.time}}</view>
+          </view>
+          <view class="history-item-right">
+            <view class="history-item-value">{{item.valueLabel}}</view>
+            <view wx:if="{{item.unit}}" class="history-item-unit">{{item.unit}}</view>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -24,7 +53,7 @@
     </view>
   </view>
 
-  <view wx:else class="panel history-empty">
+  <view wx:else class="panel history-empty" bindtap="handleBackgroundTap">
     <view class="history-empty-text">暂无记录</view>
     <view wx:if="{{canCreate}}" class="history-empty-btn" bindtap="handleOpenEditor">去记录</view>
   </view>

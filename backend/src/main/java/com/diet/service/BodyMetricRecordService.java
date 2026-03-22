@@ -8,6 +8,7 @@ import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.metric.BodyMetricDeleteResponse;
 import com.diet.dto.metric.BodyMetricHistoryRecordResponse;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
@@ -81,6 +82,30 @@ public class BodyMetricRecordService {
         }
 
         return toResponse(record);
+    }
+
+    public void seedInitialWeightRecord(Long userId, BigDecimal currentWeight, LocalDate recordDate) {
+        if (currentWeight == null || recordDate == null) {
+            return;
+        }
+        if (bodyMetricRecordRepository.findLatestByMetricType(userId, BodyMetricType.WEIGHT).isPresent()) {
+            return;
+        }
+        bodyMetricRecordRepository.save(new BodyMetricRecord(
+                userId,
+                BodyMetricType.WEIGHT,
+                currentWeight,
+                BodyMetricUnit.KG,
+                recordDate
+        ));
+    }
+
+    public BodyMetricDeleteResponse delete(Long userId, Long recordId) {
+        getUser(userId);
+        BodyMetricRecord existing = bodyMetricRecordRepository.findByIdAndUserId(recordId, userId)
+                .orElseThrow(() -> new NotFoundException("body metric record not found, id=" + recordId));
+        bodyMetricRecordRepository.deleteById(existing.getId());
+        return new BodyMetricDeleteResponse(true);
     }
 
     @Transactional(readOnly = true)

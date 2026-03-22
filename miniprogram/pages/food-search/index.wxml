@@ -121,11 +121,6 @@
       <view class="editor-title">{{editorType === 'COMBO' ? '添加自定义套餐' : '编辑食物'}}</view>
       <view class="editor-head-actions">
         <view
-          wx:if="{{editorType === 'FOOD' && editorCanDelete}}"
-          class="editor-delete {{editorLoading ? 'disabled' : ''}}"
-          bindtap="handleEditorDelete"
-        >删除</view>
-        <view
           class="icon-action {{editorLoading ? 'disabled' : ''}}"
           bindtap="handleEditorClose"
         >✕</view>

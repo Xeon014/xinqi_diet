@@ -110,6 +110,11 @@
   gap: 12rpx;
 }
 
+.sheet-actions .danger-icon-btn {
+  background: #d59889;
+  box-shadow: 0 8rpx 14rpx rgba(213, 152, 137, 0.18);
+}
+
 .sheet-close {
   align-items: center;
   background: rgba(107, 144, 132, 0.1);
@@ -161,14 +166,8 @@
 }
 
 .item-row {
-  border-top: 1rpx solid rgba(107, 144, 132, 0.1);
   min-height: 106rpx;
-  padding: 18rpx 0;
-}
-
-.item-row:first-child {
-  border-top: 0;
-  padding-top: 0;
+  padding: 18rpx 20rpx;
 }
 
 .item-main {
@@ -192,4 +191,50 @@
   display: flex;
   gap: 10rpx;
   margin-left: 16rpx;
+}
+
+.list-panel {
+  overflow: hidden;
+}
+
+.swipe-cell {
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 20rpx rgba(68, 78, 73, 0.05);
+  margin-top: 12rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.swipe-cell:first-of-type {
+  margin-top: 16rpx;
+}
+
+.swipe-action-track {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: flex-end;
+  position: absolute;
+}
+
+.swipe-action-shell {
+  align-items: center;
+  border-radius: 24rpx;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 84px;
+}
+
+.swipe-content {
+  background: linear-gradient(180deg, #fdfcf8 0%, #f8f5ee 100%);
+  border: 1rpx solid rgba(91, 126, 115, 0.11);
+  border-radius: 24rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.swipe-delete-btn {
+  height: 64rpx;
+  width: 64rpx;
 }

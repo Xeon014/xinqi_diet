@@ -132,8 +132,13 @@
 }
 
 .trend-point-wrap {
+  align-items: center;
+  display: flex;
+  height: 108rpx;
+  justify-content: center;
   position: absolute;
   transform: translate(-50%, -50%);
+  width: 44rpx;
 }
 
 .trend-point {

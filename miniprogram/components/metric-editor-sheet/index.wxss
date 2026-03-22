@@ -81,6 +81,14 @@
   margin-top: 12rpx;
 }
 
+.sheet-date-row {
+  display: flex;
+}
+
+.sheet-date-trigger {
+  display: inline-flex;
+}
+
 .sheet-date-picker {
   background: rgba(107, 144, 132, 0.08);
   border: 1rpx solid rgba(107, 144, 132, 0.12);
