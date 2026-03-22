@@ -1,9 +1,9 @@
 page {
   background:
-    radial-gradient(circle at 12% 6%, rgba(30, 90, 79, 0.14), transparent 34%),
-    radial-gradient(circle at 88% 4%, rgba(185, 94, 58, 0.1), transparent 30%),
-    linear-gradient(180deg, #f3efe7 0%, #ede6da 56%, #e7decf 100%);
-  color: #2f2a24;
+    radial-gradient(circle at 12% 0%, rgba(107, 144, 132, 0.1), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(196, 167, 140, 0.1), transparent 30%),
+    linear-gradient(180deg, #f7f5ef 0%, #f2efe8 56%, #eeebe4 100%);
+  color: #37423d;
   font-family: "PingFang SC", "Noto Sans SC", sans-serif;
   min-height: 100%;
 }
@@ -17,38 +17,40 @@ picker {
 }
 
 .page-shell {
-  padding: 30rpx 26rpx 52rpx;
+  padding: 16rpx 26rpx 52rpx;
 }
 
 .panel {
-  background: rgba(255, 253, 248, 0.94);
-  border: 1rpx solid rgba(70, 57, 47, 0.12);
-  border-radius: 30rpx;
+  background:
+    linear-gradient(180deg, rgba(253, 252, 248, 0.98) 0%, rgba(248, 245, 238, 0.95) 100%),
+    #fcfaf5;
+  border: 1rpx solid rgba(91, 126, 115, 0.11);
+  border-radius: 32rpx;
   box-shadow:
-    0 24rpx 56rpx rgba(55, 41, 31, 0.1),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.68);
+    0 14rpx 30rpx rgba(68, 78, 73, 0.07),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.72);
 }
 
 .section-title {
-  color: #2f2a24;
-  font-size: 35rpx;
+  color: #3b4842;
+  font-size: 34rpx;
   font-weight: 700;
   letter-spacing: 1rpx;
 }
 
 .section-subtitle {
-  color: #7d7062;
+  color: #7d7c74;
   font-size: 24rpx;
   line-height: 1.55;
 }
 
 .primary-button {
   align-items: center;
-  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
-  border: 1rpx solid rgba(19, 62, 54, 0.22);
+  background: linear-gradient(135deg, #6f968b 0%, #5d8378 100%);
+  border: 1rpx solid rgba(93, 131, 120, 0.2);
   border-radius: 999rpx;
-  box-shadow: 0 14rpx 24rpx rgba(30, 90, 79, 0.22);
-  color: #fffef8;
+  box-shadow: 0 10rpx 20rpx rgba(70, 104, 95, 0.16);
+  color: #fcfffd;
   display: flex;
   font-size: 28rpx;
   font-weight: 700;
@@ -64,10 +66,10 @@ picker {
 
 .ghost-button {
   align-items: center;
-  background: rgba(30, 90, 79, 0.08);
-  border: 1rpx solid rgba(30, 90, 79, 0.22);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.16);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 26rpx;
   font-weight: 600;
@@ -79,6 +81,79 @@ picker {
   opacity: 0.86;
 }
 
+.danger-icon-btn {
+  align-items: center;
+  background: #c65f4b;
+  border-radius: 999rpx;
+  box-shadow: 0 10rpx 18rpx rgba(198, 95, 75, 0.22);
+  display: inline-flex;
+  height: 56rpx;
+  justify-content: center;
+  width: 56rpx;
+}
+
+.danger-icon-btn.disabled {
+  opacity: 0.6;
+}
+
+.trash-icon {
+  height: 26rpx;
+  position: relative;
+  width: 22rpx;
+}
+
+.trash-icon-lid {
+  border: 2rpx solid #fffaf6;
+  border-bottom: 0;
+  border-radius: 6rpx 6rpx 0 0;
+  height: 6rpx;
+  left: 3rpx;
+  position: absolute;
+  top: 0;
+  width: 16rpx;
+}
+
+.trash-icon-handle {
+  background: #fffaf6;
+  border-radius: 999rpx;
+  height: 3rpx;
+  left: 7rpx;
+  position: absolute;
+  top: -2rpx;
+  width: 8rpx;
+}
+
+.trash-icon-body {
+  border: 2rpx solid #fffaf6;
+  border-radius: 0 0 6rpx 6rpx;
+  bottom: 0;
+  left: 2rpx;
+  position: absolute;
+  width: 18rpx;
+  height: 18rpx;
+}
+
+.trash-icon-line {
+  background: #fffaf6;
+  border-radius: 999rpx;
+  height: 10rpx;
+  position: absolute;
+  top: 3rpx;
+  width: 2rpx;
+}
+
+.trash-icon-line.left {
+  left: 4rpx;
+}
+
+.trash-icon-line.center {
+  left: 8rpx;
+}
+
+.trash-icon-line.right {
+  left: 12rpx;
+}
+
 .pill {
   border-radius: 999rpx;
   font-size: 22rpx;
@@ -87,25 +162,26 @@ picker {
 }
 
 .pill-success {
-  background: rgba(30, 90, 79, 0.14);
-  color: #1e5a4f;
+  background: rgba(107, 144, 132, 0.12);
+  color: #5d8378;
 }
 
 .pill-danger {
-  background: rgba(185, 94, 58, 0.14);
-  color: #b95e3a;
+  background: rgba(187, 134, 108, 0.14);
+  color: #bb866c;
 }
 
 .field-label {
-  color: #5a4f44;
+  color: #73756d;
   font-size: 24rpx;
   margin-bottom: 12rpx;
 }
 
 .field-input {
-  background: #fffef9;
-  border: 2rpx solid rgba(70, 57, 47, 0.12);
-  border-radius: 22rpx;
+  background: rgba(254, 252, 248, 0.96);
+  border: 2rpx solid rgba(107, 144, 132, 0.12);
+  border-radius: 24rpx;
+  color: #37423d;
   font-size: 28rpx;
   height: 88rpx;
   padding: 0 24rpx;

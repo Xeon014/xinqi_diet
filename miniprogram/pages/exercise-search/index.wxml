@@ -89,11 +89,6 @@
       <view class="editor-title">编辑运动</view>
       <view class="editor-head-actions">
         <view
-          wx:if="{{editorCanDelete}}"
-          class="editor-delete {{editorLoading ? 'disabled' : ''}}"
-          bindtap="handleEditorDelete"
-        >删除</view>
-        <view
           class="icon-action {{editorLoading ? 'disabled' : ''}}"
           bindtap="handleEditorClose"
         >✕</view>

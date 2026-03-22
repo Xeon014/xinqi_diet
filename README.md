@@ -1,92 +1,33 @@
-﻿# 心栖轻食后端服务
+﻿# 心栖轻食仓库说明
 
-这是 `心栖轻食` 小程序配套的后端服务，用于支持微信登录建档、食物查询、饮食记录和进度统计等功能。
+本仓库采用前后端同仓的多应用布局：
 
-## 运行前准备
+- `backend/`：Spring Boot 后端服务
+- `miniprogram/`：微信小程序工程
+- `docs/`：仓库级文档、协作说明与跨应用资料
 
-请先确认本机已安装并启动：
+## 快速入口
 
-- Java 17
-- Maven
-- MySQL 8
+- 后端说明：`backend/README.md`
+- 小程序说明：`miniprogram/README.md`
+- 仓库文档导航：`docs/README.md`
 
-## 配置说明
+## 常用命令
 
-- 公共配置：`src/main/resources/application.yml`
-- 开发环境配置：`src/main/resources/application-dev.yml`
-- 生产环境配置：`src/main/resources/application-prod.yml`
+后端：
 
-默认激活 `dev` 环境，且 `dev` 中已开启微信登录 mock：`wechat.mock-enabled=true`。
+1. 进入目录：`cd backend`
+2. 启动开发环境：`mvn spring-boot:run`
+3. 编译检查：`mvn -q -DskipTests compile`
+4. 构建镜像：`docker build -f Dockerfile .`
 
-## 快速启动
+小程序：
 
-1. 如需初始化本地数据库账号与权限，执行：`scripts/mysql-init.sql`
-2. 如需从空库或删库后重建到当前最新结构，执行：`scripts/sql/schema-full-latest.sql`
-3. 启动开发环境：`mvn spring-boot:run`
-4. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
-5. 服务默认地址：`http://localhost:8080`
+1. 用微信开发者工具打开 `miniprogram/`
+2. 修改小程序后执行：`cd miniprogram && node scripts/verify-miniprogram-files.js`
 
-## 数据库基线
+## 目录约定
 
-- 最新完整建表基线：`scripts/sql/schema-full-latest.sql`
-- 结构快照：`src/main/resources/schema.sql`
-- 增量迁移目录：`src/main/resources/db/migration/`
-
-说明：
-
-1. `schema-full-latest.sql` 用于空库初始化或删库重建，脚本会把数据库结构直接建立到当前最新版本，并写入 Flyway 基线版本 `V1`。
-2. 当前仓库中的最新上线结构已经重置为新的 `V1` 基线，后续表结构调整从 `V2` 开始新增。
-3. `schema.sql` 继续作为仓库内的最新结构快照维护，但删库重建优先使用 `schema-full-latest.sql`。
-
-## 登录与鉴权
-
-- 小程序启动后会调用 `/api/auth/wechat/login` 完成登录并自动创建用户。
-- 登录成功后，业务请求通过 `Authorization: Bearer {accessToken}` 传递身份。
-
-## 内置食物手工导入
-
-- 应用启动时**不会自动导入**内置食物。
-- 原始营养源数据：`scripts/data/food_nutrition.csv`
-- 精选清单：`scripts/data/builtin-food-selection.tsv`
-- 当前发布清单：`scripts/data/builtin-food-manual.tsv`
-- 生成脚本：`scripts/generate-builtin-food-seed.js`
-- 首次初始化脚本：`scripts/sql/bootstrap-builtin-foods-latest.sql`
-- 上线后同步脚本：`scripts/sql/sync-builtin-foods-latest.sql`
-
-正式方案：
-
-1. 维护 `builtin-food-selection.tsv` 与 `builtin-food-manual.tsv`
-2. 执行 `node scripts/generate-builtin-food-seed.js`
-3. 首次上线前，如需从空库或可重置环境初始化，执行 `bootstrap-builtin-foods-latest.sql`
-4. 正式上线后，后续维护**只执行** `sync-builtin-foods-latest.sql`
-
-重要约束：
-
-- 正式上线后，不再使用“先删后插”的全量重建脚本。
-- 内置食物以 `food.source_ref` 作为稳定身份；后续修改通过 `source_ref` 更新，不删除历史食物记录。
-
-## 内置运动手工导入
-
-- 应用启动时**不会自动导入**内置运动。
-- 生成脚本：`scripts/generate-builtin-exercise-seed.ps1`
-- 首次初始化脚本：`scripts/sql/bootstrap-builtin-exercises-latest.sql`
-- 上线后同步脚本：`scripts/sql/sync-builtin-exercises-latest.sql`
-
-正式方案：
-
-1. 如需重新生成，执行 `scripts/generate-builtin-exercise-seed.ps1`
-2. 首次上线前，如需从空库或可重置环境初始化，执行 `bootstrap-builtin-exercises-latest.sql`
-3. 正式上线后，后续维护**只执行** `sync-builtin-exercises-latest.sql`
-
-## 联调说明
-
-- 微信小程序工程目录：`miniprogram/`
-- 小程序开发时默认请求后端本地地址 `http://127.0.0.1:8080`
-- 真机调试时需改为电脑可访问的局域网 IP，而不是 `127.0.0.1`
-
-## 相关文档
-
-- 文档总导航：`docs/README.md`
-- 小程序接口说明：`docs/miniprogram-api.md`
-- 小程序工程说明：`miniprogram/README.md`
-- 腾讯云托管部署清单：`docs/tencent-cloud-hosting-checklist.md`
+- 后端专属脚本、SQL 与部署说明放在 `backend/`
+- 小程序专属校验脚本与页面文档放在 `miniprogram/`
+- 跨应用接口说明、接手指南、变更日志放在根 `docs/`

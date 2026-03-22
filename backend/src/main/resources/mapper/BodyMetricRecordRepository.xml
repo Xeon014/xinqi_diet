@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.diet.mapper.BodyMetricRecordMapper">
+
+    <select id="findLatestByMetricType" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE user_id = #{userId}
+          AND metric_type = #{metricType}
+        ORDER BY record_date DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findDailyLatestByMetricTypeAndDateRange" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            r.id,
+            r.user_id,
+            r.metric_type,
+            r.metric_value,
+            r.unit,
+            r.record_date,
+            r.created_at,
+            r.updated_at
+        FROM body_metric_record r
+        INNER JOIN (
+            SELECT
+                record_date,
+                MAX(id) AS max_id
+            FROM body_metric_record
+            WHERE user_id = #{userId}
+              AND metric_type = #{metricType}
+              AND record_date <![CDATA[>=]]> #{startDate}
+              AND record_date <![CDATA[<=]]> #{endDate}
+            GROUP BY record_date
+        ) daily ON daily.max_id = r.id
+        ORDER BY r.record_date ASC, r.id ASC
+    </select>
+
+    <select id="findDailyLatestByMetricTypeWithCursor" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            r.id,
+            r.user_id,
+            r.metric_type,
+            r.metric_value,
+            r.unit,
+            r.record_date,
+            r.created_at,
+            r.updated_at
+        FROM body_metric_record r
+        INNER JOIN (
+            SELECT
+                record_date,
+                MAX(id) AS max_id
+            FROM body_metric_record
+            WHERE user_id = #{userId}
+              AND metric_type = #{metricType}
+            GROUP BY record_date
+        ) daily ON daily.max_id = r.id
+        <if test="cursorDate != null and cursorId != null">
+            WHERE (
+                r.record_date <![CDATA[<]]> #{cursorDate}
+                OR (r.record_date = #{cursorDate} AND r.id <![CDATA[<]]> #{cursorId})
+            )
+        </if>
+        ORDER BY r.record_date DESC, r.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findByMetricTypeWithCursor" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE user_id = #{userId}
+          AND metric_type = #{metricType}
+        <if test="cursorDate != null and cursorId != null">
+          AND (
+                record_date <![CDATA[<]]> #{cursorDate}
+                OR (record_date = #{cursorDate} AND id <![CDATA[<]]> #{cursorId})
+          )
+        </if>
+        ORDER BY record_date DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findByIdAndUserId" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE id = #{id}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
+</mapper>

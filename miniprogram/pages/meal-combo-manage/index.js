@@ -2,6 +2,10 @@ const { createMealCombo, deleteMealCombo, getMealComboDetail, getMealComboList, 
 const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { pickErrorMessage } = require("../../utils/request");
 
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
+
 function buildEmptyForm() {
   return {
     id: null,
@@ -106,6 +110,30 @@ function decorateCombo(combo) {
   };
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applySwipeState(items, swipedId, swipingId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.id) === swipingId;
+    const isOpened = Number(item.id) === swipedId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 function syncNavigationTitle(editing, editMode) {
   let title = "自定义套餐";
   if (editing) {
@@ -117,6 +145,9 @@ function syncNavigationTitle(editing, editMode) {
 Page({
   data: {
     combos: [],
+    swipedComboId: null,
+    swipingComboId: null,
+    swipeOffsetX: 0,
     editing: false,
     editMode: "create",
     editForm: buildEmptyForm(),
@@ -140,7 +171,12 @@ Page({
     getMealComboList()
       .then((result) => {
         const combos = (result.combos || []).map(decorateCombo);
-        this.setData({ combos });
+        this.setData({
+          combos: applySwipeState(combos, null, null, 0),
+          swipedComboId: null,
+          swipingComboId: null,
+          swipeOffsetX: 0,
+        });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -185,10 +221,12 @@ Page({
   },
 
   handleStartCreate() {
+    this.closeSwipeActions();
     this.startEditing("create", buildEmptyForm());
   },
 
   handleEdit(event) {
+    this.closeSwipeActions();
     const comboId = Number(event.currentTarget.dataset.id);
     getMealComboDetail(comboId)
       .then((combo) => {
@@ -205,6 +243,7 @@ Page({
   },
 
   handleDelete(event) {
+    this.closeSwipeActions();
     const comboId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
     const target = this.data.combos.find((item) => Number(item.id) === comboId);
     wx.showModal({
@@ -286,6 +325,106 @@ Page({
     const index = Number(event.currentTarget.dataset.index);
     const items = this.data.editForm.items.filter((_, itemIndex) => itemIndex !== index);
     this.updateEditItems(items);
+  },
+
+  handleComboTouchStart(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const nextOpenedId = this.data.swipedComboId === id ? id : null;
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.swipeBaseOffsetX = this.data.swipedComboId === id ? DELETE_ACTION_WIDTH : 0;
+    this.swipeMode = "";
+    this.setData({
+      swipingComboId: id,
+      swipeOffsetX: this.swipeBaseOffsetX,
+      swipedComboId: nextOpenedId,
+      combos: applySwipeState(this.data.combos, nextOpenedId, id, this.swipeBaseOffsetX),
+    });
+  },
+
+  handleComboTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch || this.data.swipingComboId !== id || !Number.isFinite(this.swipeStartX)) {
+      return;
+    }
+    const deltaX = this.swipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.swipeStartY || 0) - touch.clientY);
+    if (!this.swipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.swipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.swipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.swipeBaseOffsetX + deltaX);
+    this.setData({
+      swipeOffsetX: nextOffsetX,
+      combos: applySwipeState(this.data.combos, this.data.swipedComboId, id, nextOffsetX),
+    });
+  },
+
+  handleComboTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!Number.isFinite(id) || this.data.swipingComboId !== id) {
+      return;
+    }
+    if (this.swipeMode !== "horizontal") {
+      this.resetSwipeGesture();
+      this.setData({
+        swipingComboId: null,
+        swipeOffsetX: 0,
+        combos: applySwipeState(this.data.combos, this.data.swipedComboId, null, 0),
+      });
+      return;
+    }
+    this.finishSwipe(id, this.data.swipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  resetSwipeGesture() {
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+  },
+
+  finishSwipe(id, shouldOpen) {
+    this.resetSwipeGesture();
+    this.setData({
+      swipedComboId: shouldOpen ? id : null,
+      swipingComboId: null,
+      swipeOffsetX: 0,
+      combos: applySwipeState(this.data.combos, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeSwipeActions() {
+    if (this.data.swipedComboId == null && this.data.swipingComboId == null) {
+      return;
+    }
+    this.resetSwipeGesture();
+    this.setData({
+      swipedComboId: null,
+      swipingComboId: null,
+      swipeOffsetX: 0,
+      combos: applySwipeState(this.data.combos, null, null, 0),
+    });
+  },
+
+  handleSwipeContentTap() {
+    if (this.data.swipedComboId != null) {
+      this.closeSwipeActions();
+    }
+  },
+
+  handleComboListBackgroundTap() {
+    this.closeSwipeActions();
   },
 
   handleCancelEdit(shouldReload = true) {

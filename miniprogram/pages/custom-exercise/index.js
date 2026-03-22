@@ -3,6 +3,9 @@ const { EXERCISE_CATEGORIES, decorateExercise } = require("../../utils/exercise"
 const { pickErrorMessage } = require("../../utils/request");
 
 const CREATION_CATEGORIES = EXERCISE_CATEGORIES.filter((item) => item.key !== "ALL");
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 
 function buildEmptyForm() {
   return {
@@ -17,6 +20,30 @@ function toNumber(value) {
   return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applySwipeState(items, swipedId, swipingId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.id) === swipingId;
+    const isOpened = Number(item.id) === swipedId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 Page({
   data: {
     categories: CREATION_CATEGORIES,
@@ -25,6 +52,9 @@ Page({
     keyword: "",
     loading: false,
     saving: false,
+    swipedExerciseId: null,
+    swipingExerciseId: null,
+    swipeOffsetX: 0,
     sheetVisible: false,
     launchedFromSelector: false,
     editMode: "create",
@@ -78,7 +108,12 @@ Page({
       const aliases = String(item.aliases || "").toLowerCase();
       return name.includes(keyword) || aliases.includes(keyword);
     });
-    this.setData({ displayedExercises });
+    this.setData({
+      displayedExercises: applySwipeState(displayedExercises, null, null, 0),
+      swipedExerciseId: null,
+      swipingExerciseId: null,
+      swipeOffsetX: 0,
+    });
   },
 
   handleKeywordInput(event) {
@@ -88,6 +123,7 @@ Page({
   },
 
   handleStartCreate() {
+    this.closeSwipeActions();
     this.setData({
       sheetVisible: true,
       editMode: "create",
@@ -97,6 +133,7 @@ Page({
   },
 
   handleEdit(event) {
+    this.closeSwipeActions();
     const exerciseId = Number(event.currentTarget.dataset.id);
     const target = this.data.exercises.find((item) => Number(item.id) === exerciseId);
     if (!target) {
@@ -125,6 +162,106 @@ Page({
   },
 
   noop() {},
+
+  handleExerciseTouchStart(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const nextOpenedId = this.data.swipedExerciseId === id ? id : null;
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.swipeBaseOffsetX = this.data.swipedExerciseId === id ? DELETE_ACTION_WIDTH : 0;
+    this.swipeMode = "";
+    this.setData({
+      swipingExerciseId: id,
+      swipeOffsetX: this.swipeBaseOffsetX,
+      swipedExerciseId: nextOpenedId,
+      displayedExercises: applySwipeState(this.data.displayedExercises, nextOpenedId, id, this.swipeBaseOffsetX),
+    });
+  },
+
+  handleExerciseTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch || this.data.swipingExerciseId !== id || !Number.isFinite(this.swipeStartX)) {
+      return;
+    }
+    const deltaX = this.swipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.swipeStartY || 0) - touch.clientY);
+    if (!this.swipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.swipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.swipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.swipeBaseOffsetX + deltaX);
+    this.setData({
+      swipeOffsetX: nextOffsetX,
+      displayedExercises: applySwipeState(this.data.displayedExercises, this.data.swipedExerciseId, id, nextOffsetX),
+    });
+  },
+
+  handleExerciseTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!Number.isFinite(id) || this.data.swipingExerciseId !== id) {
+      return;
+    }
+    if (this.swipeMode !== "horizontal") {
+      this.resetSwipeGesture();
+      this.setData({
+        swipingExerciseId: null,
+        swipeOffsetX: 0,
+        displayedExercises: applySwipeState(this.data.displayedExercises, this.data.swipedExerciseId, null, 0),
+      });
+      return;
+    }
+    this.finishSwipe(id, this.data.swipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  resetSwipeGesture() {
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+  },
+
+  finishSwipe(id, shouldOpen) {
+    this.resetSwipeGesture();
+    this.setData({
+      swipedExerciseId: shouldOpen ? id : null,
+      swipingExerciseId: null,
+      swipeOffsetX: 0,
+      displayedExercises: applySwipeState(this.data.displayedExercises, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeSwipeActions() {
+    if (this.data.swipedExerciseId == null && this.data.swipingExerciseId == null) {
+      return;
+    }
+    this.resetSwipeGesture();
+    this.setData({
+      swipedExerciseId: null,
+      swipingExerciseId: null,
+      swipeOffsetX: 0,
+      displayedExercises: applySwipeState(this.data.displayedExercises, null, null, 0),
+    });
+  },
+
+  handleSwipeContentTap() {
+    if (this.data.swipedExerciseId != null) {
+      this.closeSwipeActions();
+    }
+  },
+
+  handleListBackgroundTap() {
+    this.closeSwipeActions();
+  },
 
   closeSheet() {
     this.setData({
@@ -162,6 +299,7 @@ Page({
   },
 
   handleSubmit() {
+    this.closeSwipeActions();
     if (this.data.saving) {
       return;
     }
@@ -204,6 +342,7 @@ Page({
   },
 
   handleDelete(event) {
+    this.closeSwipeActions();
     const exerciseId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
     const target = this.data.exercises.find((item) => Number(item.id) === exerciseId);
     if (!target) {

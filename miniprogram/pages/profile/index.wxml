@@ -1,10 +1,8 @@
 <view class="page-shell profile-page" wx:if="{{profile}}">
   <view class="panel profile-hero">
-    <view class="hero-top">
-      <view class="hero-main">
-        <view class="hero-title">{{heroTitle}}</view>
-        <view class="hero-subtitle">{{heroSubtitle}}</view>
-      </view>
+    <view class="hero-copy">
+      <view class="hero-title">{{heroTitle}}</view>
+      <view class="hero-subtitle">{{heroSubtitle}}</view>
     </view>
 
     <view class="hero-metrics">
@@ -19,18 +17,20 @@
     </view>
   </view>
 
-  <view class="panel card-item" bindtap="handleOpenPersonalInfo">
-    <view class="card-main">
-      <view class="card-title">个人资料</view>
+  <view class="panel info-group">
+    <view class="card-item first" bindtap="handleOpenPersonalInfo">
+      <view class="card-main">
+        <view class="card-title">个人资料</view>
+      </view>
+      <view class="card-arrow">></view>
     </view>
-    <view class="card-arrow">></view>
-  </view>
 
-  <view class="panel card-item" bindtap="handleOpenHealthProfile">
-    <view class="card-main">
-      <view class="card-title">健康档案</view>
+    <view class="card-item" bindtap="handleOpenHealthProfile">
+      <view class="card-main">
+        <view class="card-title">健康档案</view>
+      </view>
+      <view class="card-arrow">></view>
     </view>
-    <view class="card-arrow">></view>
   </view>
 
   <view class="panel tools-panel">
@@ -49,4 +49,6 @@
   </view>
 </view>
 
-<empty-state wx:else title="暂无用户资料" description="请先完成资料初始化。" />
+<view wx:else class="page-shell profile-page">
+  <empty-state title="暂无用户资料" description="请先完成资料初始化。" />
+</view>

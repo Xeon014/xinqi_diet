@@ -1,12 +1,17 @@
 const { getDailySummary } = require("../../services/user");
 const { getDailyHealthDiary } = require("../../services/health-diary");
 const { createBodyMetricRecord } = require("../../services/body-metric");
-const { getRecords } = require("../../services/record");
+const { deleteRecord, getRecords } = require("../../services/record");
+const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS, getRecommendedMealType: getRecommendedMealTypeByTime } = require("../../utils/constants");
 const { addDays, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
+
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 
 const DIET_GROUPS = [
   { key: "BREAKFAST", label: MEAL_TYPE_LABELS.BREAKFAST, type: "DIET", mealType: "BREAKFAST" },
@@ -145,6 +150,34 @@ function buildRecordGroups(records) {
   ].filter((group) => group.records.length > 0);
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applySwipeStateToGroups(groups, swipedRecordKey, swipingRecordKey, swipeOffsetX) {
+  return (groups || []).map((group) => ({
+    ...group,
+    records: (group.records || []).map((record) => {
+      const isSwiping = record.recordKey === swipingRecordKey;
+      const isOpened = record.recordKey === swipedRecordKey;
+      const offsetX = isSwiping
+        ? clampSwipeOffset(swipeOffsetX)
+        : (isOpened ? DELETE_ACTION_WIDTH : 0);
+      return {
+        ...record,
+        swipeOffsetX: offsetX,
+        swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+      };
+    }),
+  }));
+}
+
 function buildFoodSearchUrl({ recordDate, mealType, source, mode, recordId }) {
   const params = [
     `recordDate=${encodeURIComponent(recordDate)}`,
@@ -200,6 +233,9 @@ Page({
     displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
     recordGroups: [],
+    swipedRecordKey: null,
+    swipingRecordKey: null,
+    swipeOffsetX: 0,
     summary: {
       targetCalories: null,
       dietCalories: 0,
@@ -305,6 +341,22 @@ Page({
     );
   },
 
+  handleBackToToday() {
+    const today = getToday();
+    if (this.data.recordDate === today) {
+      return;
+    }
+    this.setData(
+      {
+        recordDate: today,
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
+  },
+
   maybeOpenOnboarding() {
     const app = getApp();
     if (!app || typeof app.ensureLogin !== "function" || typeof app.isOnboardingPending !== "function") {
@@ -339,9 +391,13 @@ Page({
     ])
       .then(([summary, diary]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
+        const recordGroups = applySwipeStateToGroups(buildRecordGroups(normalized.records), null, null, 0);
         this.setData({
           summary: normalized,
-          recordGroups: buildRecordGroups(normalized.records),
+          recordGroups,
+          swipedRecordKey: null,
+          swipingRecordKey: null,
+          swipeOffsetX: 0,
           healthDiary: normalizeDiary(diary),
         });
       })
@@ -417,6 +473,7 @@ Page({
   },
 
   handleQuickAddMeal(event) {
+    this.closeSwipeActions();
     const { mealType } = event.currentTarget.dataset;
     if (!mealType) {
       return;
@@ -431,6 +488,7 @@ Page({
   },
 
   handleOpenMealNutrition(event) {
+    this.closeSwipeActions();
     const { mealType } = event.currentTarget.dataset;
     if (!mealType) {
       return;
@@ -480,11 +538,142 @@ Page({
   },
 
   handleOpenWeightEditor() {
+    this.closeSwipeActions();
     this.setData({
       weightEditorVisible: true,
       weightEditorLoading: false,
       weightEditorDate: this.data.recordDate,
       weightValue: "",
+    });
+  },
+
+  handleRecordTouchStart(event) {
+    const { recordKey } = event.currentTarget.dataset;
+    const touch = event.touches && event.touches[0];
+    if (!recordKey || !touch) {
+      return;
+    }
+    const nextOpenedKey = this.data.swipedRecordKey === recordKey ? recordKey : null;
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.swipeBaseOffsetX = this.data.swipedRecordKey === recordKey ? DELETE_ACTION_WIDTH : 0;
+    this.swipeMode = "";
+    this.setData({
+      swipingRecordKey: recordKey,
+      swipeOffsetX: this.swipeBaseOffsetX,
+      swipedRecordKey: nextOpenedKey,
+      recordGroups: applySwipeStateToGroups(this.data.recordGroups, nextOpenedKey, recordKey, this.swipeBaseOffsetX),
+    });
+  },
+
+  handleRecordTouchMove(event) {
+    const { recordKey } = event.currentTarget.dataset;
+    const touch = event.touches && event.touches[0];
+    if (!recordKey || !touch || this.data.swipingRecordKey !== recordKey || !Number.isFinite(this.swipeStartX)) {
+      return;
+    }
+    const deltaX = this.swipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.swipeStartY || 0) - touch.clientY);
+    if (!this.swipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.swipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.swipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.swipeBaseOffsetX + deltaX);
+    this.setData({
+      swipeOffsetX: nextOffsetX,
+      recordGroups: applySwipeStateToGroups(this.data.recordGroups, this.data.swipedRecordKey, recordKey, nextOffsetX),
+    });
+  },
+
+  handleRecordTouchEnd(event) {
+    const { recordKey } = event.currentTarget.dataset;
+    if (!recordKey || this.data.swipingRecordKey !== recordKey) {
+      return;
+    }
+    if (this.swipeMode !== "horizontal") {
+      this.resetSwipeGesture();
+      this.setData({
+        swipingRecordKey: null,
+        swipeOffsetX: 0,
+        recordGroups: applySwipeStateToGroups(this.data.recordGroups, this.data.swipedRecordKey, null, 0),
+      });
+      return;
+    }
+    this.finishSwipe(recordKey, this.data.swipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  resetSwipeGesture() {
+    this.swipeStartX = null;
+    this.swipeStartY = null;
+    this.swipeBaseOffsetX = 0;
+    this.swipeMode = "";
+  },
+
+  finishSwipe(recordKey, shouldOpen) {
+    this.resetSwipeGesture();
+    this.setData({
+      swipedRecordKey: shouldOpen ? recordKey : null,
+      swipingRecordKey: null,
+      swipeOffsetX: 0,
+      recordGroups: applySwipeStateToGroups(this.data.recordGroups, shouldOpen ? recordKey : null, null, 0),
+    });
+  },
+
+  closeSwipeActions() {
+    if (this.data.swipedRecordKey == null && this.data.swipingRecordKey == null) {
+      return;
+    }
+    this.resetSwipeGesture();
+    this.setData({
+      swipedRecordKey: null,
+      swipingRecordKey: null,
+      swipeOffsetX: 0,
+      recordGroups: applySwipeStateToGroups(this.data.recordGroups, null, null, 0),
+    });
+  },
+
+  handleRecordListTap() {
+    this.closeSwipeActions();
+  },
+
+  handleRecordTap(event) {
+    if (this.data.swipedRecordKey != null) {
+      this.closeSwipeActions();
+      return;
+    }
+    this.handleOpenRecord(event);
+  },
+
+  handleDeleteHomeRecord(event) {
+    const { recordType, recordId } = event.currentTarget.dataset;
+    if (!recordType || recordId == null) {
+      return;
+    }
+    const modalTitle = recordType === "DIET" ? "删除食物记录" : "删除运动记录";
+    wx.showModal({
+      title: modalTitle,
+      content: "删除后不可恢复，是否继续？",
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+        const task = recordType === "DIET"
+          ? deleteRecord(recordId)
+          : deleteExerciseRecord(recordId);
+        task
+          .then(() => {
+            wx.showToast({ title: "已删除", icon: "success" });
+            this.loadSummary();
+          })
+          .catch((error) => {
+            wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+          });
+      },
     });
   },
 
@@ -551,6 +740,7 @@ Page({
   },
 
   handleOpenRecord(event) {
+    this.closeSwipeActions();
     const { recordType, mealType, recordDate, recordId } = event.currentTarget.dataset;
     if (recordType === "DIET") {
       wx.navigateTo({

@@ -1,6 +1,7 @@
 .m2/
 .mvn-settings.xml
 target/
+/backend/target/
 .idea/
 *.iml
 miniprogram/ext.json

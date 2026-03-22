@@ -7,24 +7,20 @@
 }
 
 .range-panel {
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.82), rgba(248, 240, 229, 0.86)),
-    rgba(255, 252, 246, 0.93);
-  border: 1rpx solid rgba(31, 90, 79, 0.14);
-  padding: 14rpx;
+  padding: 18rpx 16rpx 16rpx;
 }
 
 .range-tabs {
-  background: rgba(31, 90, 79, 0.08);
-  border-radius: 20rpx;
+  background: rgba(107, 144, 132, 0.08);
+  border-radius: 22rpx;
   display: flex;
   padding: 6rpx;
 }
 
 .range-tab {
   align-items: center;
-  border-radius: 14rpx;
-  color: #6f6458;
+  border-radius: 16rpx;
+  color: #7d7c74;
   display: flex;
   flex: 1;
   font-size: 24rpx;
@@ -34,13 +30,16 @@
 }
 
 .range-tab.active {
-  background: #fffef9;
-  box-shadow: 0 10rpx 20rpx rgba(55, 41, 31, 0.08);
-  color: #1e5a4f;
+  background: rgba(253, 250, 245, 0.94);
+  box-shadow: 0 8rpx 14rpx rgba(57, 65, 62, 0.06);
+  color: #5d8378;
 }
 
 .chart-panel {
-  padding: 22rpx 20rpx 20rpx;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(196, 167, 140, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(253, 250, 245, 0.98) 0%, rgba(247, 242, 235, 0.96) 100%);
+  padding: 24rpx 20rpx 20rpx;
   position: relative;
 }
 
@@ -52,18 +51,18 @@
 }
 
 .chart-latest {
-  color: #2f2a24;
-  font-size: 28rpx;
+  color: #3b4842;
+  font-size: 30rpx;
   font-weight: 700;
   line-height: 1.4;
 }
 
 .chart-add-btn {
   align-items: center;
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.1);
+  border: 1rpx solid rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 34rpx;
   font-weight: 600;
@@ -74,13 +73,13 @@
 }
 
 .chart-add-btn.disabled {
-  background: rgba(140, 127, 115, 0.1);
-  border-color: rgba(140, 127, 115, 0.14);
-  color: #9b8f81;
+  background: rgba(145, 166, 159, 0.1);
+  border-color: rgba(145, 166, 159, 0.16);
+  color: #9bb1ab;
 }
 
 .axis-label {
-  color: #8a7e71;
+  color: #8a877f;
   font-family: "DIN Alternate", "PingFang SC", sans-serif;
   font-size: 20rpx;
   position: absolute;
@@ -106,7 +105,7 @@
 }
 
 .grid-line {
-  border-top: 1rpx dashed rgba(30, 90, 79, 0.18);
+  border-top: 1rpx dashed rgba(107, 144, 132, 0.14);
   left: 0;
   position: absolute;
   right: 0;
@@ -125,7 +124,7 @@
 }
 
 .trend-segment {
-  background: rgba(30, 90, 79, 0.46);
+  background: rgba(107, 144, 132, 0.42);
   border-radius: 999rpx;
   height: 4rpx;
   position: absolute;
@@ -133,39 +132,37 @@
 }
 
 .trend-point-wrap {
+  align-items: center;
+  display: flex;
+  height: 108rpx;
+  justify-content: center;
   position: absolute;
   transform: translate(-50%, -50%);
+  width: 44rpx;
 }
 
 .trend-point {
-  background: #f6f0e6;
-  border: 3rpx solid #1e5a4f;
+  background: #fcfaf5;
+  border: 3rpx solid #6f968b;
   border-radius: 50%;
-  box-shadow: 0 6rpx 10rpx rgba(30, 90, 79, 0.2);
+  box-shadow: 0 5rpx 8rpx rgba(70, 104, 95, 0.12);
   height: 18rpx;
   width: 18rpx;
 }
 
-.trend-point.latest {
-  background: #1e5a4f;
-  border-color: #1e5a4f;
-  box-shadow: 0 8rpx 18rpx rgba(30, 90, 79, 0.28);
-  height: 20rpx;
-  width: 20rpx;
-}
-
+.trend-point.latest,
 .trend-point.selected {
-  background: #1e5a4f;
-  border-color: #1e5a4f;
-  box-shadow: 0 10rpx 20rpx rgba(30, 90, 79, 0.34);
+  background: #5d8378;
+  border-color: #5d8378;
+  box-shadow: 0 8rpx 14rpx rgba(70, 104, 95, 0.18);
   height: 20rpx;
   width: 20rpx;
 }
 
 .latest-value {
-  background: rgba(30, 90, 79, 0.12);
+  background: rgba(107, 144, 132, 0.1);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   font-family: "DIN Alternate", "PingFang SC", sans-serif;
   font-size: 20rpx;
   font-weight: 700;
@@ -180,7 +177,7 @@
 }
 
 .date-label {
-  color: #8c7f72;
+  color: #8a877f;
   font-size: 19rpx;
   position: absolute;
   transform: translateX(-50%);
@@ -191,18 +188,10 @@
   color: transparent;
 }
 
-.chart-empty {
-  align-items: center;
-  color: #8f8373;
-  display: flex;
-  font-size: 24rpx;
-  height: 372rpx;
-  justify-content: center;
-}
-
+.chart-empty,
 .chart-loading {
   align-items: center;
-  color: #8f8373;
+  color: #8a877f;
   display: flex;
   font-size: 24rpx;
   height: 372rpx;
@@ -216,10 +205,10 @@
 }
 
 .load-more-btn {
-  background: rgba(30, 90, 79, 0.1);
-  border: 1rpx solid rgba(30, 90, 79, 0.18);
+  background: rgba(107, 144, 132, 0.08);
+  border: 1rpx solid rgba(107, 144, 132, 0.14);
   border-radius: 999rpx;
-  color: #1e5a4f;
+  color: #5d8378;
   font-size: 22rpx;
   font-weight: 600;
   line-height: 1;
@@ -241,23 +230,23 @@
 }
 
 .metric-card {
-  background: rgba(255, 255, 255, 0.74);
-  border: 1rpx solid rgba(70, 57, 47, 0.1);
-  border-radius: 20rpx;
-  min-height: 148rpx;
-  padding: 16rpx 16rpx 14rpx;
+  background: rgba(253, 250, 245, 0.82);
+  border: 1rpx solid rgba(107, 144, 132, 0.09);
+  border-radius: 24rpx;
+  min-height: 156rpx;
+  padding: 18rpx 18rpx 16rpx;
   position: relative;
 }
 
 .metric-card.active {
-  background: linear-gradient(160deg, rgba(239, 247, 244, 0.96), rgba(252, 248, 240, 0.96));
-  border-color: rgba(30, 90, 79, 0.24);
-  box-shadow: 0 10rpx 20rpx rgba(30, 90, 79, 0.12);
+  background: linear-gradient(160deg, rgba(249, 246, 240, 0.98), rgba(253, 250, 245, 0.96));
+  border-color: rgba(107, 144, 132, 0.16);
+  box-shadow: 0 8rpx 14rpx rgba(57, 65, 62, 0.08);
 }
 
 .metric-card-action {
   align-items: center;
-  color: #1e5a4f;
+  color: #5d8378;
   display: flex;
   font-size: 32rpx;
   font-weight: 600;
@@ -271,7 +260,7 @@
 }
 
 .metric-label {
-  color: #6f6458;
+  color: #7d7c74;
   font-size: 22rpx;
 }
 
@@ -287,7 +276,7 @@
 }
 
 .metric-value {
-  color: #2f2a24;
+  color: #37423d;
   font-family: "DIN Alternate", "PingFang SC", sans-serif;
   font-size: 34rpx;
   font-weight: 800;
@@ -299,113 +288,12 @@
 }
 
 .metric-unit {
-  color: #7d7062;
+  color: #7d7c74;
   font-size: 20rpx;
 }
 
 .metric-date {
-  color: #8f8373;
+  color: #8a877f;
   font-size: 20rpx;
   margin-top: 10rpx;
-}
-
-.sheet-overlay {
-  background: rgba(24, 20, 16, 0.44);
-  bottom: 0;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 0;
-  z-index: 120;
-}
-
-.bottom-sheet {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  bottom: 0;
-  left: 0;
-  padding: 24rpx 26rpx calc(34rpx + env(safe-area-inset-bottom));
-  position: fixed;
-  right: 0;
-  z-index: 121;
-}
-
-.sheet-head {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.sheet-title {
-  color: #2f2a24;
-  font-size: 34rpx;
-  font-weight: 700;
-}
-
-.sheet-close {
-  align-items: center;
-  color: #7f7264;
-  display: flex;
-  font-size: 32rpx;
-  height: 48rpx;
-  justify-content: center;
-  width: 48rpx;
-}
-
-.sheet-date,
-.sheet-date-picker {
-  color: #7a6e61;
-  font-size: 23rpx;
-  margin-top: 12rpx;
-}
-
-.sheet-date-picker {
-  background: rgba(30, 90, 79, 0.08);
-  border: 1rpx solid rgba(30, 90, 79, 0.12);
-  border-radius: 14rpx;
-  display: inline-flex;
-  padding: 8rpx 16rpx;
-}
-
-.sheet-input-row {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.76);
-  border: 1rpx solid rgba(70, 57, 47, 0.16);
-  border-radius: 20rpx;
-  display: flex;
-  margin-top: 20rpx;
-  overflow: hidden;
-}
-
-.sheet-input {
-  flex: 1;
-  font-family: "DIN Alternate", "PingFang SC", sans-serif;
-  font-size: 38rpx;
-  height: 92rpx;
-  padding: 0 22rpx;
-}
-
-.sheet-unit {
-  color: #6f6458;
-  font-size: 26rpx;
-  font-weight: 700;
-  min-width: 94rpx;
-  text-align: center;
-}
-
-.sheet-submit-btn {
-  align-items: center;
-  background: linear-gradient(128deg, #1e5a4f 0%, #2a7364 100%);
-  border-radius: 999rpx;
-  color: #fffef8;
-  display: flex;
-  font-size: 28rpx;
-  font-weight: 700;
-  height: 88rpx;
-  justify-content: center;
-  margin-top: 24rpx;
-}
-
-.sheet-submit-btn.disabled {
-  opacity: 0.6;
 }

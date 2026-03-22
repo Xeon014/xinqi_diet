@@ -7,7 +7,7 @@ const STEPS = [
   { key: 'basic', title: '基础信息', description: '', optional: false },
   { key: 'body', title: '身体数据', description: '', optional: false },
   { key: 'bmr', title: '基础代谢 BMR', description: '推荐值按性别、年龄、身高、体重计算。', optional: false },
-  { key: 'goalTarget', title: '目标体重与预期日期', description: '', optional: true },
+  { key: 'goalTarget', title: '目标体重与预期日期', description: '建议设置目标体重。', optional: true },
   { key: 'goalPlan', title: '目标计划', description: '', optional: true },
 ];
 
@@ -374,7 +374,7 @@ Page({
       title: '稍后完善',
       content: '后续可在健康档案里补充。',
       cancelText: '继续填写',
-      confirmText: '跳过并完成',
+      confirmText: '完成建档',
       success: (result) => {
         if (!result.confirm) {
           return;
@@ -689,7 +689,9 @@ Page({
       return;
     }
     this.setData({ submitting: true });
-    updateProfile(payload)
+    updateProfile(Object.assign({}, payload, {
+      seedInitialWeightRecord: true,
+    }))
       .then(() => {
         wx.showToast({ title: '已保存', icon: 'success' });
         setTimeout(() => {

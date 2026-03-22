@@ -19,54 +19,6 @@ const CLOUD_CONTAINER_MAP = {
   },
 };
 
-function normalizeBaseUrl(url) {
-  if (typeof url !== "string") {
-    return "";
-  }
-  return url.trim().replace(/\/+$/, "");
-}
-
-function parseBoolean(value) {
-  if (typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true") {
-      return true;
-    }
-    if (normalized === "false") {
-      return false;
-    }
-  }
-  return null;
-}
-
-function getThirdPartyExtConfig() {
-  if (typeof wx !== "undefined" && typeof wx.getExtConfigSync === "function") {
-    const config = wx.getExtConfigSync() || {};
-    if (config && typeof config === "object" && Object.keys(config).length > 0) {
-      return config;
-    }
-  }
-  return {};
-}
-
-function getRuntimeExtConfig(extConfig, envVersion) {
-  if (!extConfig || typeof extConfig !== "object") {
-    return {};
-  }
-  const runtime = extConfig.runtime;
-  if (!runtime || typeof runtime !== "object") {
-    return {};
-  }
-  const runtimeConfig = runtime[envVersion];
-  if (!runtimeConfig || typeof runtimeConfig !== "object") {
-    return {};
-  }
-  return runtimeConfig;
-}
-
 function resolveEnvVersion() {
   let envVersion = "develop";
   if (typeof wx !== "undefined" && typeof wx.getAccountInfoSync === "function") {
@@ -82,61 +34,30 @@ function resolveEnvVersion() {
   return envVersion;
 }
 
-function resolveBaseUrl(extConfig, runtimeExtConfig, envVersion) {
-  const runtimeBaseUrl = normalizeBaseUrl(runtimeExtConfig.baseUrl);
-  if (runtimeBaseUrl) {
-    return runtimeBaseUrl;
-  }
-
-  const extBaseUrl = normalizeBaseUrl(extConfig.baseUrl);
-  if (extBaseUrl) {
-    return extBaseUrl;
-  }
+function resolveBaseUrl(envVersion) {
   return BASE_URL_MAP[envVersion] || BASE_URL_MAP.develop;
 }
 
-function resolveCloudEnvId(extConfig, runtimeExtConfig, envVersion) {
-  if (typeof runtimeExtConfig.cloudEnvId === "string" && runtimeExtConfig.cloudEnvId.trim()) {
-    return runtimeExtConfig.cloudEnvId.trim();
-  }
-  if (typeof extConfig.cloudEnvId === "string" && extConfig.cloudEnvId.trim()) {
-    return extConfig.cloudEnvId.trim();
-  }
+function resolveCloudEnvId(envVersion) {
   const envConfig = CLOUD_CONTAINER_MAP[envVersion] || CLOUD_CONTAINER_MAP.develop;
   return envConfig.envId;
 }
 
-function resolveCloudService(extConfig, runtimeExtConfig, envVersion) {
-  if (typeof runtimeExtConfig.cloudService === "string" && runtimeExtConfig.cloudService.trim()) {
-    return runtimeExtConfig.cloudService.trim();
-  }
-  if (typeof extConfig.cloudService === "string" && extConfig.cloudService.trim()) {
-    return extConfig.cloudService.trim();
-  }
+function resolveCloudService(envVersion) {
   const envConfig = CLOUD_CONTAINER_MAP[envVersion] || CLOUD_CONTAINER_MAP.develop;
   return envConfig.service;
 }
 
-function resolveUseCloudContainer(extConfig, runtimeExtConfig, envVersion) {
-  const runtimeValue = parseBoolean(runtimeExtConfig.useCloudContainer);
-  if (runtimeValue != null) {
-    return runtimeValue;
-  }
-  const extValue = parseBoolean(extConfig.useCloudContainer);
-  if (extValue != null) {
-    return extValue;
-  }
+function resolveUseCloudContainer(envVersion) {
   return envVersion !== "develop";
 }
 
-const EXT_CONFIG = getThirdPartyExtConfig();
 const RUNTIME_ENV_VERSION = resolveEnvVersion();
-const RUNTIME_EXT_CONFIG = getRuntimeExtConfig(EXT_CONFIG, RUNTIME_ENV_VERSION);
 const RUNTIME_CONFIG = {
-  baseUrl: resolveBaseUrl(EXT_CONFIG, RUNTIME_EXT_CONFIG, RUNTIME_ENV_VERSION),
-  cloudEnvId: resolveCloudEnvId(EXT_CONFIG, RUNTIME_EXT_CONFIG, RUNTIME_ENV_VERSION),
-  cloudService: resolveCloudService(EXT_CONFIG, RUNTIME_EXT_CONFIG, RUNTIME_ENV_VERSION),
-  useCloudContainer: resolveUseCloudContainer(EXT_CONFIG, RUNTIME_EXT_CONFIG, RUNTIME_ENV_VERSION),
+  baseUrl: resolveBaseUrl(RUNTIME_ENV_VERSION),
+  cloudEnvId: resolveCloudEnvId(RUNTIME_ENV_VERSION),
+  cloudService: resolveCloudService(RUNTIME_ENV_VERSION),
+  useCloudContainer: resolveUseCloudContainer(RUNTIME_ENV_VERSION),
 };
 const BASE_URL = RUNTIME_CONFIG.baseUrl;
 const CLOUD_ENV_ID = RUNTIME_CONFIG.cloudEnvId;

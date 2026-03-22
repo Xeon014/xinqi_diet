@@ -74,15 +74,42 @@
       <view class="action-btn" bindtap="handleStartCreate">新建</view>
     </view>
 
-    <view wx:if="{{combos.length}}" class="panel combo-list">
-      <view wx:for="{{combos}}" wx:key="id" class="combo-item">
-        <view class="combo-main">
-          <view class="combo-name">{{item.name}}</view>
-          <view class="combo-meta">{{item.totalCalories}} kcal · {{item.foodCount}} 种食物</view>
+    <view wx:if="{{combos.length}}" class="panel combo-list" bindtap="handleComboListBackgroundTap">
+      <view
+        wx:for="{{combos}}"
+        wx:key="id"
+        class="combo-swipe-cell"
+        data-id="{{item.id}}"
+        bindtouchstart="handleComboTouchStart"
+        bindtouchmove="handleComboTouchMove"
+        bindtouchend="handleComboTouchEnd"
+        bindtouchcancel="handleComboTouchEnd"
+      >
+        <view class="swipe-action-track">
+          <view class="swipe-action-shell">
+            <view class="danger-icon-btn swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDelete">
+              <view class="trash-icon">
+                <view class="trash-icon-handle"></view>
+                <view class="trash-icon-lid"></view>
+                <view class="trash-icon-body">
+                  <view class="trash-icon-line left"></view>
+                  <view class="trash-icon-line center"></view>
+                  <view class="trash-icon-line right"></view>
+                </view>
+              </view>
+            </view>
+          </view>
         </view>
-        <view class="combo-actions">
-          <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
-          <view class="mini-action danger" data-id="{{item.id}}" bindtap="handleDelete">删除</view>
+        <view class="combo-swipe-content" style="{{item.swipeContentStyle}}" catchtap="handleSwipeContentTap">
+          <view class="combo-item">
+            <view class="combo-main">
+              <view class="combo-name">{{item.name}}</view>
+              <view class="combo-meta">{{item.totalCalories}} kcal · {{item.foodCount}} 种食物</view>
+            </view>
+            <view class="combo-actions">
+              <view class="mini-action" data-id="{{item.id}}" bindtap="handleEdit">编辑</view>
+            </view>
+          </view>
         </view>
       </view>
     </view>

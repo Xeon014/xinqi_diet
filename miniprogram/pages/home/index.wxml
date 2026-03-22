@@ -5,6 +5,13 @@
       <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
         <view class="date-center">
           <view class="date-label">{{displayDateLabel || recordDate}}</view>
+          <view
+            wx:if="{{displayDateLabel !== '今天'}}"
+            class="date-today-link"
+            catchtap="handleBackToToday"
+          >
+            回到今天
+          </view>
         </view>
       </picker>
       <view class="date-step" bindtap="handleNextDay">后一天</view>
@@ -12,9 +19,10 @@
   </view>
 
   <view class="hero panel">
-    <view class="hero-strip"></view>
     <view class="hero-head">
-      <view class="hero-title">今日净热量</view>
+      <view>
+        <view class="hero-title">今日净热量</view>
+      </view>
     </view>
 
     <view class="hero-main">
@@ -52,7 +60,7 @@
     <view class="section-title">记录</view>
   </view>
 
-  <view wx:if="{{recordGroups.length}}" class="record-groups">
+  <view wx:if="{{recordGroups.length}}" class="record-groups" bindtap="handleRecordListTap">
     <view
       wx:for="{{recordGroups}}"
       wx:key="key"
@@ -64,54 +72,88 @@
           <view class="group-accent"></view>
           <view class="group-title">{{group.label}}</view>
         </view>
-        <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
-          <view
-            class="group-action-btn group-action-nutrition"
-            data-meal-type="{{group.mealType}}"
-            bindtap="handleOpenMealNutrition"
-          >
-            <view class="nutrition-icon">
-              <view class="nutrition-bar nutrition-bar-1"></view>
-              <view class="nutrition-bar nutrition-bar-2"></view>
-              <view class="nutrition-bar nutrition-bar-3"></view>
+        <view class="group-side">
+          <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
+            <view
+              class="group-action-btn group-action-nutrition"
+              data-meal-type="{{group.mealType}}"
+              bindtap="handleOpenMealNutrition"
+            >
+              <view class="nutrition-icon">
+                <view class="nutrition-bar nutrition-bar-1"></view>
+                <view class="nutrition-bar nutrition-bar-2"></view>
+                <view class="nutrition-bar nutrition-bar-3"></view>
+              </view>
+            </view>
+            <view
+              class="group-action-btn group-action-add"
+              data-meal-type="{{group.mealType}}"
+              bindtap="handleQuickAddMeal"
+            >
+              +
             </view>
           </view>
-          <view
-            class="group-action-btn group-action-add"
-            data-meal-type="{{group.mealType}}"
-            bindtap="handleQuickAddMeal"
-          >
-            +
-          </view>
-        </view>
-        <view wx:else class="group-actions">
-          <view
-            class="group-action-btn group-action-exercise"
-            bindtap="handleQuickAddExercise"
-          >
-            <view class="group-exercise-icon">
-              <view class="group-exercise-stroke"></view>
+          <view wx:else class="group-actions">
+            <view
+              class="group-action-btn group-action-exercise"
+              bindtap="handleQuickAddExercise"
+            >
+              <view class="group-exercise-icon">
+                <view class="group-exercise-stroke"></view>
+              </view>
             </view>
           </view>
         </view>
       </view>
 
-      <view wx:if="{{group.records.length}}" class="group-list">
+      <view wx:if="{{group.records.length}}" class="group-list" catchtap="noop">
         <view
           wx:for="{{group.records}}"
           wx:key="recordKey"
           wx:for-item="record"
-          class="stream-item"
+          class="stream-swipe-cell"
+          data-record-key="{{record.recordKey}}"
+          bindtouchstart="handleRecordTouchStart"
+          bindtouchmove="handleRecordTouchMove"
+          bindtouchend="handleRecordTouchEnd"
+          bindtouchcancel="handleRecordTouchEnd"
+        >
+          <view class="stream-action-track">
+            <view class="stream-action-shell">
+              <view
+                class="danger-icon-btn stream-delete-btn"
+                data-record-type="{{record.recordType}}"
+                data-record-id="{{record.recordId}}"
+                catchtap="handleDeleteHomeRecord"
+              >
+                <view class="trash-icon">
+                  <view class="trash-icon-handle"></view>
+                  <view class="trash-icon-lid"></view>
+                  <view class="trash-icon-body">
+                    <view class="trash-icon-line left"></view>
+                    <view class="trash-icon-line center"></view>
+                    <view class="trash-icon-line right"></view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view
+            class="stream-swipe-content"
+            style="{{record.swipeContentStyle}}"
           data-record-type="{{record.recordType}}"
           data-record-id="{{record.recordId}}"
           data-meal-type="{{record.mealType}}"
           data-record-date="{{record.recordDate}}"
-          bindtap="handleOpenRecord"
-        >
-          <view class="stream-main">
-            <view class="stream-title">{{record.title}}</view>
+            catchtap="handleRecordTap"
+          >
+            <view class="stream-item">
+              <view class="stream-main">
+                <view class="stream-title">{{record.title}}</view>
+              </view>
+              <view class="stream-calories {{record.isDiet ? 'diet' : 'exercise'}}">{{record.signedCalories}}</view>
+            </view>
           </view>
-          <view class="stream-calories {{record.isDiet ? 'diet' : 'exercise'}}">{{record.signedCalories}}</view>
         </view>
       </view>
     </view>

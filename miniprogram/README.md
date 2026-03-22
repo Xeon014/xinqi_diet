@@ -11,6 +11,7 @@
 - `pages/health-profile`：健康档案维护（体重、BMR、TDEE）
 - `pages/meal-combo-manage`：自定义套餐管理
 - `pages/progress`：趋势页
+- `pages/metric-history`：单项体征历史记录页
 - `pages/onboarding-profile`：首次登录资料引导
 - `pages/custom-food`：自定义食物管理
 - `pages/custom-exercise`：自定义运动管理
@@ -43,9 +44,16 @@
 
 - `pages/food-item-editor`
 
+## 趋势与体征链路（当前实现）
+
+- Tab“趋势”：进入 `pages/progress`，展示体重、BMI 和围度趋势。
+- 趋势页卡片右上角 `+`：直接记录当前指标（BMI 仅支持查看，不支持手工新增）。
+- 趋势页卡片右上角 `···`：进入 `pages/metric-history` 查看单项指标历史明细。
+- 健康档案页底部入口：可直接跳转趋势页查看近期变化。
+
 ## 联调方式
 
-1. 启动后端服务：`mvn spring-boot:run`
+1. 启动后端服务：`cd ../backend && mvn spring-boot:run`
 2. 用微信开发者工具打开 `miniprogram` 目录
 3. 在项目配置中确认 `miniprogramRoot` 指向当前目录 `./`
 4. 用微信开发者工具以 `develop` 环境联调时，默认直连本地 `127.0.0.1:8080`
