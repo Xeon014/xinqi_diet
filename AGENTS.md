@@ -63,6 +63,7 @@
 - 修改接口字段时，同步检查 `miniprogram/services/` 与页面调用。
 - 所有卡路里相关数据在前端展示时一律取整后显示；BMI 统一保留 1 位小数。
 - 修改小程序文件时，禁止把中文文案改成英文占位或 `?`。
+- 使用 `wx.showModal` 时，`confirmText` 必须控制在 4 个汉字以内，避免运行时报 `confirmText length should not larger than 4 Chinese characters`。
 - 涉及中文内容的批量写入，优先使用 Node 脚本写文件，避免 PowerShell 终端编码导致乱码。
 - 高频操作页面默认使用短文案，禁止主动添加教学式、解释式、提示过多的描述性文字。
 - 普通微信小程序不得把 `ext.json` 作为运行时配置主方案；仅第三方平台代开发场景才允许使用 `ext.json` / `wx.getExtConfigSync()`。

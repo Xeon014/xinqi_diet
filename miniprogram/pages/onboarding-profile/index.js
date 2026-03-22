@@ -374,7 +374,7 @@ Page({
       title: '稍后完善',
       content: '后续可在健康档案里补充。',
       cancelText: '继续填写',
-      confirmText: '跳过并完成',
+      confirmText: '完成建档',
       success: (result) => {
         if (!result.confirm) {
           return;
