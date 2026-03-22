@@ -1,43 +1,39 @@
-﻿# 项目文档导航
+﻿# 仓库文档导航
+
+> 根 `docs/` 只放仓库级和跨应用文档；应用专属文档分别下沉到 `backend/docs/` 与 `miniprogram/docs/`。
 
 ## 1. 快速入口
 
-- 页面与功能：`docs/page-entry-map.md`、`docs/feature-inventory.md`
-- 接口与部署：`docs/miniprogram-api.md`、`docs/tencent-cloud-hosting-checklist.md`
-- 数据维护：`docs/builtin-food-maintenance.md`、`docs/database-rebuild.md`
-- 协作与维护：`docs/dev-handoff.md`、`docs/change-log-next.md`、`docs/current-ux-issues.md`
+- 仓库总览：`README.md`
+- 后端说明：`backend/README.md`、`backend/docs/腾讯云托管部署清单.md`
+- 小程序说明：`miniprogram/README.md`、`miniprogram/docs/页面入口与跳转地图.md`
+- 协作与维护：`docs/开发接手指南.md`、`docs/变更日志.md`、`docs/小程序接口对接说明.md`
 
 ## 2. 推荐阅读顺序
 
-1. `docs/page-entry-map.md`（先看页面入口和主链路）
-2. `docs/feature-inventory.md`（按功能编号定位需求）
-3. `docs/miniprogram-api.md`（确认前后端字段与接口）
-4. `docs/dev-handoff.md`（接手环境与流程）
-5. `docs/change-log-next.md`（查看最近变更与回归信息）
+1. `README.md`（先看仓库结构和进入方式）
+2. `backend/README.md`（后端启动、数据库和部署入口）
+3. `miniprogram/README.md`（小程序工程与调试说明）
+4. `docs/小程序接口对接说明.md`（确认前后端字段与接口）
+5. `docs/开发接手指南.md`（接手环境与常用命令）
 
-## 3. 饮食记录链路（当前口径）
+## 3. 文档归属
 
-- 首页加号 -> `pages/food-search/index`（`source=home`）
-- 首页饮食记录点击 -> `pages/food-search/index`（`mode=edit&recordId&source=home`）
-- 食物选择后在同页底部弹窗编辑重量：
-  - 新建：`添加`
-  - 编辑：`完成编辑`
-- 自定义食物入口：仅在“自定义”分类标题右侧显示 `添加` 按钮
-- “我的 -> 自定义食物”进入独立管理页，支持新建、编辑、删除
+- 根 `docs/`：仓库级说明、接手指南、变更日志、跨应用接口文档
+- `backend/docs/`：数据库、部署、数据维护等后端专属文档
+- `miniprogram/docs/`：页面入口、功能清单、体验问题等小程序专属文档
 
-## 4. 运动记录链路（当前口径）
+## 4. 常用定位
 
-- 首页加号 -> `pages/exercise-search/index`（`mode=create&source=home`）
-- 首页运动记录点击 -> `pages/exercise-search/index`（`mode=edit&recordId&source=home`）
-- 运动选择后在同页底部弹窗编辑时长与强度：
-  - 新建：`添加`
-  - 编辑：`保存`
-- 自定义运动入口：仅在“自定义”筛选标题右侧显示 `添加` 按钮
-- “我的 -> 自定义运动”进入独立管理页，支持新建、编辑、删除
+- 后端功能与数据库：`backend/docs/数据库删库重建与 Flyway 基线.md`
+- 小程序页面与功能：`miniprogram/docs/功能总览清单.md`
+- 小程序页面跳转：`miniprogram/docs/页面入口与跳转地图.md`
+- 小程序体验债务：`miniprogram/docs/当前体验问题清单.md`
 
 ## 5. 文档维护规则
 
-- 页面入口变更：同步更新 `docs/page-entry-map.md`
-- 功能状态变更：同步更新 `docs/feature-inventory.md`
-- 交互问题和体验债务：更新 `docs/current-ux-issues.md`
-- 每次功能迭代结束：在 `docs/change-log-next.md` 追加记录
+- 页面入口变更：同步更新 `miniprogram/docs/页面入口与跳转地图.md`
+- 功能状态变更：同步更新 `miniprogram/docs/功能总览清单.md`
+- 交互问题和体验债务：更新 `miniprogram/docs/当前体验问题清单.md`
+- 后端部署、数据库、数据维护规则：同步更新 `backend/docs/`
+- 每次功能迭代结束：在 `docs/变更日志.md` 追加记录
