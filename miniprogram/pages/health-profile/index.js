@@ -19,6 +19,14 @@ function toOneDecimal(value) {
   return number.toFixed(1);
 }
 
+function toWeightLabel(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return '--';
+  }
+  return number.toFixed(1).replace(/\.0$/, '');
+}
+
 function toPositiveNumber(rawValue) {
   const text = String(rawValue == null ? '' : rawValue).trim();
   if (!text) {
@@ -75,7 +83,31 @@ function createEmptySheet() {
   };
 }
 
-function createGoalPreviewState() {
+function getDefaultPreviewNoticeText(settings) {
+  return settings && settings.goalCalorieStrategy === 'MANUAL'
+    ? '按手动目标展示方案预览。'
+    : '按当前目标生成智能推荐。';
+}
+
+function getIdlePreviewNoticeText(currentWeight, settings) {
+  const targetWeight = toPositiveNumber(settings && settings.targetWeight);
+  if (targetWeight == null || !Number.isFinite(targetWeight) || targetWeight <= 0) {
+    return '补全目标体重后自动生成。';
+  }
+  if (shouldRequireGoalDate(currentWeight, settings) && !isFutureGoalDate(settings && settings.goalTargetDate)) {
+    return '请设置至少 7 天后的日期。';
+  }
+  if (settings && settings.goalCalorieStrategy === 'MANUAL') {
+    const dailyCalorieTarget = toPositiveNumber(settings.dailyCalorieTarget);
+    if (dailyCalorieTarget == null || !Number.isFinite(dailyCalorieTarget) || dailyCalorieTarget <= 0) {
+      return '请先设置目标热量。';
+    }
+  }
+  return getDefaultPreviewNoticeText(settings);
+}
+
+function createGoalPreviewState(options) {
+  const config = options || {};
   return {
     status: 'idle',
     raw: null,
@@ -86,10 +118,18 @@ function createGoalPreviewState() {
     warningMessage: '',
     trendHint: '',
     errorMessage: '',
+    noticeText: config.noticeText || getDefaultPreviewNoticeText(config.settings),
+    noticeTone: config.noticeTone || 'tip',
   };
 }
 
-function buildGoalPreviewState(preview) {
+function getLoadingPreviewNoticeText(settings) {
+  return settings && settings.goalCalorieStrategy === 'MANUAL'
+    ? '正在更新手动方案...'
+    : '正在生成智能推荐...';
+}
+
+function buildGoalPreviewState(preview, settings) {
   const weeklyNumber = Number(preview && preview.plannedWeeklyChangeKg);
   const weeklyAbs = Number.isFinite(weeklyNumber) ? Math.abs(weeklyNumber).toFixed(2) : '--';
   let weeklyLabel = '维持';
@@ -103,6 +143,8 @@ function buildGoalPreviewState(preview) {
   if (Number.isFinite(deltaNumber)) {
     deltaLabel = (deltaNumber > 0 ? '+' : '') + toInteger(deltaNumber) + ' kcal/天';
   }
+  const warningMessage = preview && preview.warningMessage ? preview.warningMessage : '';
+  const trendHint = preview && preview.usedTrendAdjustment ? '已结合最近体重变化做微调' : '';
   return {
     status: 'ready',
     raw: preview,
@@ -112,28 +154,40 @@ function buildGoalPreviewState(preview) {
     deltaLabel,
     weeklyLabel,
     warningLevel: preview && preview.warningLevel ? preview.warningLevel : 'NONE',
-    warningMessage: preview && preview.warningMessage ? preview.warningMessage : '',
-    trendHint: preview && preview.usedTrendAdjustment ? '已结合最近体重变化做微调' : '',
+    warningMessage,
+    trendHint,
     errorMessage: '',
+    noticeText: warningMessage || trendHint || getDefaultPreviewNoticeText(settings),
+    noticeTone: warningMessage ? 'warning' : 'tip',
   };
 }
 
-function buildMetrics(profile) {
+function getDraftCustomBmr(settings) {
+  const customBmr = toPositiveNumber(settings && settings.customBmr);
+  if (customBmr == null || !Number.isFinite(customBmr) || customBmr <= 0) {
+    return null;
+  }
+  return toInteger(customBmr);
+}
+
+function buildMetrics(profile, settings) {
+  const draftCustomBmr = getDraftCustomBmr(settings);
   return {
-    currentWeightLabel: profile.currentWeight == null ? '--' : String(profile.currentWeight),
     bmiLabel: toOneDecimal(profile.bmi),
-    bmrLabel: profile.bmr == null ? '--' : String(toInteger(profile.bmr)),
-    targetCaloriesLabel: profile.dailyCalorieTarget == null ? '--' : String(toInteger(profile.dailyCalorieTarget)),
+    currentWeightLabel: toWeightLabel(profile.currentWeight),
+    bmrLabel: draftCustomBmr != null
+      ? String(draftCustomBmr)
+      : (profile.bmr == null ? '--' : String(toInteger(profile.bmr))),
   };
 }
 
-function shouldRequireGoalDate(settings) {
-  const currentWeight = toPositiveNumber(settings.currentWeight);
+function shouldRequireGoalDate(currentWeight, settings) {
+  const currentWeightNumber = toPositiveNumber(currentWeight);
   const targetWeight = toPositiveNumber(settings.targetWeight);
-  if (!Number.isFinite(currentWeight) || !Number.isFinite(targetWeight)) {
+  if (!Number.isFinite(currentWeightNumber) || !Number.isFinite(targetWeight)) {
     return false;
   }
-  return Math.abs(currentWeight - targetWeight) > 0.3;
+  return Math.abs(currentWeightNumber - targetWeight) > 0.3;
 }
 
 function isFutureGoalDate(goalTargetDate) {
@@ -146,24 +200,22 @@ Page({
     minGoalDate: addDays(getToday(), 7),
     goalStrategies: GOAL_STRATEGIES,
     metrics: {
-      currentWeightLabel: '--',
       bmiLabel: '--',
+      currentWeightLabel: '--',
       bmrLabel: '--',
-      targetCaloriesLabel: '--',
     },
     settings: {
-      currentWeight: '',
       targetWeight: '',
       goalTargetDate: '',
       goalCalorieStrategy: 'MANUAL',
       dailyCalorieTarget: '',
+      customBmr: '',
     },
     goalPreview: createGoalPreviewState(),
     sheet: createEmptySheet(),
   },
 
   onShow() {
-    this.resetPageScroll();
     this.loadPageData();
   },
 
@@ -182,7 +234,6 @@ Page({
       .then((profile) => {
         this.setData(this.buildProfileViewData(profile));
         this.scheduleGoalPreview(true);
-        this.resetPageScroll();
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: 'none' });
@@ -197,23 +248,19 @@ Page({
   buildProfileViewData(profile) {
     return {
       profile,
-      metrics: buildMetrics(profile),
       settings: {
-        currentWeight: profile.currentWeight == null ? '' : String(profile.currentWeight),
         targetWeight: profile.targetWeight == null ? '' : String(profile.targetWeight),
         goalTargetDate: profile.goalTargetDate || '',
         goalCalorieStrategy: profile.goalCalorieStrategy || 'MANUAL',
         dailyCalorieTarget: profile.dailyCalorieTarget == null ? '' : String(toInteger(profile.dailyCalorieTarget)),
+        customBmr: profile.customBmr == null ? '' : String(toInteger(profile.customBmr)),
       },
+      metrics: buildMetrics(profile, {
+        customBmr: profile.customBmr == null ? '' : String(toInteger(profile.customBmr)),
+      }),
       goalPreview: createGoalPreviewState(),
       sheet: createEmptySheet(),
     };
-  },
-
-  resetPageScroll() {
-    wx.nextTick(() => {
-      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
-    });
   },
 
   handleInput(event) {
@@ -231,15 +278,36 @@ Page({
 
   handleGoalStrategySelect(event) {
     const value = event.currentTarget.dataset.value;
+    if (value === 'MANUAL') {
+      this.handleOpenTargetCalorieSheet();
+      return;
+    }
     this.setData({ 'settings.goalCalorieStrategy': value }, () => {
       this.scheduleGoalPreview(true);
+    });
+  },
+
+  handleOpenTargetCalorieSheet() {
+    this.setData({
+      sheet: {
+        visible: true,
+        type: 'DAILY_CALORIE_TARGET',
+        title: '目标热量设置',
+        fieldLabel: '目标热量 (kcal/天)',
+        currentValue: this.data.settings.dailyCalorieTarget || '--',
+        inputValue: this.data.settings.dailyCalorieTarget || '',
+        smartValue: '--',
+        smartAvailable: false,
+        hint: '仅更新当前页面预览，保存后才会生效。',
+        saving: false,
+      },
     });
   },
 
   buildPreviewPayload() {
     const profile = this.data.profile;
     const settings = this.data.settings;
-    const currentWeight = toPositiveNumber(settings.currentWeight);
+    const currentWeight = toPositiveNumber(profile && profile.currentWeight);
     const targetWeight = toPositiveNumber(settings.targetWeight);
     if (!profile || !profile.gender || !profile.birthDate || toPositiveNumber(profile.height) == null) {
       return null;
@@ -250,7 +318,7 @@ Page({
     if (targetWeight == null || !Number.isFinite(targetWeight) || targetWeight <= 0) {
       return null;
     }
-    if (shouldRequireGoalDate(settings) && !isFutureGoalDate(settings.goalTargetDate)) {
+    if (shouldRequireGoalDate(profile && profile.currentWeight, settings) && !isFutureGoalDate(settings.goalTargetDate)) {
       return null;
     }
     const payload = {
@@ -264,7 +332,10 @@ Page({
     if (settings.goalTargetDate) {
       payload.goalTargetDate = settings.goalTargetDate;
     }
-    if (profile.customBmr != null) {
+    const customBmr = getDraftCustomBmr(settings);
+    if (customBmr != null) {
+      payload.customBmr = customBmr;
+    } else if (profile.customBmr != null) {
       payload.customBmr = profile.customBmr;
     }
     if (profile.customTdee != null) {
@@ -292,7 +363,15 @@ Page({
   refreshGoalPreview(force) {
     const payload = this.buildPreviewPayload();
     if (!payload) {
-      this.setData({ goalPreview: createGoalPreviewState() });
+      this.setData({
+        goalPreview: createGoalPreviewState({
+          noticeText: getIdlePreviewNoticeText(
+            this.data.profile && this.data.profile.currentWeight,
+            this.data.settings
+          ),
+          settings: this.data.settings,
+        }),
+      });
       return Promise.resolve(null);
     }
     const signature = JSON.stringify(payload);
@@ -303,14 +382,20 @@ Page({
     const requestId = Date.now();
     this.goalPreviewRequestId = requestId;
     this.setData({
-      goalPreview: Object.assign(createGoalPreviewState(), { status: 'loading' }),
+      goalPreview: Object.assign(
+        createGoalPreviewState({
+          noticeText: getLoadingPreviewNoticeText(this.data.settings),
+          settings: this.data.settings,
+        }),
+        { status: 'loading' }
+      ),
     });
     return previewGoalPlan(payload)
       .then((preview) => {
         if (this.goalPreviewRequestId !== requestId) {
           return preview;
         }
-        this.setData({ goalPreview: buildGoalPreviewState(preview) });
+        this.setData({ goalPreview: buildGoalPreviewState(preview, this.data.settings) });
         return preview;
       })
       .catch((error) => {
@@ -318,9 +403,13 @@ Page({
           return null;
         }
         this.setData({
-          goalPreview: Object.assign(createGoalPreviewState(), {
+          goalPreview: Object.assign(createGoalPreviewState({
+            settings: this.data.settings,
+          }), {
             status: 'error',
             errorMessage: pickErrorMessage(error),
+            noticeText: pickErrorMessage(error),
+            noticeTone: 'warning',
           }),
         });
         if (force) {
@@ -336,7 +425,7 @@ Page({
       gender: profile.gender,
       birthDate: profile.birthDate,
       height: profile.height,
-      currentWeight: this.data.settings.currentWeight || profile.currentWeight,
+      currentWeight: profile.currentWeight,
     });
     this.setData({
       sheet: {
@@ -345,10 +434,10 @@ Page({
         title: '基础代谢设置',
         fieldLabel: '基础代谢 (kcal/天)',
         currentValue: this.data.metrics.bmrLabel,
-        inputValue: this.data.metrics.bmrLabel === '--' ? '' : this.data.metrics.bmrLabel,
+        inputValue: this.data.settings.customBmr || (this.data.metrics.bmrLabel === '--' ? '' : this.data.metrics.bmrLabel),
         smartValue: bmrEstimate == null ? '--' : String(bmrEstimate),
         smartAvailable: bmrEstimate != null,
-        hint: bmrEstimate == null ? '请先完善生日、身高和当前体重。' : '推荐值按性别、年龄、身高、体重计算。',
+        hint: bmrEstimate == null ? '仅更新当前页面，保存后生效。' : '推荐值按性别、年龄、身高、体重计算，保存后生效。',
         saving: false,
       },
     });
@@ -376,20 +465,31 @@ Page({
   handleSaveSheet() {
     const numberValue = toPositiveNumber(this.data.sheet.inputValue);
     if (numberValue == null || !Number.isFinite(numberValue) || numberValue <= 0) {
-      wx.showToast({ title: '请输入正确 BMR', icon: 'none' });
+      wx.showToast({
+        title: this.data.sheet.type === 'DAILY_CALORIE_TARGET' ? '请输入目标热量' : '请输入正确 BMR',
+        icon: 'none',
+      });
       return;
     }
-    this.setData({ 'sheet.saving': true });
-    updateProfile({ customBmr: toInteger(numberValue) })
-      .then((profile) => {
-        this.setData(this.buildProfileViewData(profile));
+    if (this.data.sheet.type === 'DAILY_CALORIE_TARGET') {
+      this.setData({
+        'settings.goalCalorieStrategy': 'MANUAL',
+        'settings.dailyCalorieTarget': String(toInteger(numberValue)),
+        sheet: createEmptySheet(),
+      }, () => {
         this.scheduleGoalPreview(true);
-        wx.showToast({ title: '基础代谢已更新', icon: 'success' });
-      })
-      .catch((error) => {
-        this.setData({ 'sheet.saving': false });
-        wx.showToast({ title: pickErrorMessage(error), icon: 'none' });
+        wx.showToast({ title: '已更新方案预览', icon: 'success' });
       });
+      return;
+    }
+    this.setData({
+      'settings.customBmr': String(toInteger(numberValue)),
+      'metrics.bmrLabel': String(toInteger(numberValue)),
+      sheet: createEmptySheet(),
+    }, () => {
+      this.scheduleGoalPreview(true);
+      wx.showToast({ title: '已更新当前页面', icon: 'success' });
+    });
   },
 
   confirmExtremePreview(preview) {
@@ -420,11 +520,7 @@ Page({
     const payload = {
       goalCalorieStrategy: settings.goalCalorieStrategy,
     };
-    const currentWeight = toPositiveNumber(settings.currentWeight);
     const targetWeight = toPositiveNumber(settings.targetWeight);
-    if (currentWeight != null && Number.isFinite(currentWeight) && currentWeight > 0) {
-      payload.currentWeight = currentWeight;
-    }
     if (targetWeight != null && Number.isFinite(targetWeight) && targetWeight > 0) {
       payload.targetWeight = targetWeight;
     }
@@ -437,22 +533,26 @@ Page({
         payload.dailyCalorieTarget = toInteger(dailyCalorieTarget);
       }
     }
+    const customBmr = getDraftCustomBmr(settings);
+    if (customBmr != null) {
+      payload.customBmr = customBmr;
+    }
     return payload;
   },
 
   handleSave() {
     const settings = this.data.settings;
-    const currentWeight = toPositiveNumber(settings.currentWeight);
+    const currentWeight = toPositiveNumber(this.data.profile && this.data.profile.currentWeight);
     const targetWeight = toPositiveNumber(settings.targetWeight);
     if (currentWeight == null || !Number.isFinite(currentWeight) || currentWeight <= 0) {
-      wx.showToast({ title: '请输入正确当前体重', icon: 'none' });
+      wx.showToast({ title: '请先完善当前体重', icon: 'none' });
       return;
     }
     if (targetWeight == null || !Number.isFinite(targetWeight) || targetWeight <= 0) {
       wx.showToast({ title: '请输入正确目标体重', icon: 'none' });
       return;
     }
-    if (shouldRequireGoalDate(settings) && !isFutureGoalDate(settings.goalTargetDate)) {
+    if (shouldRequireGoalDate(this.data.profile && this.data.profile.currentWeight, settings) && !isFutureGoalDate(settings.goalTargetDate)) {
       wx.showToast({ title: '请设置至少 7 天后的日期', icon: 'none' });
       return;
     }
@@ -464,7 +564,7 @@ Page({
       }
     }
     if (!this.buildPreviewPayload()) {
-      wx.showToast({ title: '请先完善目标计划', icon: 'none' });
+      wx.showToast({ title: '请先完善档案和目标设置', icon: 'none' });
       return;
     }
     this.refreshGoalPreview(true)
@@ -484,6 +584,10 @@ Page({
             wx.showToast({ title: pickErrorMessage(error), icon: 'none' });
           });
       });
+  },
+
+  handleOpenProgress() {
+    wx.switchTab({ url: '/pages/progress/index' });
   },
 
   noop() {},

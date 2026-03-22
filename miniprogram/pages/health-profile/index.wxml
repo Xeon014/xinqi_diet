@@ -1,110 +1,93 @@
 <view class="page-shell health-page" wx:if="{{profile}}">
-  <view class="panel module-panel">
-    <view class="section-title">今日概览</view>
-    <view class="metrics-grid">
-      <view class="metric-card green">
-        <view class="metric-label">当前体重</view>
-        <view class="metric-value">{{metrics.currentWeightLabel}}</view>
-        <view class="metric-unit">kg</view>
-      </view>
-      <view class="metric-card sand">
-        <view class="metric-label">BMI</view>
-        <view class="metric-value">{{metrics.bmiLabel}}</view>
-        <view class="metric-unit">指数</view>
-      </view>
-      <view class="metric-card teal">
-        <view class="metric-label">基础代谢(BMR)</view>
-        <view class="metric-value">{{metrics.bmrLabel}}</view>
-        <view class="metric-unit">kcal/天</view>
-      </view>
-      <view class="metric-card plum">
-        <view class="metric-label">目标热量</view>
-        <view class="metric-value">{{metrics.targetCaloriesLabel}}</view>
-        <view class="metric-unit">kcal/天</view>
-      </view>
+  <view class="summary-badges">
+    <view class="summary-badge">
+      <view class="summary-badge-label">BMI</view>
+      <view class="summary-badge-value">{{metrics.bmiLabel}}</view>
+    </view>
+    <view class="summary-badge">
+      <view class="summary-badge-label">当前体重</view>
+      <view class="summary-badge-value">{{metrics.currentWeightLabel === '--' ? '--' : metrics.currentWeightLabel + 'kg'}}</view>
     </view>
   </view>
 
-  <view class="panel module-panel">
-    <view class="section-title">目标设置</view>
-
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">当前体重(kg)</view>
-        <input class="field-input" type="digit" value="{{settings.currentWeight}}" data-field="currentWeight" bindinput="handleInput" placeholder="请输入当前体重" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">目标体重(kg)</view>
-        <input class="field-input" type="digit" value="{{settings.targetWeight}}" data-field="targetWeight" bindinput="handleInput" placeholder="请输入目标体重" />
+  <view class="field-card action-card" bindtap="handleOpenBmrSheet">
+    <view class="field-card-main">
+      <view class="field-card-stack">
+        <view class="field-card-title">基础代谢</view>
+        <view class="field-card-sub">当前 {{metrics.bmrLabel}} kcal/天</view>
       </view>
     </view>
+    <view class="field-card-action">设置</view>
+  </view>
 
-    <view class="field-group">
-      <view class="field-label">预期日期</view>
-      <picker mode="date" value="{{settings.goalTargetDate}}" start="{{minGoalDate}}" bindchange="handleGoalDateChange">
-        <view class="field-picker">{{settings.goalTargetDate || '请选择预期日期'}}</view>
-      </picker>
+  <view class="field-card inline-field-card">
+    <view class="inline-field-main">
+      <view class="field-card-title">目标体重 (kg)</view>
+      <input
+        class="inline-field-input"
+        type="digit"
+        value="{{settings.targetWeight}}"
+        data-field="targetWeight"
+        bindinput="handleInput"
+        placeholder="请输入"
+      />
     </view>
+  </view>
 
-    <view class="field-group">
-      <view class="field-label">目标热量模式</view>
-      <view class="strategy-row">
-        <view
-          wx:for="{{goalStrategies}}"
-          wx:key="value"
-          wx:for-item="strategy"
-          class="strategy-chip {{settings.goalCalorieStrategy === strategy.value ? 'active' : ''}}"
-          data-value="{{strategy.value}}"
-          bindtap="handleGoalStrategySelect"
-        >
-          {{strategy.label}}
+  <view class="field-card inline-field-card">
+    <picker mode="date" value="{{settings.goalTargetDate}}" start="{{minGoalDate}}" bindchange="handleGoalDateChange">
+      <view class="inline-field-main">
+        <view class="field-card-title">预期日期</view>
+        <view class="inline-field-picker">{{settings.goalTargetDate || '请选择日期'}}</view>
+      </view>
+    </picker>
+  </view>
+
+  <view class="panel strategy-panel">
+    <view class="strategy-card">
+      <view class="field-card-title">热量方案</view>
+      <view class="strategy-control-row">
+        <view class="strategy-button-group">
+          <view
+            wx:for="{{goalStrategies}}"
+            wx:key="value"
+            wx:for-item="strategy"
+            class="strategy-chip {{settings.goalCalorieStrategy === strategy.value ? 'active' : ''}}"
+            data-value="{{strategy.value}}"
+            bindtap="handleGoalStrategySelect"
+          >
+            {{strategy.label}}
+          </view>
         </view>
       </view>
-    </view>
-
-    <view wx:if="{{settings.goalCalorieStrategy === 'MANUAL'}}" class="field-group">
-      <view class="field-label">目标热量 (kcal/天)</view>
-      <input class="field-input" type="number" value="{{settings.dailyCalorieTarget}}" data-field="dailyCalorieTarget" bindinput="handleInput" placeholder="请输入目标热量" />
     </view>
 
     <view class="goal-preview-card">
       <view class="goal-preview-head">
-        <view class="goal-preview-title">{{settings.goalCalorieStrategy === 'MANUAL' ? '当前手动目标' : '智能推荐目标'}}</view>
+        <view class="goal-preview-title">方案预览</view>
         <view wx:if="{{goalPreview.warningLevel === 'EXTREME'}}" class="preview-pill danger">偏激进</view>
-        <view wx:elif="{{goalPreview.status === 'ready' && settings.goalCalorieStrategy === 'SMART'}}" class="preview-pill">已生成</view>
+        <view wx:elif="{{goalPreview.status === 'ready'}}" class="preview-pill">{{settings.goalCalorieStrategy === 'MANUAL' ? '手动方案' : '智能推荐'}}</view>
       </view>
 
-      <block wx:if="{{settings.goalCalorieStrategy === 'MANUAL'}}">
-        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在更新目标热量...</view>
-        <view wx:elif="{{goalPreview.status === 'ready'}}">
-          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
-          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
-        </view>
-        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
-        <view wx:else class="goal-preview-tip">请输入目标热量。</view>
-      </block>
-
-      <block wx:else>
-        <view wx:if="{{goalPreview.status === 'loading'}}" class="goal-preview-loading">正在计算目标热量...</view>
-        <view wx:elif="{{goalPreview.status === 'ready'}}">
-          <view class="goal-preview-main">{{goalPreview.targetCaloriesLabel}}</view>
-          <view class="goal-preview-meta">热量差值 {{goalPreview.deltaLabel}}</view>
-          <view class="goal-preview-meta">{{goalPreview.weeklyLabel}}</view>
-          <view wx:if="{{goalPreview.trendHint}}" class="goal-preview-tip">{{goalPreview.trendHint}}</view>
-          <view wx:if="{{goalPreview.warningMessage}}" class="goal-preview-warning">{{goalPreview.warningMessage}}</view>
-        </view>
-        <view wx:elif="{{goalPreview.status === 'error'}}" class="goal-preview-warning">{{goalPreview.errorMessage}}</view>
-        <view wx:else class="goal-preview-tip">完善信息后自动生成目标热量。</view>
-      </block>
-    </view>
-
-    <view class="setting-entry-card" bindtap="handleOpenBmrSheet">
-      <view class="setting-entry-main">
-        <view class="setting-entry-title">基础代谢</view>
-        <view class="setting-entry-sub">当前 {{metrics.bmrLabel}} kcal/天</view>
+      <view class="goal-preview-main {{goalPreview.status === 'ready' ? '' : 'muted'}}">
+        {{goalPreview.status === 'ready' ? goalPreview.targetCaloriesLabel : '--'}}
       </view>
-      <view class="setting-entry-action">去设置</view>
+      <view class="goal-preview-meta">热量差值 {{goalPreview.status === 'ready' ? goalPreview.deltaLabel : '--'}}</view>
+      <view class="goal-preview-meta">{{goalPreview.status === 'ready' ? goalPreview.weeklyLabel : '--'}}</view>
+      <view class="goal-preview-note {{goalPreview.noticeTone === 'warning' ? 'warning' : ''}}">
+        {{goalPreview.noticeText}}
+      </view>
     </view>
+  </view>
+
+  <view class="progress-entry-card" bindtap="handleOpenProgress">
+    <view class="field-card-main">
+      <view class="field-card-stack">
+        <view class="field-card-title">体征记录与趋势</view>
+        <view class="field-card-sub">查看体重和围度记录</view>
+      </view>
+    </view>
+    <view class="field-card-action">查看</view>
   </view>
 
   <view class="primary-button" bindtap="handleSave">保存</view>
@@ -123,13 +106,17 @@
       <input class="field-input" type="digit" value="{{sheet.inputValue}}" bindinput="handleSheetInput" placeholder="请输入数值" />
     </view>
 
-    <view class="estimate-btn {{sheet.smartAvailable ? '' : 'disabled'}}" bindtap="handleUseSmartValue">
+    <view
+      wx:if="{{sheet.type === 'BMR'}}"
+      class="estimate-btn {{sheet.smartAvailable ? '' : 'disabled'}}"
+      bindtap="handleUseSmartValue"
+    >
       使用估算值：{{sheet.smartValue}}
     </view>
     <view class="sheet-hint">{{sheet.hint}}</view>
 
     <view class="primary-button sheet-primary" bindtap="handleSaveSheet">
-      {{sheet.saving ? '保存中...' : '保存'}}
+      {{sheet.saving ? '确认中...' : '确认'}}
     </view>
   </view>
 </view>
