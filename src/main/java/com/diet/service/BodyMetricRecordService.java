@@ -5,6 +5,7 @@ import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.metric.BodyMetricType;
 import com.diet.domain.metric.BodyMetricUnit;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.dto.metric.BodyMetricRecordResponse;
@@ -15,12 +16,13 @@ import com.diet.dto.metric.BodyMetricTrendPointResponse;
 import com.diet.dto.metric.BodyMetricTrendResponse;
 import com.diet.dto.metric.CreateBodyMetricRecordRequest;
 import com.diet.dto.metric.MetricTrendRangeType;
+import com.diet.dto.user.GoalPlanPreviewResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,12 +47,16 @@ public class BodyMetricRecordService {
 
     private final UserProfileRepository userProfileRepository;
 
+    private final GoalPlanningService goalPlanningService;
+
     public BodyMetricRecordService(
             BodyMetricRecordRepository bodyMetricRecordRepository,
-            UserProfileRepository userProfileRepository
+            UserProfileRepository userProfileRepository,
+            GoalPlanningService goalPlanningService
     ) {
         this.bodyMetricRecordRepository = bodyMetricRecordRepository;
         this.userProfileRepository = userProfileRepository;
+        this.goalPlanningService = goalPlanningService;
     }
 
     public BodyMetricRecordResponse create(Long userId, CreateBodyMetricRecordRequest request) {
@@ -68,6 +74,7 @@ public class BodyMetricRecordService {
 
         if (request.metricType() == BodyMetricType.WEIGHT && request.recordDate().equals(LocalDate.now())) {
             user.setCurrentWeight(request.metricValue());
+            refreshSmartGoalSnapshot(user);
             userProfileRepository.update(user);
         }
 
@@ -277,5 +284,35 @@ public class BodyMetricRecordService {
     private UserProfile getUser(Long id) {
         return userProfileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
+    }
+
+    private void refreshSmartGoalSnapshot(UserProfile user) {
+        if (user.resolveGoalCalorieStrategy() != GoalCalorieStrategy.SMART) {
+            return;
+        }
+        try {
+            GoalPlanPreviewResponse preview = goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
+                    user.getId(),
+                    user.getGender(),
+                    user.getBirthDate(),
+                    user.getHeight(),
+                    user.getCurrentWeight(),
+                    user.getTargetWeight(),
+                    user.getCustomBmr(),
+                    user.getCustomTdee(),
+                    user.getDailyCalorieTarget(),
+                    user.getGoalMode(),
+                    user.getGoalCalorieDelta(),
+                    user.getDailyCalorieTarget(),
+                    user.getGoalMode(),
+                    user.getGoalCalorieDelta(),
+                    user.getGoalTargetDate(),
+                    user.resolveGoalCalorieStrategy()
+            ));
+            user.setDailyCalorieTarget(preview.recommendedDailyCalorieTarget());
+            user.setGoalMode(preview.goalMode());
+            user.setGoalCalorieDelta(preview.recommendedGoalCalorieDelta());
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 }

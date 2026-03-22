@@ -49,6 +49,9 @@ public class Food {
 
     private String aliases;
 
+    @TableField("image_url")
+    private String imageUrl;
+
     @TableField("is_builtin")
     private Boolean builtin;
 

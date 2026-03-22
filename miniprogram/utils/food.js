@@ -72,6 +72,7 @@ function decorateFood(food) {
   return {
     ...food,
     isBuiltin,
+    imageUrl: typeof food.imageUrl === "string" ? food.imageUrl.trim() : "",
     calorieUnit,
     calorieUnitLabel: CALORIE_UNIT_LABELS[calorieUnit],
     quantityUnit,

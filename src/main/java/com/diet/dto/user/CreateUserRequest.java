@@ -2,6 +2,7 @@ package com.diet.dto.user;
 
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -65,6 +66,12 @@ public record CreateUserRequest(
         @Schema(description = "目标热量差值，单位 kcal，负数表示减脂，正数表示增重")
         @Min(value = -1000, message = "goalCalorieDelta must be greater than or equal to -1000")
         @Max(value = 1000, message = "goalCalorieDelta must be less than or equal to 1000")
-        Integer goalCalorieDelta
+        Integer goalCalorieDelta,
+
+        @Schema(description = "预期达到目标体重的日期")
+        LocalDate goalTargetDate,
+
+        @Schema(description = "目标热量策略：SMART/MANUAL")
+        GoalCalorieStrategy goalCalorieStrategy
 ) {
 }

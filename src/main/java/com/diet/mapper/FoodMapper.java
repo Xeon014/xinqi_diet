@@ -18,4 +18,22 @@ public interface FoodMapper extends BaseMapper<Food> {
     List<Food> findAll(@Param("userId") Long userId, @Param("keyword") String keyword);
 
     List<Food> findCustomByUser(@Param("userId") Long userId, @Param("keyword") String keyword);
+
+    List<Food> findPage(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("category") String category,
+            @Param("customOnly") boolean customOnly,
+            @Param("builtinOnly") boolean builtinOnly,
+            @Param("offset") int offset,
+            @Param("size") int size
+    );
+
+    long countPage(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("category") String category,
+            @Param("customOnly") boolean customOnly,
+            @Param("builtinOnly") boolean builtinOnly
+    );
 }

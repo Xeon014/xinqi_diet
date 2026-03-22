@@ -1,5 +1,6 @@
 package com.diet.repository;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
 import com.diet.mapper.FoodMapper;
@@ -19,6 +20,12 @@ public class FoodRepositoryImpl implements FoodRepository {
     @Override
     public long count() {
         return foodMapper.selectCount(null);
+    }
+
+    @Override
+    public long countBuiltin() {
+        return foodMapper.selectCount(new LambdaQueryWrapper<Food>()
+                .eq(Food::getBuiltin, true));
     }
 
     @Override
@@ -63,5 +70,15 @@ public class FoodRepositoryImpl implements FoodRepository {
     @Override
     public List<Food> findCustomByUser(Long userId, String keyword) {
         return foodMapper.findCustomByUser(userId, keyword);
+    }
+
+    @Override
+    public List<Food> findPage(Long userId, String keyword, String category, boolean customOnly, boolean builtinOnly, int offset, int size) {
+        return foodMapper.findPage(userId, keyword, category, customOnly, builtinOnly, offset, size);
+    }
+
+    @Override
+    public long countPage(Long userId, String keyword, String category, boolean customOnly, boolean builtinOnly) {
+        return foodMapper.countPage(userId, keyword, category, customOnly, builtinOnly);
     }
 }

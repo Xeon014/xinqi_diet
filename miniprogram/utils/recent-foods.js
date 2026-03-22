@@ -16,6 +16,7 @@ function pickFoodSnapshot(food) {
     fatPer100g: food.fatPer100g,
     quantityUnit: food.quantityUnit,
     category: food.category,
+    imageUrl: food.imageUrl,
     usedAt: Date.now(),
   };
 }

@@ -224,6 +224,7 @@ Page({
     },
     weightEditorVisible: false,
     weightEditorLoading: false,
+    weightEditorDate: getToday(),
     weightValue: "",
     quickMenuVisible: false,
   },
@@ -482,17 +483,26 @@ Page({
     this.setData({
       weightEditorVisible: true,
       weightEditorLoading: false,
+      weightEditorDate: this.data.recordDate,
       weightValue: "",
     });
   },
 
   handleCloseWeightEditor() {
+
     if (this.data.weightEditorLoading) {
       return;
     }
     this.setData({
       weightEditorVisible: false,
+      weightEditorDate: this.data.recordDate,
       weightValue: "",
+    });
+  },
+
+  handleWeightDateChange(event) {
+    this.setData({
+      weightEditorDate: event.detail.value,
     });
   },
 
@@ -517,13 +527,19 @@ Page({
       metricType: "WEIGHT",
       metricValue,
       unit: "KG",
-      recordDate: this.data.recordDate,
+      recordDate: this.data.weightEditorDate,
     })
       .then(() => {
-        wx.showToast({ title: "已保存", icon: "success" });
+        const nextRecordDate = this.data.weightEditorDate;
+        wx.showToast({ title: "???", icon: "success" });
         this.setData({
           weightEditorVisible: false,
+          weightEditorDate: nextRecordDate,
           weightValue: "",
+          recordDate: nextRecordDate,
+        }, () => {
+          this.refreshDateMeta();
+          this.loadSummary();
         });
       })
       .catch((error) => {

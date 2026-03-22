@@ -81,7 +81,7 @@ Page({
 
   loadFoods() {
     this.setData({ loading: true });
-    searchFoods("", { scope: "CUSTOM" })
+    searchFoods("", { scope: "CUSTOM", page: 1, size: 500 })
       .then((result) => {
         const foods = (result.foods || []).map((item) => normalizeFood(decorateFood(item)));
         this.setData({ foods }, () => {

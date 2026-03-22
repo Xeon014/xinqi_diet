@@ -7,6 +7,8 @@ public interface FoodRepository {
 
     long count();
 
+    long countBuiltin();
+
     void save(Food food);
 
     void deleteById(Long id);
@@ -22,4 +24,8 @@ public interface FoodRepository {
     List<Food> findAll(Long userId, String keyword);
 
     List<Food> findCustomByUser(Long userId, String keyword);
+
+    List<Food> findPage(Long userId, String keyword, String category, boolean customOnly, boolean builtinOnly, int offset, int size);
+
+    long countPage(Long userId, String keyword, String category, boolean customOnly, boolean builtinOnly);
 }

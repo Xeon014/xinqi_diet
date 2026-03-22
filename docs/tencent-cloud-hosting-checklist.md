@@ -25,10 +25,18 @@
 `prod` 环境关闭了 Spring 自动建表，因此首次部署前必须先建库建表。
 
 1. 在腾讯云 MySQL 创建数据库：`diet`
-2. 执行脚本：`src/main/resources/schema.sql`
+2. 从空库初始化到当前最新结构时，执行脚本：`scripts/sql/schema-full-latest.sql`
 3. 确认业务账号拥有目标库的 DDL/DML 权限
+4. 后续表结构升级只新增 Flyway migration，不直接改这套线上库
 
-说明：应用启动后会自动补齐部分字段/索引并导入内置食物、运动数据，但前提是基础表已存在。
+说明：应用启动后**不会自动导入内置食物，也不会自动导入内置运动**，两者都需按仓库中的手工导入流程单独执行 SQL。
+
+推荐执行方式：
+
+1. 首次上线前，从空库或可重置环境执行 `scripts/sql/bootstrap-builtin-foods-latest.sql`
+2. 首次上线前，从空库或可重置环境执行 `scripts/sql/bootstrap-builtin-exercises-latest.sql`
+3. 正式上线后，食物后续只执行 `scripts/sql/sync-builtin-foods-latest.sql`
+4. 正式上线后，运动后续只执行 `scripts/sql/sync-builtin-exercises-latest.sql`
 
 ## 4. 健康检查建议
 

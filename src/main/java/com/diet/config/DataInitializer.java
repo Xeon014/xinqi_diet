@@ -1,6 +1,5 @@
 package com.diet.config;
 
-import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
@@ -9,6 +8,7 @@ import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
+import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import java.math.BigDecimal;
@@ -18,10 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 @Configuration
 public class DataInitializer {
@@ -34,35 +30,14 @@ public class DataInitializer {
             UserProfileRepository userProfileRepository,
             FoodRepository foodRepository,
             MealRecordRepository mealRecordRepository,
-            ExerciseRepository exerciseRepository,
-            ExerciseRecordRepository exerciseRecordRepository,
-            JdbcTemplate jdbcTemplate
+            ExerciseRecordRepository exerciseRecordRepository
     ) {
-        return args -> {
-            seedBuiltinFoodsIfNeeded(foodRepository, jdbcTemplate);
-            seedBuiltinExercisesIfNeeded(exerciseRepository, jdbcTemplate);
-            seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository, exerciseRecordRepository);
-        };
-    }
-
-    private void seedBuiltinFoodsIfNeeded(FoodRepository foodRepository, JdbcTemplate jdbcTemplate) {
-        if (foodRepository.count() >= 300) {
-            return;
-        }
-        importSql(jdbcTemplate, "builtin_food_seed.sql");
-    }
-
-    private void seedBuiltinExercisesIfNeeded(ExerciseRepository exerciseRepository, JdbcTemplate jdbcTemplate) {
-        if (exerciseRepository.count() >= 60) {
-            return;
-        }
-        importSql(jdbcTemplate, "builtin_exercise_seed.sql");
-    }
-
-    private void importSql(JdbcTemplate jdbcTemplate, String classpathSql) {
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(new ClassPathResource(classpathSql));
-        populator.setContinueOnError(false);
-        DatabasePopulatorUtils.execute(populator, jdbcTemplate.getDataSource());
+        return args -> seedDemoDataIfNeeded(
+                userProfileRepository,
+                foodRepository,
+                mealRecordRepository,
+                exerciseRecordRepository
+        );
     }
 
     private void seedDemoDataIfNeeded(
@@ -91,7 +66,9 @@ public class DataInitializer {
                 1350,
                 null,
                 null,
-                null
+                null,
+                null,
+                GoalCalorieStrategy.MANUAL
         );
         userProfileRepository.save(user);
 

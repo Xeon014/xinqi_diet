@@ -272,7 +272,7 @@ function buildLatestText(snapshotMap, metricKey) {
   const snapshot = snapshotMap[metricKey] || {};
   if (snapshot.rawValue != null) {
     const unit = metric.unit ? ` ${metric.unit}` : "";
-    return `${metric.label} ${snapshot.valueLabel}${unit}`;
+    return `${metric.label} ${toOneDecimal(snapshot.rawValue)}${unit}`;
   }
   return `${metric.label} 待记录`;
 }

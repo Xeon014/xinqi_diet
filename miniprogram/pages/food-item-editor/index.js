@@ -58,6 +58,7 @@ function normalizeFoodPayload(payload) {
     carbsPer100g: toInteger(payload.carbsPer100g),
     fatPer100g: toInteger(payload.fatPer100g),
     quantityUnit: normalizeQuantityUnit(payload.quantityUnit),
+    imageUrl: typeof payload.imageUrl === "string" ? payload.imageUrl : "",
   };
 }
 
@@ -97,6 +98,7 @@ Page({
     recordId: null,
     foodId: null,
     foodName: "",
+    foodImageUrl: "",
     categoryLabel: "",
     caloriesPer100g: 0,
     displayCaloriesPer100: 0,
@@ -160,6 +162,7 @@ Page({
     this.setData({
       foodId: food.id,
       foodName: food.name,
+      foodImageUrl: food.imageUrl || "",
       categoryLabel: food.categoryLabel || food.category || "",
       caloriesPer100g: toNumber(food.caloriesPer100g),
       displayCaloriesPer100: toInteger(food.displayCaloriesPer100),
@@ -212,12 +215,17 @@ Page({
           carbsPer100g: targetRecord.carbsPer100g,
           fatPer100g: targetRecord.fatPer100g,
           quantityUnit: normalizeQuantityUnit(targetRecord.quantityUnit),
+          imageUrl: "",
         }, String(toNumber(targetRecord.quantityInGram) || DEFAULT_QUANTITY));
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
         this.goHome();
       });
+  },
+
+  handleImageError() {
+    this.setData({ foodImageUrl: "" });
   },
 
   handleQuantityInput(event) {
@@ -289,6 +297,7 @@ Page({
             fatPer100g: this.data.fatPer100g,
             quantityUnit: this.data.quantityUnit,
             category: this.data.categoryLabel,
+            imageUrl: this.data.foodImageUrl,
           });
         }
 

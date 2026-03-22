@@ -1,6 +1,14 @@
 const { loginByWechatCode } = require("./services/auth");
 const { clearAuthInfo, getAccessToken, getClientUserKey, getCurrentUserId, setAuthInfo } = require("./utils/auth");
-const { BASE_URL, CLOUD_ENV_ID, CLOUD_SERVICE, RUNTIME_ENV_VERSION, USE_CLOUD_CONTAINER } = require("./utils/constants");
+const {
+  BASE_URL,
+  CLOUD_ENV_ID,
+  CLOUD_SERVICE,
+  RUNTIME_ENV_VERSION,
+  STORAGE_SCHEMA_VERSION,
+  STORAGE_SCHEMA_VERSION_KEY,
+  USE_CLOUD_CONTAINER,
+} = require("./utils/constants");
 
 const ONBOARDING_PENDING_PREFIX = "onboarding_pending_";
 
@@ -12,8 +20,21 @@ App({
   },
 
   onLaunch() {
+    this.ensureStorageSchema();
     this.initCloudRuntime();
     this.ensureLogin();
+  },
+
+  ensureStorageSchema() {
+    const currentVersion = Number(wx.getStorageSync(STORAGE_SCHEMA_VERSION_KEY) || 0);
+    if (currentVersion === STORAGE_SCHEMA_VERSION) {
+      return;
+    }
+
+    wx.clearStorageSync();
+    wx.setStorageSync(STORAGE_SCHEMA_VERSION_KEY, STORAGE_SCHEMA_VERSION);
+    this.globalData.onboardingPendingUserId = null;
+    console.info(`本地缓存结构已升级到版本 ${STORAGE_SCHEMA_VERSION}，已执行一次性全量清理`);
   },
 
   initCloudRuntime() {

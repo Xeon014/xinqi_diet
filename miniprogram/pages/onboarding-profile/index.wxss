@@ -1,42 +1,77 @@
 .onboarding-page {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 18rpx;
   min-height: 100vh;
-  padding-bottom: calc(36rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(136rpx + env(safe-area-inset-bottom));
 }
 
 .header-panel {
-  padding: 24rpx;
+  overflow: hidden;
+  padding: 24rpx 24rpx 22rpx;
+  position: relative;
+}
+
+.header-panel::after {
+  background: linear-gradient(90deg, rgba(30, 90, 79, 0.26), rgba(185, 94, 58, 0.08));
+  content: "";
+  height: 6rpx;
+  left: 24rpx;
+  position: absolute;
+  right: 24rpx;
+  top: 0;
 }
 
 .header-row {
   align-items: flex-start;
   display: flex;
+  gap: 18rpx;
   justify-content: space-between;
+}
+
+.header-copy {
+  min-width: 0;
 }
 
 .step-meta {
   color: #786d61;
   font-size: 23rpx;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
 }
 
-.skip-all {
+.skip-link {
   color: #1e5a4f;
+  flex-shrink: 0;
   font-size: 24rpx;
   font-weight: 700;
+  line-height: 1.2;
+  padding: 8rpx 0;
+}
+
+.progress-track {
+  background: rgba(30, 90, 79, 0.1);
+  border-radius: 999rpx;
+  height: 12rpx;
+  margin-top: 18rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #1e5a4f 0%, #2f7b6d 68%, rgba(185, 94, 58, 0.92) 100%);
+  border-radius: 999rpx;
+  height: 100%;
+  transition: width 200ms ease;
 }
 
 .content-panel {
-  border-left: 8rpx solid rgba(30, 90, 79, 0.62);
-  min-height: 440rpx;
-  padding: 28rpx;
+  border-left: 8rpx solid rgba(30, 90, 79, 0.56);
+  min-height: 560rpx;
+  padding: 28rpx 28rpx 32rpx;
 }
 
 .step-title {
   color: #2f2a24;
-  font-size: 34rpx;
+  font-size: 40rpx;
   font-weight: 800;
   letter-spacing: 1rpx;
 }
@@ -44,102 +79,203 @@
 .step-desc {
   color: #6f6559;
   font-size: 24rpx;
-  line-height: 1.5;
-  margin-top: 12rpx;
+  line-height: 1.45;
+  margin-top: 10rpx;
 }
 
-.field-wrap {
-  margin-top: 28rpx;
-}
-
-.gender-list {
+.step-stack {
   display: flex;
-  gap: 16rpx;
-  margin-top: 28rpx;
+  flex-direction: column;
+  gap: 22rpx;
+  margin-top: 26rpx;
 }
 
-.gender-chip {
+.body-stack {
+  gap: 20rpx;
+}
+
+.field-block {
+  margin-top: 26rpx;
+}
+
+.step-stack .field-block {
+  margin-top: 0;
+}
+
+.gender-list,
+.strategy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.gender-chip,
+.strategy-chip {
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.96);
   border: 2rpx solid rgba(30, 90, 79, 0.16);
   border-radius: 999rpx;
   color: #1e5a4f;
   display: inline-flex;
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 700;
-  height: 80rpx;
+  height: 92rpx;
   justify-content: center;
-  min-width: 170rpx;
-  padding: 0 22rpx;
+  min-width: 190rpx;
+  padding: 0 28rpx;
 }
 
-.gender-chip.active {
+.strategy-chip {
+  min-width: 0;
+}
+
+.gender-chip.active,
+.strategy-chip.active {
   background: rgba(30, 90, 79, 0.15);
   border-color: rgba(30, 90, 79, 0.3);
+  box-shadow: inset 0 0 0 1rpx rgba(30, 90, 79, 0.08);
 }
 
 .field-picker {
+  align-items: center;
   background: #fffef9;
   border: 2rpx solid rgba(70, 57, 47, 0.12);
-  border-radius: 22rpx;
+  border-radius: 24rpx;
   color: #2f2a24;
-  font-size: 28rpx;
-  min-height: 88rpx;
-  padding: 24rpx;
+  display: flex;
+  font-size: 30rpx;
+  min-height: 96rpx;
+  padding: 0 28rpx;
+}
+
+.tall-input {
+  font-size: 30rpx;
+  height: 96rpx;
+}
+
+.tall-picker {
+  min-height: 96rpx;
 }
 
 .formula-tip {
+  color: #6b6257;
+  font-size: 23rpx;
+  line-height: 1.5;
+  margin-top: 14rpx;
+  padding-left: 6rpx;
+}
+
+.recommend-btn {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(30, 90, 79, 0.08) 100%);
+  border: 2rpx solid rgba(30, 90, 79, 0.24);
+  border-radius: 18rpx;
+  color: #1e5a4f;
+  display: flex;
+  font-size: 28rpx;
+  font-weight: 700;
+  justify-content: center;
+  margin-top: 18rpx;
+  min-height: 92rpx;
+  padding: 0 26rpx;
+}
+
+.manual-input-wrap {
+  margin-top: 22rpx;
+}
+
+.goal-preview-card {
+  background: linear-gradient(138deg, rgba(30, 90, 79, 0.12) 0%, rgba(255, 253, 248, 0.98) 76%);
+  border: 2rpx solid rgba(30, 90, 79, 0.16);
+  border-radius: 26rpx;
+  margin-top: 24rpx;
+  padding: 24rpx;
+}
+
+.goal-preview-head {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+  justify-content: space-between;
+}
+
+.goal-preview-title {
+  color: #2f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.preview-pill {
+  background: rgba(30, 90, 79, 0.14);
+  border-radius: 999rpx;
+  color: #1e5a4f;
+  font-size: 22rpx;
+  font-weight: 700;
+  padding: 10rpx 18rpx;
+}
+
+.preview-pill.danger {
+  background: rgba(185, 94, 58, 0.14);
+  color: #b95e3a;
+}
+
+.goal-preview-main {
+  color: #183f38;
+  font-size: 40rpx;
+  font-weight: 800;
+  margin-top: 18rpx;
+}
+
+.goal-preview-meta {
+  color: #5d5146;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.goal-preview-tip,
+.goal-preview-warning,
+.goal-preview-loading {
   background: rgba(255, 255, 255, 0.84);
   border-radius: 18rpx;
   color: #2f2a24;
   font-size: 24rpx;
+  line-height: 1.6;
   margin-top: 16rpx;
   padding: 18rpx 20rpx;
 }
 
-.formula-tip.disabled {
-  color: #8f877d;
+.goal-preview-warning {
+  background: rgba(185, 94, 58, 0.12);
+  color: #8c4327;
 }
 
-.goal-input-wrap {
-  margin-top: 28rpx;
+.action-dock {
+  bottom: 0;
+  left: 0;
+  padding: 8rpx 0 calc(12rpx + env(safe-area-inset-bottom));
+  position: sticky;
+  right: 0;
 }
 
 .action-row {
   align-items: center;
   display: flex;
-  gap: 14rpx;
+  gap: 16rpx;
 }
 
-.ghost-button {
-  align-items: center;
-  background: rgba(30, 90, 79, 0.08);
-  border: 2rpx solid rgba(30, 90, 79, 0.14);
-  border-radius: 20rpx;
-  color: #1e5a4f;
-  display: flex;
-  font-size: 24rpx;
-  font-weight: 700;
-  height: 84rpx;
-  justify-content: center;
-  min-width: 164rpx;
-  padding: 0 16rpx;
+.action-secondary {
+  flex: 0 0 224rpx;
+  font-size: 28rpx;
+  height: 94rpx;
+  padding: 0 28rpx;
 }
 
 .action-primary {
   flex: 1;
+  height: 96rpx;
   margin-top: 0;
 }
-.recommend-btn {
-  align-items: center;
-  background: linear-gradient(135deg, rgba(30, 90, 79, 0.12) 0%, rgba(30, 90, 79, 0.08) 100%);
-  border: 2rpx solid rgba(30, 90, 79, 0.24);
-  border-radius: 16rpx;
-  color: #1e5a4f;
-  display: flex;
-  font-size: 26rpx;
-  font-weight: 600;
-  justify-content: center;
-  margin-top: 20rpx;
-  padding: 22rpx 24rpx;
+
+.action-primary.full {
+  width: 100%;
 }
