@@ -5,6 +5,13 @@
       <picker mode="date" value="{{recordDate}}" bindchange="handleDateChange">
         <view class="date-center">
           <view class="date-label">{{displayDateLabel || recordDate}}</view>
+          <view
+            wx:if="{{displayDateLabel !== '今天'}}"
+            class="date-today-link"
+            catchtap="handleBackToToday"
+          >
+            回到今天
+          </view>
         </view>
       </picker>
       <view class="date-step" bindtap="handleNextDay">后一天</view>

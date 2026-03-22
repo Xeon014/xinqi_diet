@@ -341,6 +341,22 @@ Page({
     );
   },
 
+  handleBackToToday() {
+    const today = getToday();
+    if (this.data.recordDate === today) {
+      return;
+    }
+    this.setData(
+      {
+        recordDate: today,
+      },
+      () => {
+        this.refreshDateMeta();
+        this.loadSummary();
+      }
+    );
+  },
+
   maybeOpenOnboarding() {
     const app = getApp();
     if (!app || typeof app.ensureLogin !== "function" || typeof app.isOnboardingPending !== "function") {
