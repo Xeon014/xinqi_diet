@@ -1,2 +1,0 @@
-ALTER TABLE food
-    ADD COLUMN image_url VARCHAR(500) NULL COMMENT '食物主图 URL' AFTER aliases;

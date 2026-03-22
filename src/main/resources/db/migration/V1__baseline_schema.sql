@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
     custom_tdee INT NULL COMMENT '自定义基础日消耗 kcal',
     goal_mode VARCHAR(20) NULL COMMENT '热量目标模式',
     goal_calorie_delta INT NULL COMMENT '目标热量差值 kcal',
-    goal_target_date DATE NULL COMMENT '预期达到目标体重的日期',
+    goal_target_date DATE NULL COMMENT '预计达到目标体重的日期',
     goal_calorie_strategy VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT '目标热量策略',
     last_login_at DATETIME NULL COMMENT '最近登录时间',
     created_at DATETIME NOT NULL COMMENT '创建时间',

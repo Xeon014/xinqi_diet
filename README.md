@@ -20,22 +20,63 @@
 
 ## 快速启动
 
-1. 执行数据库初始化脚本：`scripts/mysql-init.sql`
-2. 启动开发环境：`mvn spring-boot:run`
-3. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
-4. 服务默认地址：`http://localhost:8080`
+1. 如需初始化本地数据库账号与权限，执行：`scripts/mysql-init.sql`
+2. 如需从空库或删库后重建到当前最新结构，执行：`scripts/sql/schema-full-latest.sql`
+3. 启动开发环境：`mvn spring-boot:run`
+4. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
+5. 服务默认地址：`http://localhost:8080`
+
+## 数据库基线
+
+- 最新完整建表基线：`scripts/sql/schema-full-latest.sql`
+- 结构快照：`src/main/resources/schema.sql`
+- 增量迁移目录：`src/main/resources/db/migration/`
+
+说明：
+
+1. `schema-full-latest.sql` 用于空库初始化或删库重建，脚本会把数据库结构直接建立到当前最新版本，并写入 Flyway 基线版本 `V1`。
+2. 当前仓库中的最新上线结构已经重置为新的 `V1` 基线，后续表结构调整从 `V2` 开始新增。
+3. `schema.sql` 继续作为仓库内的最新结构快照维护，但删库重建优先使用 `schema-full-latest.sql`。
 
 ## 登录与鉴权
 
 - 小程序启动后会调用 `/api/auth/wechat/login` 完成登录并自动创建用户。
 - 登录成功后，业务请求通过 `Authorization: Bearer {accessToken}` 传递身份。
 
-## 食物冷启动数据
+## 内置食物手工导入
 
-- 项目内置 `src/main/resources/builtin_food_seed.sql`。
-- 启动时会同步内置食物种子，按内置词条名称更新已有数据并补齐缺失词条。
-- 原始数据表：`scripts/data/builtin-food-raw.tsv`
+- 应用启动时**不会自动导入**内置食物。
+- 原始营养源数据：`scripts/data/food_nutrition.csv`
+- 精选清单：`scripts/data/builtin-food-selection.tsv`
+- 当前发布清单：`scripts/data/builtin-food-manual.tsv`
 - 生成脚本：`scripts/generate-builtin-food-seed.js`
+- 首次初始化脚本：`scripts/sql/bootstrap-builtin-foods-latest.sql`
+- 上线后同步脚本：`scripts/sql/sync-builtin-foods-latest.sql`
+
+正式方案：
+
+1. 维护 `builtin-food-selection.tsv` 与 `builtin-food-manual.tsv`
+2. 执行 `node scripts/generate-builtin-food-seed.js`
+3. 首次上线前，如需从空库或可重置环境初始化，执行 `bootstrap-builtin-foods-latest.sql`
+4. 正式上线后，后续维护**只执行** `sync-builtin-foods-latest.sql`
+
+重要约束：
+
+- 正式上线后，不再使用“先删后插”的全量重建脚本。
+- 内置食物以 `food.source_ref` 作为稳定身份；后续修改通过 `source_ref` 更新，不删除历史食物记录。
+
+## 内置运动手工导入
+
+- 应用启动时**不会自动导入**内置运动。
+- 生成脚本：`scripts/generate-builtin-exercise-seed.ps1`
+- 首次初始化脚本：`scripts/sql/bootstrap-builtin-exercises-latest.sql`
+- 上线后同步脚本：`scripts/sql/sync-builtin-exercises-latest.sql`
+
+正式方案：
+
+1. 如需重新生成，执行 `scripts/generate-builtin-exercise-seed.ps1`
+2. 首次上线前，如需从空库或可重置环境初始化，执行 `bootstrap-builtin-exercises-latest.sql`
+3. 正式上线后，后续维护**只执行** `sync-builtin-exercises-latest.sql`
 
 ## 联调说明
 

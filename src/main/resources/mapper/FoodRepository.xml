@@ -26,7 +26,7 @@
 
     <sql id="visibleBuiltinScope">
         is_builtin = 1
-        AND source IN ('CURATED_CN', 'CURATED_GLOBAL')
+        AND source &lt;&gt; 'LEGACY_BUILTIN'
     </sql>
 
     <sql id="accessScope">

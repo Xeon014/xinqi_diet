@@ -1,3 +1,5 @@
+﻿CREATE DATABASE IF NOT EXISTS diet DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE diet;
 CREATE TABLE IF NOT EXISTS user_profile (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户主键 ID',
     open_id VARCHAR(64) NULL COMMENT '微信 openid',
@@ -14,7 +16,11 @@ CREATE TABLE IF NOT EXISTS user_profile (
     current_weight DECIMAL(5, 2) NULL COMMENT '当前体重 kg',
     target_weight DECIMAL(5, 2) NULL COMMENT '目标体重 kg',
     custom_bmr INT NULL COMMENT '自定义 BMR kcal',
-    custom_tdee INT NULL COMMENT '自定义 TDEE kcal',
+    custom_tdee INT NULL COMMENT '自定义基础日消耗 kcal',
+    goal_mode VARCHAR(20) NULL COMMENT '热量目标模式',
+    goal_calorie_delta INT NULL COMMENT '目标热量差值 kcal',
+    goal_target_date DATE NULL COMMENT '预期达到目标体重的日期',
+    goal_calorie_strategy VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT '目标热量策略',
     last_login_at DATETIME NULL COMMENT '最近登录时间',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     UNIQUE KEY uk_user_profile_open_id (open_id)
@@ -24,17 +30,21 @@ CREATE TABLE IF NOT EXISTS food (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '食物主键 ID',
     user_id BIGINT NULL COMMENT '创建用户 ID，内置数据为空',
     name VARCHAR(80) NOT NULL COMMENT '食物名称',
-    calories_per_100g DECIMAL(8, 2) NOT NULL COMMENT '每 100g 热量 kcal',
+    calories_per_100g DECIMAL(8, 2) NOT NULL COMMENT '每 100g/100ml 热量（内部口径 kcal）',
+    calorie_unit VARCHAR(10) NOT NULL DEFAULT 'KCAL' COMMENT '热量单位（KCAL/KJ）',
     protein_per_100g DECIMAL(8, 2) NOT NULL COMMENT '每 100g 蛋白质 g',
     carbs_per_100g DECIMAL(8, 2) NOT NULL COMMENT '每 100g 碳水 g',
     fat_per_100g DECIMAL(8, 2) NOT NULL COMMENT '每 100g 脂肪 g',
+    quantity_unit VARCHAR(10) NOT NULL DEFAULT 'G' COMMENT '计量单位（G/ML）',
     category VARCHAR(120) COMMENT '分类',
     source VARCHAR(20) NOT NULL DEFAULT 'MANUAL' COMMENT '数据来源',
     source_ref VARCHAR(100) NULL COMMENT '来源主键',
     aliases VARCHAR(500) NULL COMMENT '别名',
+    image_url VARCHAR(500) NULL COMMENT '食物主图 URL',
     is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置',
     sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类排序',
     created_at DATETIME NOT NULL COMMENT '创建时间',
+    UNIQUE KEY uk_food_source_ref (source_ref),
     KEY idx_food_user_builtin (user_id, is_builtin, id),
     KEY idx_food_category_sort (category, sort_order, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='食物基础信息表';
@@ -44,7 +54,7 @@ CREATE TABLE IF NOT EXISTS meal_record (
     user_id BIGINT NOT NULL COMMENT '用户 ID',
     food_id BIGINT NOT NULL COMMENT '食物 ID',
     meal_type VARCHAR(20) NOT NULL COMMENT '餐次类型',
-    quantity_in_gram DECIMAL(8, 2) NOT NULL COMMENT '摄入克重 g',
+    quantity_in_gram DECIMAL(8, 2) NOT NULL COMMENT '摄入数量（按食物计量单位）',
     total_calories DECIMAL(10, 2) NOT NULL COMMENT '本次摄入热量 kcal',
     record_date DATE NOT NULL COMMENT '记录日期',
     created_at DATETIME NOT NULL COMMENT '创建时间',
@@ -64,6 +74,7 @@ CREATE TABLE IF NOT EXISTS exercise (
     is_builtin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否内置',
     sort_order INT NOT NULL DEFAULT 9999 COMMENT '分类排序',
     created_at DATETIME NOT NULL COMMENT '创建时间',
+    UNIQUE KEY uk_exercise_source_ref (source_ref),
     KEY idx_exercise_user_builtin (user_id, is_builtin, id),
     KEY idx_exercise_category_sort (category, sort_order, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运动库表';
@@ -113,7 +124,6 @@ CREATE TABLE IF NOT EXISTS meal_combo (
     user_id BIGINT NOT NULL COMMENT '用户 ID',
     name VARCHAR(50) NOT NULL COMMENT '套餐名称',
     description VARCHAR(200) NULL COMMENT '套餐说明',
-    meal_type VARCHAR(20) NOT NULL COMMENT '默认餐次类型',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     updated_at DATETIME NOT NULL COMMENT '更新时间',
     KEY idx_meal_combo_user_created (user_id, created_at)
@@ -123,9 +133,51 @@ CREATE TABLE IF NOT EXISTS meal_combo_item (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '套餐明细主键 ID',
     combo_id BIGINT NOT NULL COMMENT '套餐 ID',
     food_id BIGINT NOT NULL COMMENT '食物 ID',
-    quantity_in_gram DECIMAL(8, 2) NOT NULL COMMENT '默认克重 g',
+    quantity_in_gram DECIMAL(8, 2) NOT NULL COMMENT '默认数量（按食物计量单位）',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     KEY idx_meal_combo_item_combo (combo_id, sort_order),
     KEY idx_meal_combo_item_food (food_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户自定义套餐明细表';
+CREATE TABLE IF NOT EXISTS flyway_schema_history (
+    installed_rank INT NOT NULL,
+    version VARCHAR(50) DEFAULT NULL,
+    description VARCHAR(200) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    script VARCHAR(1000) NOT NULL,
+    checksum INT DEFAULT NULL,
+    installed_by VARCHAR(100) NOT NULL,
+    installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    execution_time INT NOT NULL,
+    success TINYINT(1) NOT NULL,
+    PRIMARY KEY (installed_rank),
+    KEY flyway_schema_history_s_idx (success)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO flyway_schema_history (
+    installed_rank,
+    version,
+    description,
+    type,
+    script,
+    checksum,
+    installed_by,
+    execution_time,
+    success
+)
+SELECT
+    1,
+    '1',
+    '<< Flyway Baseline >>',
+    'BASELINE',
+    '<< Flyway Baseline >>',
+    NULL,
+    SUBSTRING_INDEX(USER(), '@', 1),
+    0,
+    1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM flyway_schema_history
+    WHERE version = '1'
+      AND success = 1
+);

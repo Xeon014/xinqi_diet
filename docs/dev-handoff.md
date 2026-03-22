@@ -21,10 +21,14 @@
 
 ## 3. 后端启动
 
-1. 初始化数据库（参照 `scripts/mysql-init.sql` 与 `src/main/resources/schema.sql`）。
-2. 开发环境启动：
+1. 初始化数据库账号与权限（如需要）：`scripts/mysql-init.sql`
+2. 从空库或删库后重建最新结构：`scripts/sql/schema-full-latest.sql`
+3. 手工导入内置食物：`scripts/sql/bootstrap-builtin-foods-latest.sql`
+4. 手工导入内置运动：`scripts/sql/bootstrap-builtin-exercises-latest.sql`
+5. 结构维护规则参见：`docs/database-rebuild.md`
+6. 开发环境启动：
    - `mvn spring-boot:run`
-3. 编译检查：
+7. 编译检查：
    - `mvn -q -DskipTests compile`
 
 ## 4. 小程序启动

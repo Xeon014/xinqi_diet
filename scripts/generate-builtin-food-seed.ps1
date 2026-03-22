@@ -1,4 +1,17 @@
-param()
+param(
+    [switch]$Check,
+    [switch]$Archive
+)
 
 $scriptPath = Join-Path $PSScriptRoot "generate-builtin-food-seed.js"
-node $scriptPath
+$args = @($scriptPath)
+
+if ($Check) {
+    $args += "--check"
+}
+
+if ($Archive) {
+    $args += "--archive"
+}
+
+node @args

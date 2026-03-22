@@ -1,6 +1,5 @@
 package com.diet.config;
 
-import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodRepository;
@@ -19,10 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 @Configuration
 public class DataInitializer {
@@ -35,32 +30,14 @@ public class DataInitializer {
             UserProfileRepository userProfileRepository,
             FoodRepository foodRepository,
             MealRecordRepository mealRecordRepository,
-            ExerciseRepository exerciseRepository,
-            ExerciseRecordRepository exerciseRecordRepository,
-            JdbcTemplate jdbcTemplate
+            ExerciseRecordRepository exerciseRecordRepository
     ) {
-        return args -> {
-            seedBuiltinFoodsIfNeeded(jdbcTemplate);
-            seedBuiltinExercisesIfNeeded(exerciseRepository, jdbcTemplate);
-            seedDemoDataIfNeeded(userProfileRepository, foodRepository, mealRecordRepository, exerciseRecordRepository);
-        };
-    }
-
-    private void seedBuiltinFoodsIfNeeded(JdbcTemplate jdbcTemplate) {
-        importSql(jdbcTemplate, "builtin_food_seed.sql");
-    }
-
-    private void seedBuiltinExercisesIfNeeded(ExerciseRepository exerciseRepository, JdbcTemplate jdbcTemplate) {
-        if (exerciseRepository.count() >= 60) {
-            return;
-        }
-        importSql(jdbcTemplate, "builtin_exercise_seed.sql");
-    }
-
-    private void importSql(JdbcTemplate jdbcTemplate, String classpathSql) {
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(new ClassPathResource(classpathSql));
-        populator.setContinueOnError(false);
-        DatabasePopulatorUtils.execute(populator, jdbcTemplate.getDataSource());
+        return args -> seedDemoDataIfNeeded(
+                userProfileRepository,
+                foodRepository,
+                mealRecordRepository,
+                exerciseRecordRepository
+        );
     }
 
     private void seedDemoDataIfNeeded(

@@ -4,6 +4,7 @@
 
 - 页面与功能：`docs/page-entry-map.md`、`docs/feature-inventory.md`
 - 接口与部署：`docs/miniprogram-api.md`、`docs/tencent-cloud-hosting-checklist.md`
+- 数据维护：`docs/builtin-food-maintenance.md`、`docs/database-rebuild.md`
 - 协作与维护：`docs/dev-handoff.md`、`docs/change-log-next.md`、`docs/current-ux-issues.md`
 
 ## 2. 推荐阅读顺序
