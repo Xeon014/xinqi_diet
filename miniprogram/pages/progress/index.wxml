@@ -93,7 +93,7 @@
           catchtap="handleMetricAction"
         >
           <block wx:if="{{item.actionType === 'record'}}">+</block>
-          <block wx:else>›</block>
+          <block wx:else>···</block>
         </view>
 
         <view class="metric-label {{item.isCircumference ? 'metric-label-circumference' : ''}}">{{item.label}}</view>
@@ -106,30 +106,18 @@
     </view>
   </view>
 
-  <view wx:if="{{metricEditorVisible}}" class="sheet-overlay" bindtap="handleCloseMetricEditor"></view>
-  <view wx:if="{{metricEditorVisible}}" class="bottom-sheet panel" catchtouchmove="noop">
-    <view class="sheet-head">
-      <view class="sheet-title">记录{{metricEditorMetricLabel}}</view>
-      <view class="sheet-close" bindtap="handleCloseMetricEditor">✕</view>
-    </view>
-    <picker mode="date" value="{{metricEditorDate}}" bindchange="handleMetricEditorDateChange" disabled="{{metricEditorLoading}}">
-      <view class="sheet-date-picker">日期：{{metricEditorDate}}</view>
-    </picker>
-    <view class="sheet-input-row">
-      <input
-        class="sheet-input"
-        type="digit"
-        value="{{metricEditorValue}}"
-        placeholder="请输入数值"
-        bindinput="handleMetricEditorInput"
-      />
-      <view class="sheet-unit">{{metricEditorUnit}}</view>
-    </view>
-    <view
-      class="sheet-submit-btn {{metricEditorLoading ? 'disabled' : ''}}"
-      bindtap="handleSubmitMetricEditor"
-    >
-      {{metricEditorLoading ? "保存中..." : "保存"}}
-    </view>
-  </view>
+  <metric-editor-sheet
+    visible="{{metricEditorVisible}}"
+    loading="{{metricEditorLoading}}"
+    title="记录{{metricEditorMetricLabel}}"
+    date="{{metricEditorDate}}"
+    dateEditable="{{true}}"
+    value="{{metricEditorValue}}"
+    placeholder="请输入数值"
+    unit="{{metricEditorUnit}}"
+    bind:close="handleCloseMetricEditor"
+    bind:datechange="handleMetricEditorDateChange"
+    bind:input="handleMetricEditorInput"
+    bind:submit="handleSubmitMetricEditor"
+  />
 </view>

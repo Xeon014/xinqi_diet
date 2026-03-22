@@ -2,6 +2,7 @@
   "navigationBarTitleText": "每日记录",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "metric-editor-sheet": "/components/metric-editor-sheet/index"
   }
 }

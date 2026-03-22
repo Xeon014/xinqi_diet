@@ -202,29 +202,18 @@
       </view>
     </view>
   </view>
-
-  <view wx:if="{{weightEditorVisible}}" class="sheet-overlay" bindtap="handleCloseWeightEditor"></view>
-  <view wx:if="{{weightEditorVisible}}" class="bottom-sheet panel" catchtouchmove="noop">
-    <view class="sheet-head">
-      <view class="sheet-title">记录体重</view>
-      <view class="sheet-close" bindtap="handleCloseWeightEditor">✕</view>
-    </view>
-    <view class="weight-sheet-meta">日期：{{displayDateLabel || recordDate}}</view>
-    <view class="weight-input-row">
-      <input
-        class="weight-input"
-        type="digit"
-        value="{{weightValue}}"
-        placeholder="请输入体重"
-        bindinput="handleWeightInput"
-      />
-      <view class="weight-unit">kg</view>
-    </view>
-    <view
-      class="weight-submit-btn {{weightEditorLoading ? 'disabled' : ''}}"
-      bindtap="handleSubmitWeight"
-    >
-      {{weightEditorLoading ? "保存中..." : "保存"}}
-    </view>
-  </view>
+  <metric-editor-sheet
+    visible="{{weightEditorVisible}}"
+    loading="{{weightEditorLoading}}"
+    title="记录体重"
+    date="{{weightEditorDate}}"
+    dateEditable="{{true}}"
+    value="{{weightValue}}"
+    placeholder="请输入体重"
+    unit="kg"
+    bind:close="handleCloseWeightEditor"
+    bind:datechange="handleWeightDateChange"
+    bind:input="handleWeightInput"
+    bind:submit="handleSubmitWeight"
+  />
 </view>

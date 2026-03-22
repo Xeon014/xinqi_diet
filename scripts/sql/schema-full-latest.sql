@@ -1,4 +1,4 @@
-﻿CREATE DATABASE IF NOT EXISTS diet DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+﻿CREATE DATABASE IF NOT EXISTS diet DEFAULT CHARACTER SET utf8mb4;
 USE diet;
 CREATE TABLE IF NOT EXISTS user_profile (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户主键 ID',
@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS meal_combo_item (
     KEY idx_meal_combo_item_combo (combo_id, sort_order),
     KEY idx_meal_combo_item_food (food_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户自定义套餐明细表';
+
 CREATE TABLE IF NOT EXISTS flyway_schema_history (
     installed_rank INT NOT NULL,
     version VARCHAR(50) DEFAULT NULL,
@@ -152,7 +153,7 @@ CREATE TABLE IF NOT EXISTS flyway_schema_history (
     success TINYINT(1) NOT NULL,
     PRIMARY KEY (installed_rank),
     KEY flyway_schema_history_s_idx (success)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO flyway_schema_history (
     installed_rank,
