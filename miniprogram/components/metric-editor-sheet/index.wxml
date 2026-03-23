@@ -2,7 +2,6 @@
 <view
   wx:if="{{visible}}"
   class="bottom-sheet panel"
-  style="bottom: {{keyboardHeight}}px;"
   catchtouchmove="noop"
 >
   <view class="sheet-body">
@@ -33,8 +32,8 @@
         placeholder="{{placeholder}}"
         bindinput="handleInput"
         bindblur="handleInputBlur"
-        adjust-position="{{false}}"
-        cursor-spacing="140"
+        adjust-position="{{true}}"
+        cursor-spacing="20"
         confirm-type="done"
       />
       <view wx:if="{{unit}}" class="sheet-unit">{{unit}}</view>
