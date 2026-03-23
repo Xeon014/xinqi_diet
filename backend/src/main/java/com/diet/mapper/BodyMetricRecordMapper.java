@@ -16,6 +16,11 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
             @Param("metricType") BodyMetricType metricType
     );
 
+    List<BodyMetricRecord> findDailyLatestByDate(
+            @Param("userId") Long userId,
+            @Param("date") LocalDate date
+    );
+
     List<BodyMetricRecord> findDailyLatestByMetricTypeAndDateRange(
             @Param("userId") Long userId,
             @Param("metricType") BodyMetricType metricType,

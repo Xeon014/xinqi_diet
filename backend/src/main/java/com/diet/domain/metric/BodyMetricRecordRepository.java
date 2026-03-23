@@ -10,6 +10,8 @@ public interface BodyMetricRecordRepository {
 
     Optional<BodyMetricRecord> findLatestByMetricType(Long userId, BodyMetricType metricType);
 
+    List<BodyMetricRecord> findDailyLatestByDate(Long userId, LocalDate date);
+
     List<BodyMetricRecord> findDailyLatestByMetricTypeAndDateRange(
             Long userId,
             BodyMetricType metricType,

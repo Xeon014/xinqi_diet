@@ -33,6 +33,11 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     }
 
     @Override
+    public List<BodyMetricRecord> findDailyLatestByDate(Long userId, LocalDate date) {
+        return bodyMetricRecordMapper.findDailyLatestByDate(userId, date);
+    }
+
+    @Override
     public List<BodyMetricRecord> findDailyLatestByMetricTypeAndDateRange(
             Long userId,
             BodyMetricType metricType,

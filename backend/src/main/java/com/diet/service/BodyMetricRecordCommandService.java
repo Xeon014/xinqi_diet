@@ -1,0 +1,140 @@
+package com.diet.service;
+
+import com.diet.common.NotFoundException;
+import com.diet.domain.metric.BodyMetricRecord;
+import com.diet.domain.metric.BodyMetricRecordRepository;
+import com.diet.domain.metric.BodyMetricType;
+import com.diet.domain.metric.BodyMetricUnit;
+import com.diet.domain.user.GoalCalorieStrategy;
+import com.diet.domain.user.UserProfile;
+import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.metric.BodyMetricDeleteResponse;
+import com.diet.dto.metric.BodyMetricRecordResponse;
+import com.diet.dto.metric.CreateBodyMetricRecordRequest;
+import com.diet.dto.user.GoalPlanPreviewResponse;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional
+public class BodyMetricRecordCommandService {
+
+    private final BodyMetricRecordRepository bodyMetricRecordRepository;
+
+    private final UserProfileRepository userProfileRepository;
+
+    private final GoalPlanningService goalPlanningService;
+
+    public BodyMetricRecordCommandService(
+            BodyMetricRecordRepository bodyMetricRecordRepository,
+            UserProfileRepository userProfileRepository,
+            GoalPlanningService goalPlanningService
+    ) {
+        this.bodyMetricRecordRepository = bodyMetricRecordRepository;
+        this.userProfileRepository = userProfileRepository;
+        this.goalPlanningService = goalPlanningService;
+    }
+
+    public BodyMetricRecordResponse create(Long userId, CreateBodyMetricRecordRequest request) {
+        UserProfile user = getUser(userId);
+        validateUnit(request.metricType(), request.unit());
+
+        BodyMetricRecord record = new BodyMetricRecord(
+                user.getId(),
+                request.metricType(),
+                request.metricValue(),
+                request.unit(),
+                request.recordDate()
+        );
+        bodyMetricRecordRepository.save(record);
+
+        if (request.metricType() == BodyMetricType.WEIGHT && request.recordDate().equals(LocalDate.now())) {
+            user.setCurrentWeight(request.metricValue());
+            refreshSmartGoalSnapshot(user);
+            userProfileRepository.update(user);
+        }
+
+        return new BodyMetricRecordResponse(
+                record.getId(),
+                record.getUserId(),
+                record.getMetricType(),
+                record.getMetricValue(),
+                record.getUnit(),
+                record.getRecordDate(),
+                record.getCreatedAt()
+        );
+    }
+
+    public BodyMetricDeleteResponse delete(Long userId, Long recordId) {
+        getUser(userId);
+        BodyMetricRecord existing = bodyMetricRecordRepository.findByIdAndUserId(recordId, userId)
+                .orElseThrow(() -> new NotFoundException("body metric record not found, id=" + recordId));
+        bodyMetricRecordRepository.deleteById(existing.getId());
+        return new BodyMetricDeleteResponse(true);
+    }
+
+    public void seedInitialWeightRecord(Long userId, BigDecimal currentWeight, LocalDate recordDate) {
+        if (currentWeight == null || recordDate == null) {
+            return;
+        }
+        if (bodyMetricRecordRepository.findLatestByMetricType(userId, BodyMetricType.WEIGHT).isPresent()) {
+            return;
+        }
+        bodyMetricRecordRepository.save(new BodyMetricRecord(
+                userId,
+                BodyMetricType.WEIGHT,
+                currentWeight,
+                BodyMetricUnit.KG,
+                recordDate
+        ));
+    }
+
+    private void validateUnit(BodyMetricType metricType, BodyMetricUnit unit) {
+        if (metricType == BodyMetricType.WEIGHT) {
+            if (unit != BodyMetricUnit.KG) {
+                throw new IllegalArgumentException("weight metric must use KG");
+            }
+            return;
+        }
+        if (unit != BodyMetricUnit.CM) {
+            throw new IllegalArgumentException("circumference metric must use CM");
+        }
+    }
+
+    private UserProfile getUser(Long id) {
+        return userProfileRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
+    }
+
+    private void refreshSmartGoalSnapshot(UserProfile user) {
+        if (user.resolveGoalCalorieStrategy() != GoalCalorieStrategy.SMART) {
+            return;
+        }
+        try {
+            GoalPlanPreviewResponse preview = goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
+                    user.getId(),
+                    user.getGender(),
+                    user.getBirthDate(),
+                    user.getHeight(),
+                    user.getCurrentWeight(),
+                    user.getTargetWeight(),
+                    user.getCustomBmr(),
+                    user.getCustomTdee(),
+                    user.getDailyCalorieTarget(),
+                    user.getGoalMode(),
+                    user.getGoalCalorieDelta(),
+                    user.getDailyCalorieTarget(),
+                    user.getGoalMode(),
+                    user.getGoalCalorieDelta(),
+                    user.getGoalTargetDate(),
+                    user.resolveGoalCalorieStrategy()
+            ));
+            user.setDailyCalorieTarget(preview.recommendedDailyCalorieTarget());
+            user.setGoalMode(preview.goalMode());
+            user.setGoalCalorieDelta(preview.recommendedGoalCalorieDelta());
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+}

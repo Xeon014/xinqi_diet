@@ -8,10 +8,6 @@ import com.diet.domain.exercise.ExerciseRepository;
 import com.diet.domain.food.Food;
 import com.diet.domain.food.FoodQuantityUnit;
 import com.diet.domain.food.FoodRepository;
-import com.diet.domain.metric.BodyMetricRecord;
-import com.diet.domain.metric.BodyMetricRecordRepository;
-import com.diet.domain.metric.BodyMetricType;
-import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.record.MealRecord;
 import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
@@ -109,7 +105,7 @@ public class UserProfileService {
 
     private final GoalPlanningService goalPlanningService;
 
-    private final BodyMetricRecordRepository bodyMetricRecordRepository;
+    private final BodyMetricRecordCommandService bodyMetricRecordCommandService;
 
     public UserProfileService(
             UserProfileRepository userProfileRepository,
@@ -118,7 +114,7 @@ public class UserProfileService {
             ExerciseRecordRepository exerciseRecordRepository,
             ExerciseRepository exerciseRepository,
             GoalPlanningService goalPlanningService,
-            BodyMetricRecordRepository bodyMetricRecordRepository
+            BodyMetricRecordCommandService bodyMetricRecordCommandService
     ) {
         this.userProfileRepository = userProfileRepository;
         this.mealRecordRepository = mealRecordRepository;
@@ -126,7 +122,7 @@ public class UserProfileService {
         this.exerciseRecordRepository = exerciseRecordRepository;
         this.exerciseRepository = exerciseRepository;
         this.goalPlanningService = goalPlanningService;
-        this.bodyMetricRecordRepository = bodyMetricRecordRepository;
+        this.bodyMetricRecordCommandService = bodyMetricRecordCommandService;
     }
 
     public UserResponse create(CreateUserRequest request) {
@@ -948,16 +944,7 @@ public class UserProfileService {
         if (!Boolean.TRUE.equals(request.seedInitialWeightRecord()) || nextCurrentWeight == null) {
             return;
         }
-        if (bodyMetricRecordRepository.findLatestByMetricType(user.getId(), BodyMetricType.WEIGHT).isPresent()) {
-            return;
-        }
-        bodyMetricRecordRepository.save(new BodyMetricRecord(
-                user.getId(),
-                BodyMetricType.WEIGHT,
-                nextCurrentWeight,
-                BodyMetricUnit.KG,
-                LocalDate.now()
-        ));
+        bodyMetricRecordCommandService.seedInitialWeightRecord(user.getId(), nextCurrentWeight, LocalDate.now());
     }
 
     private GoalPlanningService.GoalPlanningProfile buildGoalPlanningProfile(UserProfile user, UpdateUserRequest request) {

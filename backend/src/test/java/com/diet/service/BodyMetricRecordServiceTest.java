@@ -17,6 +17,7 @@ import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
+import com.diet.dto.metric.BodyMetricDailySnapshotResponse;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricDeleteResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
@@ -50,11 +51,18 @@ class BodyMetricRecordServiceTest {
     @Mock
     private GoalPlanningService goalPlanningService;
 
-    private BodyMetricRecordService bodyMetricRecordService;
+    private BodyMetricRecordCommandService bodyMetricRecordCommandService;
+
+    private BodyMetricRecordQueryService bodyMetricRecordQueryService;
 
     @BeforeEach
     void setUp() {
-        bodyMetricRecordService = new BodyMetricRecordService(bodyMetricRecordRepository, userProfileRepository, goalPlanningService);
+        bodyMetricRecordCommandService = new BodyMetricRecordCommandService(
+                bodyMetricRecordRepository,
+                userProfileRepository,
+                goalPlanningService
+        );
+        bodyMetricRecordQueryService = new BodyMetricRecordQueryService(bodyMetricRecordRepository, userProfileRepository);
     }
 
     @Test
@@ -67,10 +75,9 @@ class BodyMetricRecordServiceTest {
             return null;
         }).when(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
 
-        BodyMetricRecordResponse response = bodyMetricRecordService.create(
+        BodyMetricRecordResponse response = bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("61.50"),
                         BodyMetricUnit.KG,
@@ -101,10 +108,9 @@ class BodyMetricRecordServiceTest {
                 true
         ));
 
-        bodyMetricRecordService.create(
+        bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("61.20"),
                         BodyMetricUnit.KG,
@@ -129,10 +135,9 @@ class BodyMetricRecordServiceTest {
             return null;
         }).when(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
 
-        bodyMetricRecordService.create(
+        bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("60.80"),
                         BodyMetricUnit.KG,
@@ -149,20 +154,18 @@ class BodyMetricRecordServiceTest {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        bodyMetricRecordService.create(
+        bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("61.50"),
                         BodyMetricUnit.KG,
                         LocalDate.now()
                 )
         );
-        bodyMetricRecordService.create(
+        bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("61.20"),
                         BodyMetricUnit.KG,
@@ -178,10 +181,9 @@ class BodyMetricRecordServiceTest {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> bodyMetricRecordService.create(
+        assertThatThrownBy(() -> bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WEIGHT,
                         new BigDecimal("61.50"),
                         BodyMetricUnit.CM,
@@ -197,10 +199,9 @@ class BodyMetricRecordServiceTest {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        bodyMetricRecordService.create(
+        bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WAIST_CIRCUMFERENCE,
                         new BigDecimal("75.20"),
                         BodyMetricUnit.CM,
@@ -217,10 +218,9 @@ class BodyMetricRecordServiceTest {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> bodyMetricRecordService.create(
+        assertThatThrownBy(() -> bodyMetricRecordCommandService.create(
                 1L,
                 new CreateBodyMetricRecordRequest(
-                        null,
                         BodyMetricType.WAIST_CIRCUMFERENCE,
                         new BigDecimal("75.20"),
                         BodyMetricUnit.KG,
@@ -244,7 +244,7 @@ class BodyMetricRecordServiceTest {
         when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.HIP_CIRCUMFERENCE)).thenReturn(Optional.empty());
         when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.THIGH_CIRCUMFERENCE)).thenReturn(Optional.empty());
 
-        BodyMetricSnapshotResponse response = bodyMetricRecordService.getSnapshot(1L);
+        BodyMetricSnapshotResponse response = bodyMetricRecordQueryService.getSnapshot(1L);
 
         assertThat(response.items()).hasSize(6);
         assertThat(response.items())
@@ -255,6 +255,49 @@ class BodyMetricRecordServiceTest {
                 .anyMatch(item -> item.metricKey() == BodyMetricTrendMetricKey.BMI
                         && item.latestValue().compareTo(new BigDecimal("20.76")) == 0
                         && item.latestRecordDate().equals(LocalDate.of(2026, 3, 15)));
+    }
+
+    @Test
+    void shouldBuildDailySnapshotUsingLatestRecordOfSelectedDate() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        user.setHeight(new BigDecimal("170.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findDailyLatestByDate(1L, LocalDate.of(2026, 3, 15))).thenReturn(List.of(
+                buildRecord(30L, BodyMetricType.WEIGHT, new BigDecimal("60.40"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 20, 0)),
+                buildRecord(31L, BodyMetricType.WAIST_CIRCUMFERENCE, new BigDecimal("74.50"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 20, 5))
+        ));
+
+        BodyMetricDailySnapshotResponse response = bodyMetricRecordQueryService.getDailySnapshot(1L, LocalDate.of(2026, 3, 15));
+
+        assertThat(response.date()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.items())
+                .anyMatch(item -> item.metricKey() == BodyMetricTrendMetricKey.WEIGHT
+                        && item.latestValue().compareTo(new BigDecimal("60.40")) == 0
+                        && item.latestRecordDate().equals(LocalDate.of(2026, 3, 15)));
+        assertThat(response.items())
+                .anyMatch(item -> item.metricKey() == BodyMetricTrendMetricKey.BMI
+                        && item.latestValue().compareTo(new BigDecimal("20.90")) == 0
+                        && item.latestRecordDate().equals(LocalDate.of(2026, 3, 15)));
+        assertThat(response.items())
+                .anyMatch(item -> item.metricKey() == BodyMetricTrendMetricKey.WAIST_CIRCUMFERENCE
+                        && item.latestValue().compareTo(new BigDecimal("74.50")) == 0
+                        && item.latestRecordDate().equals(LocalDate.of(2026, 3, 15)));
+    }
+
+    @Test
+    void shouldReturnNullBmiWhenDailySnapshotHeightMissing() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findDailyLatestByDate(1L, LocalDate.of(2026, 3, 15))).thenReturn(List.of(
+                buildRecord(30L, BodyMetricType.WEIGHT, new BigDecimal("60.40"), LocalDate.of(2026, 3, 15), LocalDateTime.of(2026, 3, 15, 20, 0))
+        ));
+
+        BodyMetricDailySnapshotResponse response = bodyMetricRecordQueryService.getDailySnapshot(1L, LocalDate.of(2026, 3, 15));
+
+        assertThat(response.items())
+                .anyMatch(item -> item.metricKey() == BodyMetricTrendMetricKey.BMI
+                        && item.latestValue() == null
+                        && item.latestRecordDate() == null);
     }
 
     @Test
@@ -275,7 +318,7 @@ class BodyMetricRecordServiceTest {
                 3
         )).thenReturn(records);
 
-        BodyMetricHistoryResponse response = bodyMetricRecordService.getHistory(
+        BodyMetricHistoryResponse response = bodyMetricRecordQueryService.getHistory(
                 1L,
                 BodyMetricTrendMetricKey.WEIGHT,
                 null,
@@ -313,7 +356,7 @@ class BodyMetricRecordServiceTest {
                 3
         )).thenReturn(records);
 
-        BodyMetricTrendResponse response = bodyMetricRecordService.getTrend(
+        BodyMetricTrendResponse response = bodyMetricRecordQueryService.getTrend(
                 1L,
                 BodyMetricTrendMetricKey.BMI,
                 MetricTrendRangeType.ALL,
@@ -349,7 +392,7 @@ class BodyMetricRecordServiceTest {
                 121
         )).thenReturn(records);
 
-        BodyMetricTrendResponse response = bodyMetricRecordService.getTrend(
+        BodyMetricTrendResponse response = bodyMetricRecordQueryService.getTrend(
                 1L,
                 BodyMetricTrendMetricKey.WEIGHT,
                 MetricTrendRangeType.ALL,
@@ -370,7 +413,7 @@ class BodyMetricRecordServiceTest {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> bodyMetricRecordService.getTrend(
+        assertThatThrownBy(() -> bodyMetricRecordQueryService.getTrend(
                 1L,
                 BodyMetricTrendMetricKey.WEIGHT,
                 MetricTrendRangeType.ALL,
@@ -389,7 +432,7 @@ class BodyMetricRecordServiceTest {
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
         when(bodyMetricRecordRepository.findByIdAndUserId(21L, 1L)).thenReturn(Optional.of(existing));
 
-        BodyMetricDeleteResponse response = bodyMetricRecordService.delete(1L, 21L);
+        BodyMetricDeleteResponse response = bodyMetricRecordCommandService.delete(1L, 21L);
 
         assertThat(response.deleted()).isTrue();
         verify(bodyMetricRecordRepository).deleteById(21L);
@@ -400,7 +443,7 @@ class BodyMetricRecordServiceTest {
     void shouldSeedInitialWeightRecordOnlyWhenHistoryMissing() {
         when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT)).thenReturn(Optional.empty());
 
-        bodyMetricRecordService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
+        bodyMetricRecordCommandService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
 
         verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
     }
@@ -410,7 +453,7 @@ class BodyMetricRecordServiceTest {
         when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
                 .thenReturn(Optional.of(buildRecord(11L, BodyMetricType.WEIGHT, new BigDecimal("61.00"), LocalDate.of(2026, 3, 14))));
 
-        bodyMetricRecordService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
+        bodyMetricRecordCommandService.seedInitialWeightRecord(1L, new BigDecimal("60.80"), LocalDate.of(2026, 3, 15));
 
         verify(bodyMetricRecordRepository, never()).save(any(BodyMetricRecord.class));
     }

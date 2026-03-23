@@ -192,6 +192,22 @@
   gap: 12rpx;
 }
 
+.weight-record-panel {
+  padding: 0 18rpx;
+}
+
+.weight-record-line {
+  align-items: center;
+  display: flex;
+  min-height: 88rpx;
+}
+
+.weight-record-title {
+  color: #3b4842;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
 .record-group {
   padding: 16rpx 18rpx 8rpx;
 }

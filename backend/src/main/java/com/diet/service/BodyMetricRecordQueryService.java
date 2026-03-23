@@ -4,34 +4,31 @@ import com.diet.common.NotFoundException;
 import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.metric.BodyMetricType;
-import com.diet.domain.metric.BodyMetricUnit;
-import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
-import com.diet.dto.metric.BodyMetricDeleteResponse;
+import com.diet.dto.metric.BodyMetricDailySnapshotResponse;
 import com.diet.dto.metric.BodyMetricHistoryRecordResponse;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
-import com.diet.dto.metric.BodyMetricRecordResponse;
 import com.diet.dto.metric.BodyMetricSnapshotItemResponse;
 import com.diet.dto.metric.BodyMetricSnapshotResponse;
 import com.diet.dto.metric.BodyMetricTrendMetricKey;
 import com.diet.dto.metric.BodyMetricTrendPointResponse;
 import com.diet.dto.metric.BodyMetricTrendResponse;
-import com.diet.dto.metric.CreateBodyMetricRecordRequest;
 import com.diet.dto.metric.MetricTrendRangeType;
-import com.diet.dto.user.GoalPlanPreviewResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
-public class BodyMetricRecordService {
+@Transactional(readOnly = true)
+public class BodyMetricRecordQueryService {
 
     private static final int DEFAULT_ALL_PAGE_SIZE = 120;
 
@@ -50,65 +47,14 @@ public class BodyMetricRecordService {
 
     private final UserProfileRepository userProfileRepository;
 
-    private final GoalPlanningService goalPlanningService;
-
-    public BodyMetricRecordService(
+    public BodyMetricRecordQueryService(
             BodyMetricRecordRepository bodyMetricRecordRepository,
-            UserProfileRepository userProfileRepository,
-            GoalPlanningService goalPlanningService
+            UserProfileRepository userProfileRepository
     ) {
         this.bodyMetricRecordRepository = bodyMetricRecordRepository;
         this.userProfileRepository = userProfileRepository;
-        this.goalPlanningService = goalPlanningService;
     }
 
-    public BodyMetricRecordResponse create(Long userId, CreateBodyMetricRecordRequest request) {
-        UserProfile user = getUser(userId);
-        validateUnit(request.metricType(), request.unit());
-
-        BodyMetricRecord record = new BodyMetricRecord(
-                user.getId(),
-                request.metricType(),
-                request.metricValue(),
-                request.unit(),
-                request.recordDate()
-        );
-        bodyMetricRecordRepository.save(record);
-
-        if (request.metricType() == BodyMetricType.WEIGHT && request.recordDate().equals(LocalDate.now())) {
-            user.setCurrentWeight(request.metricValue());
-            refreshSmartGoalSnapshot(user);
-            userProfileRepository.update(user);
-        }
-
-        return toResponse(record);
-    }
-
-    public void seedInitialWeightRecord(Long userId, BigDecimal currentWeight, LocalDate recordDate) {
-        if (currentWeight == null || recordDate == null) {
-            return;
-        }
-        if (bodyMetricRecordRepository.findLatestByMetricType(userId, BodyMetricType.WEIGHT).isPresent()) {
-            return;
-        }
-        bodyMetricRecordRepository.save(new BodyMetricRecord(
-                userId,
-                BodyMetricType.WEIGHT,
-                currentWeight,
-                BodyMetricUnit.KG,
-                recordDate
-        ));
-    }
-
-    public BodyMetricDeleteResponse delete(Long userId, Long recordId) {
-        getUser(userId);
-        BodyMetricRecord existing = bodyMetricRecordRepository.findByIdAndUserId(recordId, userId)
-                .orElseThrow(() -> new NotFoundException("body metric record not found, id=" + recordId));
-        bodyMetricRecordRepository.deleteById(existing.getId());
-        return new BodyMetricDeleteResponse(true);
-    }
-
-    @Transactional(readOnly = true)
     public BodyMetricSnapshotResponse getSnapshot(Long userId) {
         UserProfile user = getUser(userId);
         List<BodyMetricSnapshotItemResponse> items = SNAPSHOT_METRIC_ORDER.stream()
@@ -117,7 +63,18 @@ public class BodyMetricRecordService {
         return new BodyMetricSnapshotResponse(items);
     }
 
-    @Transactional(readOnly = true)
+    public BodyMetricDailySnapshotResponse getDailySnapshot(Long userId, LocalDate date) {
+        UserProfile user = getUser(userId);
+        Map<BodyMetricType, BodyMetricRecord> dailyLatestMap = new EnumMap<>(BodyMetricType.class);
+        bodyMetricRecordRepository.findDailyLatestByDate(userId, date)
+                .forEach(record -> dailyLatestMap.put(record.getMetricType(), record));
+
+        List<BodyMetricSnapshotItemResponse> items = SNAPSHOT_METRIC_ORDER.stream()
+                .map(metricKey -> buildDailySnapshotItem(user, metricKey, date, dailyLatestMap))
+                .toList();
+        return new BodyMetricDailySnapshotResponse(date, items);
+    }
+
     public BodyMetricHistoryResponse getHistory(
             Long userId,
             BodyMetricTrendMetricKey metricKey,
@@ -172,7 +129,6 @@ public class BodyMetricRecordService {
         );
     }
 
-    @Transactional(readOnly = true)
     public BodyMetricTrendResponse getTrend(
             Long userId,
             BodyMetricTrendMetricKey metricKey,
@@ -256,18 +212,6 @@ public class BodyMetricRecordService {
         );
     }
 
-    private BodyMetricRecordResponse toResponse(BodyMetricRecord record) {
-        return new BodyMetricRecordResponse(
-                record.getId(),
-                record.getUserId(),
-                record.getMetricType(),
-                record.getMetricValue(),
-                record.getUnit(),
-                record.getRecordDate(),
-                record.getCreatedAt()
-        );
-    }
-
     private List<BodyMetricHistoryRecordResponse> toHistoryRecords(
             BodyMetricTrendMetricKey metricKey,
             UserProfile user,
@@ -309,12 +253,34 @@ public class BodyMetricRecordService {
         }
         BodyMetricRecord latestRecord = bodyMetricRecordRepository.findLatestByMetricType(user.getId(), metricKey.metricType())
                 .orElse(null);
-        return new BodyMetricSnapshotItemResponse(
-                metricKey,
-                latestRecord == null ? null : latestRecord.getMetricValue(),
-                metricKey.unitLabel(),
-                latestRecord == null ? null : latestRecord.getRecordDate()
-        );
+        return toSnapshotItem(metricKey, latestRecord);
+    }
+
+    private BodyMetricSnapshotItemResponse buildDailySnapshotItem(
+            UserProfile user,
+            BodyMetricTrendMetricKey metricKey,
+            LocalDate date,
+            Map<BodyMetricType, BodyMetricRecord> dailyLatestMap
+    ) {
+        if (metricKey == BodyMetricTrendMetricKey.BMI) {
+            BodyMetricRecord latestWeightRecord = dailyLatestMap.get(BodyMetricType.WEIGHT);
+            if (latestWeightRecord == null) {
+                return new BodyMetricSnapshotItemResponse(
+                        BodyMetricTrendMetricKey.BMI,
+                        null,
+                        BodyMetricTrendMetricKey.BMI.unitLabel(),
+                        null
+                );
+            }
+            BigDecimal bmi = calculateBmi(latestWeightRecord.getMetricValue(), user.getHeight());
+            return new BodyMetricSnapshotItemResponse(
+                    BodyMetricTrendMetricKey.BMI,
+                    bmi,
+                    BodyMetricTrendMetricKey.BMI.unitLabel(),
+                    bmi == null ? null : date
+            );
+        }
+        return toSnapshotItem(metricKey, dailyLatestMap.get(metricKey.metricType()));
     }
 
     private BodyMetricSnapshotItemResponse buildBmiSnapshotItem(UserProfile user) {
@@ -331,6 +297,15 @@ public class BodyMetricRecordService {
                 bmi,
                 BodyMetricTrendMetricKey.BMI.unitLabel(),
                 bmi == null ? null : latestWeightRecord.getRecordDate()
+        );
+    }
+
+    private BodyMetricSnapshotItemResponse toSnapshotItem(BodyMetricTrendMetricKey metricKey, BodyMetricRecord record) {
+        return new BodyMetricSnapshotItemResponse(
+                metricKey,
+                record == null ? null : record.getMetricValue(),
+                metricKey.unitLabel(),
+                record == null ? null : record.getRecordDate()
         );
     }
 
@@ -386,50 +361,8 @@ public class BodyMetricRecordService {
         return heightCm != null && heightCm.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    private void validateUnit(BodyMetricType metricType, BodyMetricUnit unit) {
-        if (metricType == BodyMetricType.WEIGHT) {
-            if (unit != BodyMetricUnit.KG) {
-                throw new IllegalArgumentException("weight metric must use KG");
-            }
-            return;
-        }
-        if (unit != BodyMetricUnit.CM) {
-            throw new IllegalArgumentException("circumference metric must use CM");
-        }
-    }
-
     private UserProfile getUser(Long id) {
         return userProfileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
-    }
-
-    private void refreshSmartGoalSnapshot(UserProfile user) {
-        if (user.resolveGoalCalorieStrategy() != GoalCalorieStrategy.SMART) {
-            return;
-        }
-        try {
-            GoalPlanPreviewResponse preview = goalPlanningService.preview(new GoalPlanningService.GoalPlanningProfile(
-                    user.getId(),
-                    user.getGender(),
-                    user.getBirthDate(),
-                    user.getHeight(),
-                    user.getCurrentWeight(),
-                    user.getTargetWeight(),
-                    user.getCustomBmr(),
-                    user.getCustomTdee(),
-                    user.getDailyCalorieTarget(),
-                    user.getGoalMode(),
-                    user.getGoalCalorieDelta(),
-                    user.getDailyCalorieTarget(),
-                    user.getGoalMode(),
-                    user.getGoalCalorieDelta(),
-                    user.getGoalTargetDate(),
-                    user.resolveGoalCalorieStrategy()
-            ));
-            user.setDailyCalorieTarget(preview.recommendedDailyCalorieTarget());
-            user.setGoalMode(preview.goalMode());
-            user.setGoalCalorieDelta(preview.recommendedGoalCalorieDelta());
-        } catch (IllegalArgumentException ignored) {
-        }
     }
 }

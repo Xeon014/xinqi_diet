@@ -59,6 +59,11 @@ class UserProfileServiceTest {
 
     @BeforeEach
     void setUp() {
+        BodyMetricRecordCommandService bodyMetricRecordCommandService = new BodyMetricRecordCommandService(
+                bodyMetricRecordRepository,
+                userProfileRepository,
+                new GoalPlanningService(bodyMetricRecordRepository)
+        );
         userProfileService = new UserProfileService(
                 userProfileRepository,
                 mealRecordRepository,
@@ -66,7 +71,7 @@ class UserProfileServiceTest {
                 exerciseRecordRepository,
                 exerciseRepository,
                 new GoalPlanningService(bodyMetricRecordRepository),
-                bodyMetricRecordRepository
+                bodyMetricRecordCommandService
         );
     }
 

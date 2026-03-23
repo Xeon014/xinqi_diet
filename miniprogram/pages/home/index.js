@@ -1,6 +1,6 @@
 const { getDailySummary } = require("../../services/user");
 const { getDailyHealthDiary } = require("../../services/health-diary");
-const { createBodyMetricRecord } = require("../../services/body-metric");
+const { createBodyMetricRecord, getDailyBodyMetricSnapshot } = require("../../services/body-metric");
 const { deleteRecord, getRecords } = require("../../services/record");
 const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
@@ -119,6 +119,25 @@ function normalizeDiary(diary) {
     imageFileIds,
     hasContent: content.length > 0,
     hasImages: imageFileIds.length > 0,
+  };
+}
+
+function formatWeightValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    return "待记录";
+  }
+  return number.toFixed(1);
+}
+
+function normalizeDailyWeight(snapshot) {
+  const items = Array.isArray(snapshot && snapshot.items) ? snapshot.items : [];
+  const weightItem = items.find((item) => item && item.metricKey === "WEIGHT");
+  const hasWeight = weightItem && weightItem.latestValue != null;
+
+  return {
+    hasRecord: Boolean(hasWeight),
+    title: hasWeight ? `体重 ${formatWeightValue(weightItem.latestValue)}kg` : "",
   };
 }
 
@@ -263,6 +282,10 @@ Page({
     weightEditorDate: getToday(),
     weightValue: "",
     quickMenuVisible: false,
+    dailyWeight: {
+      hasRecord: false,
+      title: "",
+    },
   },
 
   onLoad() {
@@ -388,8 +411,9 @@ Page({
     Promise.all([
       getDailySummary(this.data.recordDate),
       getDailyHealthDiary(this.data.recordDate),
+      getDailyBodyMetricSnapshot(this.data.recordDate).catch(() => null),
     ])
-      .then(([summary, diary]) => {
+      .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
         const recordGroups = applySwipeStateToGroups(buildRecordGroups(normalized.records), null, null, 0);
         this.setData({
@@ -399,6 +423,7 @@ Page({
           swipingRecordKey: null,
           swipeOffsetX: 0,
           healthDiary: normalizeDiary(diary),
+          dailyWeight: normalizeDailyWeight(dailyWeightSnapshot),
         });
       })
       .catch((error) => {
@@ -720,7 +745,7 @@ Page({
     })
       .then(() => {
         const nextRecordDate = this.data.weightEditorDate;
-        wx.showToast({ title: "???", icon: "success" });
+        wx.showToast({ title: "已保存", icon: "success" });
         this.setData({
           weightEditorVisible: false,
           weightEditorDate: nextRecordDate,
