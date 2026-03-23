@@ -36,45 +36,50 @@ public class AccessTokenService {
         return encodedPayload + "." + signature;
     }
 
-    public Optional<Long> parseUserId(String token) {
+    public AccessTokenParseResult parse(String token) {
         if (token == null || token.isBlank()) {
-            return Optional.empty();
+            return AccessTokenParseResult.missing();
         }
 
         String[] parts = token.split("\\.");
         if (parts.length != 2) {
-            return Optional.empty();
+            return AccessTokenParseResult.invalid();
         }
 
         String encodedPayload = parts[0];
         String signature = parts[1];
         String expectedSignature = sign(encodedPayload);
         if (!MessageDigest.isEqual(signature.getBytes(StandardCharsets.UTF_8), expectedSignature.getBytes(StandardCharsets.UTF_8))) {
-            return Optional.empty();
+            return AccessTokenParseResult.invalid();
         }
 
         String payload;
         try {
             payload = new String(Base64.getUrlDecoder().decode(encodedPayload), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException exception) {
-            return Optional.empty();
+            return AccessTokenParseResult.invalid();
         }
 
         String[] payloadParts = payload.split(":");
         if (payloadParts.length != 2) {
-            return Optional.empty();
+            return AccessTokenParseResult.invalid();
         }
 
         try {
             long userId = Long.parseLong(payloadParts[0]);
             long expiresAt = Long.parseLong(payloadParts[1]);
             if (expiresAt < Instant.now().getEpochSecond()) {
-                return Optional.empty();
+                return AccessTokenParseResult.expired();
             }
-            return Optional.of(userId);
+            return AccessTokenParseResult.valid(userId);
         } catch (NumberFormatException exception) {
-            return Optional.empty();
+            return AccessTokenParseResult.invalid();
         }
+    }
+
+    public Optional<Long> parseUserId(String token) {
+        AccessTokenParseResult result = parse(token);
+        return result.isValid() ? Optional.of(result.userId()) : Optional.empty();
     }
 
     private String sign(String payload) {

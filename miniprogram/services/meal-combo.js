@@ -10,20 +10,17 @@ function withUserId(executor) {
 }
 
 function createMealCombo(payload) {
-  return withUserId((userId) => request({
+  return withUserId(() => request({
     url: "/api/meal-combos",
     method: "POST",
-    data: {
-      ...payload,
-      userId,
-    },
+    data: payload,
     loadingTitle: "保存中",
   }));
 }
 
 function updateMealCombo(comboId, payload) {
-  return withUserId((userId) => request({
-    url: `/api/meal-combos/${comboId}?userId=${userId}`,
+  return withUserId(() => request({
+    url: `/api/meal-combos/${comboId}`,
     method: "PUT",
     data: payload,
     loadingTitle: "保存中",
@@ -31,23 +28,23 @@ function updateMealCombo(comboId, payload) {
 }
 
 function deleteMealCombo(comboId) {
-  return withUserId((userId) => request({
-    url: `/api/meal-combos/${comboId}?userId=${userId}`,
+  return withUserId(() => request({
+    url: `/api/meal-combos/${comboId}`,
     method: "DELETE",
     loadingTitle: "删除中",
   }));
 }
 
 function getMealComboList() {
-  return withUserId((userId) => request({
-    url: `/api/meal-combos?userId=${userId}`,
+  return withUserId(() => request({
+    url: "/api/meal-combos",
     showLoading: false,
   }));
 }
 
 function getMealComboDetail(comboId) {
-  return withUserId((userId) => request({
-    url: `/api/meal-combos/${comboId}?userId=${userId}`,
+  return withUserId(() => request({
+    url: `/api/meal-combos/${comboId}`,
     showLoading: false,
   }));
 }

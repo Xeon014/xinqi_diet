@@ -8,9 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record CreateMealComboRequest(
-        @NotNull(message = "userId must not be null")
-        Long userId,
-
         @NotBlank(message = "name must not be blank")
         @Size(max = 50, message = "name length must be <= 50")
         String name,

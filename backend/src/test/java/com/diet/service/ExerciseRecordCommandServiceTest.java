@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class ExerciseRecordServiceTest {
+class ExerciseRecordCommandServiceTest {
 
     @Mock
     private ExerciseRecordRepository exerciseRecordRepository;
@@ -35,15 +35,16 @@ class ExerciseRecordServiceTest {
     @Mock
     private ExerciseRepository exerciseRepository;
 
-    private ExerciseRecordService exerciseRecordService;
+    private ExerciseRecordCommandService exerciseRecordCommandService;
 
     @BeforeEach
     void setUp() {
-        exerciseRecordService = new ExerciseRecordService(
+        ExerciseRecordSupport exerciseRecordSupport = new ExerciseRecordSupport(
                 exerciseRecordRepository,
                 userProfileRepository,
                 exerciseRepository
         );
+        exerciseRecordCommandService = new ExerciseRecordCommandService(exerciseRecordRepository, exerciseRecordSupport);
     }
 
     @Test
@@ -57,7 +58,7 @@ class ExerciseRecordServiceTest {
         when(exerciseRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
         when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
 
-        ExerciseRecordResponse response = exerciseRecordService.update(
+        ExerciseRecordResponse response = exerciseRecordCommandService.update(
                 userId,
                 recordId,
                 new UpdateExerciseRecordRequest(

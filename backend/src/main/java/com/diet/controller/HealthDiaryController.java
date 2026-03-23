@@ -43,7 +43,7 @@ public class HealthDiaryController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(healthDiaryService.findDaily(userId, date).orElse(null));
     }
 
@@ -53,7 +53,7 @@ public class HealthDiaryController {
             @Valid @RequestBody HealthDiaryUpsertRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(healthDiaryService.upsert(userId, request));
     }
 
@@ -64,7 +64,7 @@ public class HealthDiaryController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(healthDiaryService.deleteByDate(userId, date));
     }
 }

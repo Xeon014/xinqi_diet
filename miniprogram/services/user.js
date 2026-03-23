@@ -10,7 +10,14 @@ function withUserId(executor) {
   return ensureLogin().then(() => {
     const userId = getCurrentUserId();
     if (!userId) {
-      return Promise.reject(new Error("???????"));
+      if (app && typeof app.handleAuthFailure === "function") {
+        app.handleAuthFailure();
+      }
+      return Promise.reject({
+        statusCode: 401,
+        code: "TOKEN_MISSING",
+        message: "登录已失效，请重试",
+      });
     }
     return executor(userId);
   });

@@ -44,7 +44,7 @@ public class FoodController {
             @Valid @RequestBody CreateFoodRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(foodService.create(userId, request)));
     }
@@ -56,7 +56,7 @@ public class FoodController {
             @Valid @RequestBody UpdateFoodRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(foodService.update(userId, id, request));
     }
 
@@ -66,7 +66,7 @@ public class FoodController {
             @Parameter(description = "食物 ID") @PathVariable Long id,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(foodService.delete(userId, id));
     }
 

@@ -45,7 +45,7 @@ public class ExerciseController {
             @Valid @RequestBody CreateExerciseRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(exerciseService.create(userId, request)));
     }
@@ -57,7 +57,7 @@ public class ExerciseController {
             @Valid @RequestBody UpdateExerciseRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(exerciseService.update(userId, id, request));
     }
 
@@ -67,7 +67,7 @@ public class ExerciseController {
             @Parameter(description = "运动 ID") @PathVariable Long id,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(exerciseService.delete(userId, id));
     }
 

@@ -122,6 +122,11 @@ App({
     return this.loginPromise;
   },
 
+  handleAuthFailure() {
+    clearAuthInfo();
+    this.globalData.onboardingPendingUserId = null;
+  },
+
   isOnboardingPending(userId) {
     return this.globalData.onboardingPendingUserId != null
       && Number(this.globalData.onboardingPendingUserId) === Number(userId);

@@ -9,7 +9,10 @@ import com.diet.dto.user.ProgressSummaryResponse;
 import com.diet.dto.user.UpdateUserRequest;
 import com.diet.dto.user.UserListResponse;
 import com.diet.dto.user.UserResponse;
-import com.diet.service.UserProfileService;
+import com.diet.service.DailySummaryQueryService;
+import com.diet.service.ProgressQueryService;
+import com.diet.service.UserGoalPlanApplicationService;
+import com.diet.service.UserProfileApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,12 +37,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 public class UserProfileController {
 
-    private final UserProfileService userProfileService;
+    private final UserProfileApplicationService userProfileApplicationService;
+
+    private final UserGoalPlanApplicationService userGoalPlanApplicationService;
+
+    private final DailySummaryQueryService dailySummaryQueryService;
+
+    private final ProgressQueryService progressQueryService;
 
     private final AuthContextService authContextService;
 
-    public UserProfileController(UserProfileService userProfileService, AuthContextService authContextService) {
-        this.userProfileService = userProfileService;
+    public UserProfileController(
+            UserProfileApplicationService userProfileApplicationService,
+            UserGoalPlanApplicationService userGoalPlanApplicationService,
+            DailySummaryQueryService dailySummaryQueryService,
+            ProgressQueryService progressQueryService,
+            AuthContextService authContextService
+    ) {
+        this.userProfileApplicationService = userProfileApplicationService;
+        this.userGoalPlanApplicationService = userGoalPlanApplicationService;
+        this.dailySummaryQueryService = dailySummaryQueryService;
+        this.progressQueryService = progressQueryService;
         this.authContextService = authContextService;
     }
 
@@ -47,13 +65,13 @@ public class UserProfileController {
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(userProfileService.create(request)));
+                .body(ApiResponse.created(userProfileApplicationService.create(request)));
     }
 
     @Operation(summary = "查询用户列表", description = "查询系统中的所有用户资料")
     @GetMapping
     public ApiResponse<UserListResponse> findAll() {
-        List<UserResponse> users = userProfileService.findAll();
+        List<UserResponse> users = userProfileApplicationService.findAll();
         return ApiResponse.success(new UserListResponse(users, users.size()));
     }
 
@@ -64,7 +82,7 @@ public class UserProfileController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
-        return ApiResponse.success(userProfileService.findById(userId));
+        return ApiResponse.success(userProfileApplicationService.findById(userId));
     }
 
     @Operation(summary = "更新用户资料", description = "更新用户基础资料和目标信息")
@@ -75,7 +93,7 @@ public class UserProfileController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
-        return ApiResponse.success(userProfileService.update(userId, request));
+        return ApiResponse.success(userProfileApplicationService.update(userId, request));
     }
 
     @Operation(summary = "预览目标计划", description = "根据当前资料与目标设置预览推荐目标热量和风险提示")
@@ -86,7 +104,7 @@ public class UserProfileController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
-        return ApiResponse.success(userProfileService.previewGoalPlan(userId, request));
+        return ApiResponse.success(userGoalPlanApplicationService.previewGoalPlan(userId, request));
     }
 
     @Operation(summary = "查询每日汇总", description = "查询指定用户在某一天的热量摄入与营养汇总")
@@ -98,7 +116,7 @@ public class UserProfileController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
-        return ApiResponse.success(userProfileService.getDailySummary(userId, date));
+        return ApiResponse.success(dailySummaryQueryService.getDailySummary(userId, date));
     }
 
     @Operation(summary = "查询进度趋势", description = "查询指定时间范围内的热量趋势和减重进度")
@@ -112,6 +130,6 @@ public class UserProfileController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.resolveUserId(httpServletRequest, id);
-        return ApiResponse.success(userProfileService.getProgress(userId, startDate, endDate));
+        return ApiResponse.success(progressQueryService.getProgress(userId, startDate, endDate));
     }
 }
