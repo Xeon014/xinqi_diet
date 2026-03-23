@@ -10,9 +10,6 @@ import java.time.LocalDate;
 
 @Schema(description = "新增身体指标记录请求")
 public record CreateBodyMetricRecordRequest(
-        @Schema(description = "用户 ID，可不传（由 token 自动识别）")
-        Long userId,
-
         @NotNull(message = "metricType must not be null")
         @Schema(description = "指标类型", example = "WEIGHT")
         BodyMetricType metricType,

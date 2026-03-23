@@ -60,7 +60,12 @@
     <view class="section-title">记录</view>
   </view>
 
-  <view wx:if="{{recordGroups.length}}" class="record-groups" bindtap="handleRecordListTap">
+  <view wx:if="{{dailyWeight.hasRecord || recordGroups.length}}" class="record-groups" bindtap="handleRecordListTap">
+    <view wx:if="{{dailyWeight.hasRecord}}" class="panel weight-record-panel">
+      <view class="weight-record-line">
+        <view class="weight-record-title">{{dailyWeight.title}}</view>
+      </view>
+    </view>
     <view
       wx:for="{{recordGroups}}"
       wx:key="key"

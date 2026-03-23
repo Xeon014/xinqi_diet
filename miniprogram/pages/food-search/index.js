@@ -5,7 +5,7 @@ const { getCurrentUserId } = require("../../utils/auth");
 const { CALORIE_UNIT_LABELS, MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
 const { decorateFood, FOOD_CATEGORIES, isCustomFood } = require("../../utils/food");
-const { getRecentFoods, saveRecentFood } = require("../../utils/recent-foods");
+const { getRecentFoods, removeRecentFood, saveRecentFood } = require("../../utils/recent-foods");
 const {
   clearRecentFoodSearches,
   getRecentFoodSearches,
@@ -18,6 +18,9 @@ const app = getApp();
 const DEFAULT_QUANTITY = 100;
 const DEFAULT_PAGE_SIZE = 30;
 const SEARCH_DEBOUNCE_MS = 240;
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 
 const FILTER_KEYS = {
   RECENT: "RECENT",
@@ -172,6 +175,30 @@ function normalizeComboEditorItem(item) {
   };
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applyRecentFoodSwipeState(items, swipedFoodId, swipingFoodId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.id) === swipingFoodId;
+    const isOpened = Number(item.id) === swipedFoodId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 Page({
   data: {
     keyword: "",
@@ -192,6 +219,10 @@ Page({
     recentSearches: [],
     displayedFoods: [],
     displayedCombos: [],
+    enableRecentFoodSwipe: false,
+    swipedRecentFoodId: null,
+    swipingRecentFoodId: null,
+    recentFoodSwipeOffsetX: 0,
     emptyTitle: "最近记录为空",
     emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
     recordDate: getToday(),
@@ -247,6 +278,10 @@ Page({
     this.userId = getCurrentUserId();
     this.searchTimer = null;
     this.foodRequestId = 0;
+    this.recentFoodSwipeStartX = null;
+    this.recentFoodSwipeStartY = null;
+    this.recentFoodSwipeBaseOffsetX = 0;
+    this.recentFoodSwipeMode = "";
 
     const recordDate = options.recordDate || getToday();
     const mealType = options.mealType || "BREAKFAST";
@@ -546,6 +581,7 @@ Page({
 
   handleCategoryTap(event) {
     const selectedCategoryKey = event.currentTarget.dataset.key;
+    this.closeRecentFoodSwipeActions();
     this.setData(
       {
         selectedCategoryKey,
@@ -566,6 +602,7 @@ Page({
       return;
     }
 
+    this.closeRecentFoodSwipeActions();
     this.setData(
       {
         keyword,
@@ -638,6 +675,125 @@ Page({
     }
 
     wx.navigateBack();
+  },
+
+  handleRecentFoodTouchStart(event) {
+    if (!this.data.enableRecentFoodSwipe) {
+      return;
+    }
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const nextOpenedId = this.data.swipedRecentFoodId === id ? id : null;
+    this.recentFoodSwipeStartX = touch.clientX;
+    this.recentFoodSwipeStartY = touch.clientY;
+    this.recentFoodSwipeBaseOffsetX = this.data.swipedRecentFoodId === id ? DELETE_ACTION_WIDTH : 0;
+    this.recentFoodSwipeMode = "";
+    this.setData({
+      swipingRecentFoodId: id,
+      recentFoodSwipeOffsetX: this.recentFoodSwipeBaseOffsetX,
+      swipedRecentFoodId: nextOpenedId,
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, nextOpenedId, id, this.recentFoodSwipeBaseOffsetX),
+    });
+  },
+
+  handleRecentFoodTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!this.data.enableRecentFoodSwipe || !Number.isFinite(id) || !touch) {
+      return;
+    }
+    if (this.data.swipingRecentFoodId !== id || !Number.isFinite(this.recentFoodSwipeStartX)) {
+      return;
+    }
+    const deltaX = this.recentFoodSwipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.recentFoodSwipeStartY || 0) - touch.clientY);
+    if (!this.recentFoodSwipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.recentFoodSwipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.recentFoodSwipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.recentFoodSwipeBaseOffsetX + deltaX);
+    this.setData({
+      recentFoodSwipeOffsetX: nextOffsetX,
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, id, nextOffsetX),
+    });
+  },
+
+  handleRecentFoodTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!this.data.enableRecentFoodSwipe || !Number.isFinite(id) || this.data.swipingRecentFoodId !== id) {
+      return;
+    }
+    if (this.recentFoodSwipeMode !== "horizontal") {
+      this.resetRecentFoodSwipeGesture();
+      this.setData({
+        swipingRecentFoodId: null,
+        recentFoodSwipeOffsetX: 0,
+        displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, null, 0),
+      });
+      return;
+    }
+    this.finishRecentFoodSwipe(id, this.data.recentFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  handleRecentFoodContentTap(event) {
+    if (this.data.swipedRecentFoodId != null) {
+      this.closeRecentFoodSwipeActions();
+      return;
+    }
+    this.handleSelectFood(event);
+  },
+
+  handleRecentFoodListBackgroundTap() {
+    this.closeRecentFoodSwipeActions();
+  },
+
+  handleDeleteRecentFood(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!this.userId || !Number.isFinite(id)) {
+      return;
+    }
+    removeRecentFood(this.userId, id);
+    this.closeRecentFoodSwipeActions();
+    this.loadRecentFoods();
+    wx.showToast({ title: "已移除", icon: "success" });
+  },
+
+  resetRecentFoodSwipeGesture() {
+    this.recentFoodSwipeStartX = null;
+    this.recentFoodSwipeStartY = null;
+    this.recentFoodSwipeBaseOffsetX = 0;
+    this.recentFoodSwipeMode = "";
+  },
+
+  finishRecentFoodSwipe(id, shouldOpen) {
+    this.resetRecentFoodSwipeGesture();
+    this.setData({
+      swipedRecentFoodId: shouldOpen ? id : null,
+      swipingRecentFoodId: null,
+      recentFoodSwipeOffsetX: 0,
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeRecentFoodSwipeActions() {
+    if (this.data.swipedRecentFoodId == null && this.data.swipingRecentFoodId == null) {
+      return;
+    }
+    this.resetRecentFoodSwipeGesture();
+    this.setData({
+      swipedRecentFoodId: null,
+      swipingRecentFoodId: null,
+      recentFoodSwipeOffsetX: 0,
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, null, null, 0),
+    });
   },
 
   handleSelectCombo(event) {
@@ -1207,6 +1363,7 @@ Page({
     const isSearching = Boolean(keyword);
     const currentCategoryKey = this.data.selectedCategoryKey;
     const usesRemoteFoods = this.shouldUseRemoteFoodSource();
+    const enableRecentFoodSwipe = !isSearching && currentCategoryKey === FILTER_KEYS.RECENT;
 
     let displayedFoods = [];
     let displayedCombos = [];
@@ -1248,10 +1405,34 @@ Page({
       isSearching,
     });
 
+    const nextSwipedRecentFoodId = enableRecentFoodSwipe
+      && displayedFoods.some((item) => Number(item.id) === Number(this.data.swipedRecentFoodId))
+      ? this.data.swipedRecentFoodId
+      : null;
+    const nextSwipingRecentFoodId = enableRecentFoodSwipe
+      && displayedFoods.some((item) => Number(item.id) === Number(this.data.swipingRecentFoodId))
+      ? this.data.swipingRecentFoodId
+      : null;
+    const nextRecentFoodSwipeOffsetX = enableRecentFoodSwipe && nextSwipingRecentFoodId != null
+      ? this.data.recentFoodSwipeOffsetX
+      : 0;
+    if (enableRecentFoodSwipe) {
+      displayedFoods = applyRecentFoodSwipeState(
+        displayedFoods,
+        nextSwipedRecentFoodId,
+        nextSwipingRecentFoodId,
+        nextRecentFoodSwipeOffsetX
+      );
+    }
+
     this.setData({
       isSearching,
       displayedFoods,
       displayedCombos,
+      enableRecentFoodSwipe,
+      swipedRecentFoodId: nextSwipedRecentFoodId,
+      swipingRecentFoodId: nextSwipingRecentFoodId,
+      recentFoodSwipeOffsetX: nextRecentFoodSwipeOffsetX,
       showRecentSearchList,
       showFoodSection: displayedFoods.length > 0 || showCustomCreateAction || Boolean(builtinStatusText),
       showComboSection: displayedCombos.length > 0,

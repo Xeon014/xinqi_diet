@@ -2,6 +2,7 @@ package com.diet.controller;
 
 import com.diet.auth.AuthContextService;
 import com.diet.common.ApiResponse;
+import com.diet.dto.metric.BodyMetricDailySnapshotResponse;
 import com.diet.dto.metric.BodyMetricDeleteResponse;
 import com.diet.dto.metric.BodyMetricHistoryResponse;
 import com.diet.dto.metric.BodyMetricRecordResponse;
@@ -10,7 +11,8 @@ import com.diet.dto.metric.BodyMetricTrendMetricKey;
 import com.diet.dto.metric.BodyMetricTrendResponse;
 import com.diet.dto.metric.CreateBodyMetricRecordRequest;
 import com.diet.dto.metric.MetricTrendRangeType;
-import com.diet.service.BodyMetricRecordService;
+import com.diet.service.BodyMetricRecordCommandService;
+import com.diet.service.BodyMetricRecordQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,15 +36,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/body-metrics")
 public class BodyMetricRecordController {
 
-    private final BodyMetricRecordService bodyMetricRecordService;
+    private final BodyMetricRecordCommandService bodyMetricRecordCommandService;
+
+    private final BodyMetricRecordQueryService bodyMetricRecordQueryService;
 
     private final AuthContextService authContextService;
 
     public BodyMetricRecordController(
-            BodyMetricRecordService bodyMetricRecordService,
+            BodyMetricRecordCommandService bodyMetricRecordCommandService,
+            BodyMetricRecordQueryService bodyMetricRecordQueryService,
             AuthContextService authContextService
     ) {
-        this.bodyMetricRecordService = bodyMetricRecordService;
+        this.bodyMetricRecordCommandService = bodyMetricRecordCommandService;
+        this.bodyMetricRecordQueryService = bodyMetricRecordQueryService;
         this.authContextService = authContextService;
     }
 
@@ -52,16 +58,27 @@ public class BodyMetricRecordController {
             @Valid @RequestBody CreateBodyMetricRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(bodyMetricRecordService.create(userId, request)));
+                .body(ApiResponse.created(bodyMetricRecordCommandService.create(userId, request)));
     }
 
     @Operation(summary = "查询身体指标快照", description = "返回体重、BMI 和围度的最近一次记录值与日期")
     @GetMapping("/snapshot")
     public ApiResponse<BodyMetricSnapshotResponse> getSnapshot(HttpServletRequest httpServletRequest) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordService.getSnapshot(userId));
+        return ApiResponse.success(bodyMetricRecordQueryService.getSnapshot(userId));
+    }
+
+    @Operation(summary = "按日期查询身体指标快照", description = "返回指定日期各指标的最新记录值，适用于首页按日展示")
+    @GetMapping("/daily")
+    public ApiResponse<BodyMetricDailySnapshotResponse> getDailySnapshot(
+            @Parameter(description = "查询日期，格式 yyyy-MM-dd")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(bodyMetricRecordQueryService.getDailySnapshot(userId, date));
     }
 
     @Operation(summary = "删除身体指标记录", description = "删除当前登录用户的一条身体指标记录")
@@ -71,7 +88,7 @@ public class BodyMetricRecordController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordService.delete(userId, id));
+        return ApiResponse.success(bodyMetricRecordCommandService.delete(userId, id));
     }
 
     @Operation(summary = "查询身体指标历史明细", description = "按指标查询历史明细列表，支持游标分页，同一天可返回多条记录")
@@ -88,7 +105,7 @@ public class BodyMetricRecordController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordService.getHistory(userId, metricKey, cursorDate, cursorId, pageSize));
+        return ApiResponse.success(bodyMetricRecordQueryService.getHistory(userId, metricKey, cursorDate, cursorId, pageSize));
     }
 
     @Operation(summary = "查询身体指标趋势", description = "按指标和时间区间查询趋势点，ALL 支持游标分页")
@@ -107,6 +124,6 @@ public class BodyMetricRecordController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordService.getTrend(userId, metricKey, rangeType, cursorDate, cursorId, pageSize));
+        return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorDate, cursorId, pageSize));
     }
 }

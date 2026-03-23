@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateMealRecordRequest(
-        Long userId,
         @NotNull(message = "foodId must not be null")
         Long foodId,
         @NotNull(message = "mealType must not be null")

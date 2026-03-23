@@ -19,14 +19,16 @@
 - 生产环境配置：`src/main/resources/application-prod.yml`
 
 默认激活 `dev` 环境，且 `dev` 中已开启微信登录 mock：`wechat.mock-enabled=true`。
+如需演示数据，必须显式追加 `demo-seed` profile，不再通过普通启动自动注入。
 
 ## 快速启动
 
 1. 如需初始化本地数据库账号与权限，执行：`scripts/mysql-init.sql`
 2. 如需从空库或删库后重建到当前最新结构，执行：`scripts/sql/schema-full-latest.sql`
 3. 启动开发环境：`mvn spring-boot:run`
-4. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
-5. 服务默认地址：`http://localhost:8080`
+4. 如需带演示数据启动：`mvn spring-boot:run -Dspring-boot.run.profiles=dev,demo-seed`
+5. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
+6. 服务默认地址：`http://localhost:8080`
 
 ## 数据库基线
 

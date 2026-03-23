@@ -23,8 +23,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring("Bearer ".length()).trim();
-            accessTokenService.parseUserId(token)
-                    .ifPresent(userId -> request.setAttribute(AuthConstants.CURRENT_USER_ID_ATTR, userId));
+            AccessTokenParseResult result = accessTokenService.parse(token);
+            if (result.isValid()) {
+                request.setAttribute(AuthConstants.CURRENT_USER_ID_ATTR, result.userId());
+            } else {
+                request.setAttribute(AuthConstants.ACCESS_TOKEN_STATUS_ATTR, result.status());
+            }
         }
         filterChain.doFilter(request, response);
     }

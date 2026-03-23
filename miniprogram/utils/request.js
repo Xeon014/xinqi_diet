@@ -6,6 +6,13 @@ const {
   USE_CLOUD_CONTAINER,
 } = require("./constants");
 
+const AUTH_ERROR_CODES = new Set([
+  "TOKEN_MISSING",
+  "TOKEN_INVALID",
+  "TOKEN_EXPIRED",
+  "UNAUTHORIZED",
+]);
+
 function pickErrorMessage(error) {
   if (error && error.data && Array.isArray(error.data.details) && error.data.details.length > 0) {
     return error.data.details[0];
@@ -154,6 +161,46 @@ function requestWithoutLogin(options) {
   return doRequest(options);
 }
 
+function isAuthError(error) {
+  return !!(error && (error.statusCode === 401 || AUTH_ERROR_CODES.has(error.code)));
+}
+
+function normalizeAuthError(error) {
+  const code = error && error.code ? error.code : "TOKEN_INVALID";
+  let message = "登录已失效，请重试";
+  if (code === "TOKEN_MISSING") {
+    message = "请先登录";
+  } else if (code !== "TOKEN_INVALID" && code !== "TOKEN_EXPIRED") {
+    message = (error && error.message) || message;
+  }
+
+  return {
+    ...error,
+    statusCode: 401,
+    code,
+    message,
+  };
+}
+
+function normalizeReloginError(error) {
+  if (isAuthError(error)) {
+    return normalizeAuthError(error);
+  }
+  return {
+    ...error,
+    statusCode: 401,
+    code: "LOGIN_REFRESH_FAILED",
+    message: "登录失败，请重试",
+  };
+}
+
+function clearAuthState() {
+  const app = getApp();
+  if (app && typeof app.handleAuthFailure === "function") {
+    app.handleAuthFailure();
+  }
+}
+
 function request(options) {
   const app = getApp();
   const ensureLogin = app && typeof app.ensureLogin === "function"
@@ -164,7 +211,18 @@ function request(options) {
     .then(() => doRequest(options))
     .catch((error) => {
       if (error && error.statusCode === 401 && !options.__retried) {
-        return ensureLogin(true).then(() => doRequest({ ...options, __retried: true }));
+        return ensureLogin(true)
+          .then(() => doRequest({ ...options, __retried: true }))
+          .catch((retryError) => {
+            const normalizedRetryError = normalizeReloginError(retryError);
+            clearAuthState();
+            return Promise.reject(normalizedRetryError);
+          });
+      }
+      if (isAuthError(error)) {
+        const normalizedError = normalizeAuthError(error);
+        clearAuthState();
+        return Promise.reject(normalizedError);
       }
       return Promise.reject(error);
     });

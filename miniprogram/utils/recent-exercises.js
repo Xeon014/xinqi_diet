@@ -33,7 +33,17 @@ function saveRecentExercise(userId, exercise) {
   wx.setStorageSync(getStorageKey(userId), nextList);
 }
 
+function removeRecentExercise(userId, exerciseId) {
+  if (!userId) {
+    return;
+  }
+
+  const nextList = getRecentExercises(userId).filter((item) => Number(item.id) !== Number(exerciseId));
+  wx.setStorageSync(getStorageKey(userId), nextList);
+}
+
 module.exports = {
   getRecentExercises,
+  removeRecentExercise,
   saveRecentExercise,
 };

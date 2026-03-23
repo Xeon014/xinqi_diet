@@ -57,7 +57,50 @@
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
           <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">新建</view>
         </view>
-        <view wx:if="{{displayedExercises.length}}" class="exercise-list compact-list">
+        <view wx:if="{{displayedExercises.length && enableRecentExerciseSwipe}}" class="exercise-list compact-list" bindtap="handleRecentExerciseListBackgroundTap">
+          <view
+            wx:for="{{displayedExercises}}"
+            wx:key="id"
+            class="exercise-swipe-cell"
+            data-id="{{item.id}}"
+            bindtouchstart="handleRecentExerciseTouchStart"
+            bindtouchmove="handleRecentExerciseTouchMove"
+            bindtouchend="handleRecentExerciseTouchEnd"
+            bindtouchcancel="handleRecentExerciseTouchEnd"
+          >
+            <view class="exercise-swipe-action-track">
+              <view class="exercise-swipe-action-shell">
+                <view class="danger-icon-btn exercise-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentExercise">
+                  <view class="trash-icon">
+                    <view class="trash-icon-handle"></view>
+                    <view class="trash-icon-lid"></view>
+                    <view class="trash-icon-body">
+                      <view class="trash-icon-line left"></view>
+                      <view class="trash-icon-line center"></view>
+                      <view class="trash-icon-line right"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view
+              class="exercise-swipe-content"
+              style="{{item.swipeContentStyle}}"
+              data-index="{{index}}"
+              catchtap="handleRecentExerciseContentTap"
+            >
+              <view class="exercise-item">
+                <view class="exercise-head">
+                  <view class="exercise-name">{{item.name}}</view>
+                  <view class="exercise-met">MET {{item.metValue}}</view>
+                </view>
+                <view class="exercise-meta">{{item.categoryLabel}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view wx:elif="{{displayedExercises.length}}" class="exercise-list compact-list">
           <view
             wx:for="{{displayedExercises}}"
             wx:key="id"

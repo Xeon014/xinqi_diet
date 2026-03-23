@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record CreateExerciseRecordRequest(
-        Long userId,
         @NotNull(message = "exerciseId must not be null")
         Long exerciseId,
         @NotNull(message = "durationMinutes must not be null")

@@ -16,6 +16,13 @@ function getBodyMetricSnapshot() {
   });
 }
 
+function getDailyBodyMetricSnapshot(date) {
+  return request({
+    url: "/api/body-metrics/daily?date=" + encodeURIComponent(date),
+    showLoading: false,
+  });
+}
+
 function getBodyMetricTrend(params) {
   const query = [
     `metricKey=${encodeURIComponent(params.metricKey)}`,
@@ -66,6 +73,7 @@ function deleteBodyMetricRecord(id) {
 module.exports = {
   createBodyMetricRecord,
   getBodyMetricSnapshot,
+  getDailyBodyMetricSnapshot,
   getBodyMetricTrend,
   getBodyMetricHistory,
   deleteBodyMetricRecord,

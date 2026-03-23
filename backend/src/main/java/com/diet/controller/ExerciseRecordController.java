@@ -6,7 +6,8 @@ import com.diet.dto.exercise.CreateExerciseRecordRequest;
 import com.diet.dto.exercise.ExerciseRecordListResponse;
 import com.diet.dto.exercise.ExerciseRecordResponse;
 import com.diet.dto.exercise.UpdateExerciseRecordRequest;
-import com.diet.service.ExerciseRecordService;
+import com.diet.service.ExerciseRecordCommandService;
+import com.diet.service.ExerciseRecordQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,12 +33,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/exercise-records")
 public class ExerciseRecordController {
 
-    private final ExerciseRecordService exerciseRecordService;
+    private final ExerciseRecordCommandService exerciseRecordCommandService;
+
+    private final ExerciseRecordQueryService exerciseRecordQueryService;
 
     private final AuthContextService authContextService;
 
-    public ExerciseRecordController(ExerciseRecordService exerciseRecordService, AuthContextService authContextService) {
-        this.exerciseRecordService = exerciseRecordService;
+    public ExerciseRecordController(
+            ExerciseRecordCommandService exerciseRecordCommandService,
+            ExerciseRecordQueryService exerciseRecordQueryService,
+            AuthContextService authContextService
+    ) {
+        this.exerciseRecordCommandService = exerciseRecordCommandService;
+        this.exerciseRecordQueryService = exerciseRecordQueryService;
         this.authContextService = authContextService;
     }
 
@@ -47,9 +55,9 @@ public class ExerciseRecordController {
             @Valid @RequestBody CreateExerciseRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(exerciseRecordService.create(userId, request)));
+                .body(ApiResponse.created(exerciseRecordCommandService.create(userId, request)));
     }
 
     @Operation(summary = "更新运动记录", description = "按记录 ID 更新时长、强度和日期")
@@ -59,8 +67,8 @@ public class ExerciseRecordController {
             @Valid @RequestBody UpdateExerciseRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
-        return ApiResponse.success(exerciseRecordService.update(userId, id, request));
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(exerciseRecordCommandService.update(userId, id, request));
     }
 
     @Operation(summary = "删除运动记录", description = "按记录 ID 删除当前用户的一条运动记录")
@@ -69,20 +77,19 @@ public class ExerciseRecordController {
             @Parameter(description = "运动记录 ID") @PathVariable Long id,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
-        return ApiResponse.success(exerciseRecordService.deleteById(userId, id));
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(exerciseRecordCommandService.deleteById(userId, id));
     }
 
     @Operation(summary = "查询运动记录", description = "按用户和日期查询运动记录列表")
     @GetMapping
     public ApiResponse<ExerciseRecordListResponse> findByUserAndDate(
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             @Parameter(description = "记录日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
-        List<ExerciseRecordResponse> records = exerciseRecordService.findByUserAndDate(resolvedUserId, date);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
+        List<ExerciseRecordResponse> records = exerciseRecordQueryService.findByUserAndDate(resolvedUserId, date);
         return ApiResponse.success(new ExerciseRecordListResponse(resolvedUserId, date, records, records.size()));
     }
 }

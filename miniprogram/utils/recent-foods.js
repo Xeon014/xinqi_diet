@@ -39,7 +39,17 @@ function saveRecentFood(userId, food) {
   wx.setStorageSync(getStorageKey(userId), nextList);
 }
 
+function removeRecentFood(userId, foodId) {
+  if (!userId) {
+    return;
+  }
+
+  const nextList = getRecentFoods(userId).filter((item) => Number(item.id) !== Number(foodId));
+  wx.setStorageSync(getStorageKey(userId), nextList);
+}
+
 module.exports = {
   getRecentFoods,
+  removeRecentFood,
   saveRecentFood,
 };

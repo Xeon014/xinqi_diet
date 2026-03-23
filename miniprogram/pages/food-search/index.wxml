@@ -58,7 +58,61 @@
           <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">新建</view>
         </view>
 
-        <view wx:if="{{displayedFoods.length}}" class="food-list compact-list">
+        <view wx:if="{{displayedFoods.length && enableRecentFoodSwipe}}" class="food-list compact-list" bindtap="handleRecentFoodListBackgroundTap">
+          <view
+            wx:for="{{displayedFoods}}"
+            wx:key="id"
+            class="food-swipe-cell"
+            data-id="{{item.id}}"
+            bindtouchstart="handleRecentFoodTouchStart"
+            bindtouchmove="handleRecentFoodTouchMove"
+            bindtouchend="handleRecentFoodTouchEnd"
+            bindtouchcancel="handleRecentFoodTouchEnd"
+          >
+            <view class="food-swipe-action-track">
+              <view class="food-swipe-action-shell">
+                <view class="danger-icon-btn food-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentFood">
+                  <view class="trash-icon">
+                    <view class="trash-icon-handle"></view>
+                    <view class="trash-icon-lid"></view>
+                    <view class="trash-icon-body">
+                      <view class="trash-icon-line left"></view>
+                      <view class="trash-icon-line center"></view>
+                      <view class="trash-icon-line right"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view
+              class="food-swipe-content"
+              style="{{item.swipeContentStyle}}"
+              data-index="{{index}}"
+              catchtap="handleRecentFoodContentTap"
+            >
+              <view class="food-item">
+                <view wx:if="{{item.imageUrl}}" class="food-cover-wrap">
+                  <image
+                    class="food-cover"
+                    src="{{item.imageUrl}}"
+                    mode="aspectFill"
+                    data-id="{{item.id}}"
+                    binderror="handleFoodImageError"
+                  />
+                </view>
+                <view class="food-main">
+                  <view class="food-top">
+                    <view class="food-name">{{item.name}}</view>
+                    <view class="food-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
+                  </view>
+                  <view wx:if="{{item.categoryLabel}}" class="food-category">{{item.categoryLabel}}</view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view wx:elif="{{displayedFoods.length}}" class="food-list compact-list">
           <view
             wx:for="{{displayedFoods}}"
             wx:key="id"

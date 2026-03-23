@@ -2,6 +2,8 @@ package com.diet.common;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse<ApiErrorResponse>> handleNotFound(NotFoundException exception) {
@@ -24,7 +28,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<ApiErrorResponse>> handleUnauthorized(UnauthorizedException exception) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", List.of(exception.getMessage()));
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception.getCode(), List.of(exception.getMessage()));
     }
 
     @ExceptionHandler(ForbiddenException.class)
@@ -60,7 +64,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<ApiErrorResponse>> handleUnknown(Exception exception) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", List.of(exception.getMessage()));
+        log.error("未处理异常", exception);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", List.of("系统繁忙，请稍后重试"));
     }
 
     private ResponseEntity<ApiResponse<ApiErrorResponse>> buildResponse(HttpStatus status, String code, List<String> details) {

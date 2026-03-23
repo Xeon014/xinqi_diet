@@ -8,7 +8,8 @@ import com.diet.dto.record.CreateMealRecordRequest;
 import com.diet.dto.record.MealRecordListResponse;
 import com.diet.dto.record.MealRecordResponse;
 import com.diet.dto.record.UpdateMealRecordRequest;
-import com.diet.service.MealRecordService;
+import com.diet.service.MealRecordCommandService;
+import com.diet.service.MealRecordQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,12 +35,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/records")
 public class MealRecordController {
 
-    private final MealRecordService mealRecordService;
+    private final MealRecordCommandService mealRecordCommandService;
+
+    private final MealRecordQueryService mealRecordQueryService;
 
     private final AuthContextService authContextService;
 
-    public MealRecordController(MealRecordService mealRecordService, AuthContextService authContextService) {
-        this.mealRecordService = mealRecordService;
+    public MealRecordController(
+            MealRecordCommandService mealRecordCommandService,
+            MealRecordQueryService mealRecordQueryService,
+            AuthContextService authContextService
+    ) {
+        this.mealRecordCommandService = mealRecordCommandService;
+        this.mealRecordQueryService = mealRecordQueryService;
         this.authContextService = authContextService;
     }
 
@@ -49,9 +57,9 @@ public class MealRecordController {
             @Valid @RequestBody CreateMealRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(mealRecordService.create(userId, request)));
+                .body(ApiResponse.created(mealRecordCommandService.create(userId, request)));
     }
 
     @Operation(summary = "批量新增饮食记录", description = "同一餐次一次提交多种食物并保存")
@@ -60,8 +68,8 @@ public class MealRecordController {
             @Valid @RequestBody CreateMealRecordBatchRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
-        List<MealRecordResponse> records = mealRecordService.createBatch(userId, request);
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        List<MealRecordResponse> records = mealRecordCommandService.createBatch(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(new MealRecordListResponse(
                         userId,
@@ -78,8 +86,8 @@ public class MealRecordController {
             @Valid @RequestBody UpdateMealRecordRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
-        return ApiResponse.success(mealRecordService.updateRecord(userId, id, request));
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(mealRecordCommandService.updateRecord(userId, id, request));
     }
 
     @Operation(summary = "删除饮食记录", description = "按记录 ID 删除当前用户的一条饮食记录")
@@ -88,22 +96,21 @@ public class MealRecordController {
             @Parameter(description = "饮食记录 ID") @PathVariable Long id,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, null);
-        return ApiResponse.success(mealRecordService.deleteById(userId, id));
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(mealRecordCommandService.deleteById(userId, id));
     }
 
     @Operation(summary = "查询饮食记录", description = "按用户、日期和可选餐次查询饮食记录列表")
     @GetMapping
     public ApiResponse<MealRecordListResponse> findByUserAndDate(
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             @Parameter(description = "记录日期，格式 yyyy-MM-dd")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "餐次类型，可选值 BREAKFAST/MORNING_SNACK/LUNCH/AFTERNOON_SNACK/DINNER/LATE_NIGHT_SNACK/OTHER")
             @RequestParam(required = false) MealType mealType,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
-        List<MealRecordResponse> records = mealRecordService.findByUserAndDate(resolvedUserId, date, mealType);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
+        List<MealRecordResponse> records = mealRecordQueryService.findByUserAndDate(resolvedUserId, date, mealType);
         return ApiResponse.success(new MealRecordListResponse(resolvedUserId, date, records, records.size()));
     }
 }

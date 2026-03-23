@@ -45,7 +45,7 @@ public class MealComboController {
             @Valid @RequestBody CreateMealComboRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long userId = authContextService.resolveUserId(httpServletRequest, request.userId());
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(mealComboService.create(userId, request)));
     }
@@ -54,11 +54,10 @@ public class MealComboController {
     @PutMapping("/{id}")
     public ApiResponse<MealComboResponse> update(
             @Parameter(description = "套餐 ID") @PathVariable Long id,
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             @Valid @RequestBody UpdateMealComboRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(mealComboService.update(resolvedUserId, id, request));
     }
 
@@ -66,20 +65,18 @@ public class MealComboController {
     @DeleteMapping("/{id}")
     public ApiResponse<Boolean> delete(
             @Parameter(description = "套餐 ID") @PathVariable Long id,
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(mealComboService.delete(resolvedUserId, id));
     }
 
     @Operation(summary = "查询套餐列表", description = "查询当前用户可用的套餐列表")
     @GetMapping
     public ApiResponse<MealComboListResponse> findAll(
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         List<MealComboResponse> combos = mealComboService.findByUser(resolvedUserId);
         return ApiResponse.success(new MealComboListResponse(combos, combos.size()));
     }
@@ -88,10 +85,9 @@ public class MealComboController {
     @GetMapping("/{id}")
     public ApiResponse<MealComboResponse> findById(
             @Parameter(description = "套餐 ID") @PathVariable Long id,
-            @Parameter(description = "用户 ID，可不传（由 token 自动识别）") @RequestParam(required = false) Long userId,
             HttpServletRequest httpServletRequest
     ) {
-        Long resolvedUserId = authContextService.resolveUserId(httpServletRequest, userId);
+        Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(mealComboService.findById(resolvedUserId, id));
     }
 }

@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record CreateMealRecordBatchRequest(
-        Long userId,
         @NotNull(message = "mealType must not be null")
         MealType mealType,
         @NotNull(message = "recordDate must not be null")

@@ -9,13 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.diet.domain.metric.BodyMetricRecord;
+import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.metric.BodyMetricType;
 import com.diet.domain.metric.BodyMetricUnit;
-import com.diet.domain.exercise.ExerciseRecordRepository;
-import com.diet.domain.exercise.ExerciseRepository;
-import com.diet.domain.food.FoodRepository;
-import com.diet.domain.metric.BodyMetricRecordRepository;
-import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.user.ActivityLevel;
 import com.diet.domain.user.Gender;
 import com.diet.domain.user.GoalCalorieStrategy;
@@ -35,38 +31,30 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class UserProfileServiceTest {
+class UserProfileApplicationServiceTest {
 
     @Mock
     private UserProfileRepository userProfileRepository;
 
     @Mock
-    private MealRecordRepository mealRecordRepository;
-
-    @Mock
-    private FoodRepository foodRepository;
-
-    @Mock
-    private ExerciseRecordRepository exerciseRecordRepository;
-
-    @Mock
-    private ExerciseRepository exerciseRepository;
-
-    @Mock
     private BodyMetricRecordRepository bodyMetricRecordRepository;
 
-    private UserProfileService userProfileService;
+    private UserProfileApplicationService userProfileApplicationService;
 
     @BeforeEach
     void setUp() {
-        userProfileService = new UserProfileService(
+        GoalPlanningService goalPlanningService = new GoalPlanningService(bodyMetricRecordRepository);
+        BodyMetricRecordCommandService bodyMetricRecordCommandService = new BodyMetricRecordCommandService(
+                bodyMetricRecordRepository,
                 userProfileRepository,
-                mealRecordRepository,
-                foodRepository,
-                exerciseRecordRepository,
-                exerciseRepository,
-                new GoalPlanningService(bodyMetricRecordRepository),
-                bodyMetricRecordRepository
+                goalPlanningService
+        );
+        UserProfileSupport userProfileSupport = new UserProfileSupport(userProfileRepository, goalPlanningService);
+        userProfileApplicationService = new UserProfileApplicationService(
+                userProfileRepository,
+                goalPlanningService,
+                bodyMetricRecordCommandService,
+                userProfileSupport
         );
     }
 
@@ -94,7 +82,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        UserResponse response = userProfileService.update(1L, request);
+        UserResponse response = userProfileApplicationService.update(1L, request);
 
         assertThat(response.name()).isEqualTo("已存在昵称");
         verify(userProfileRepository).update(existing);
@@ -124,7 +112,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        assertThatThrownBy(() -> userProfileService.update(1L, request))
+        assertThatThrownBy(() -> userProfileApplicationService.update(1L, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("name must not be blank");
         verify(userProfileRepository, never()).update(any(UserProfile.class));
@@ -132,7 +120,7 @@ class UserProfileServiceTest {
 
     @Test
     void shouldRejectTooLongNameWhenUpdate() {
-        UserProfile existing = buildUser("???");
+        UserProfile existing = buildUser("旧昵称");
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
         UpdateUserRequest request = new UpdateUserRequest(
@@ -154,7 +142,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        assertThatThrownBy(() -> userProfileService.update(1L, request))
+        assertThatThrownBy(() -> userProfileApplicationService.update(1L, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("name length must be less than or equal to 20");
         verify(userProfileRepository, never()).update(any(UserProfile.class));
@@ -185,7 +173,7 @@ class UserProfileServiceTest {
                 GoalCalorieStrategy.MANUAL
         );
 
-        UserResponse response = userProfileService.create(request);
+        UserResponse response = userProfileApplicationService.create(request);
 
         assertThat(response.name()).isNull();
     }
@@ -215,7 +203,7 @@ class UserProfileServiceTest {
                 true
         );
 
-        UserResponse response = userProfileService.update(1L, request);
+        UserResponse response = userProfileApplicationService.update(1L, request);
 
         assertThat(response.customBmr()).isNull();
         verify(userProfileRepository).update(existing);
@@ -231,7 +219,7 @@ class UserProfileServiceTest {
         existing.setDailyCalorieTarget(1600);
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
-        UserResponse response = userProfileService.findById(1L);
+        UserResponse response = userProfileApplicationService.findById(1L);
 
         assertThat(response.customTdee()).isEqualTo(1980);
         assertThat(response.tdee()).isEqualByComparingTo("1980.00");
@@ -247,7 +235,7 @@ class UserProfileServiceTest {
         existing.setGoalCalorieDelta(0);
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
 
-        UserResponse response = userProfileService.findById(1L);
+        UserResponse response = userProfileApplicationService.findById(1L);
 
         assertThat(response.tdee()).isEqualByComparingTo("2000.00");
         assertThat(response.dailyCalorieTarget()).isEqualTo(2000);
@@ -277,7 +265,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        UserResponse response = userProfileService.update(1L, request);
+        UserResponse response = userProfileApplicationService.update(1L, request);
 
         assertThat(response.tdee()).isEqualByComparingTo("2100.00");
         assertThat(response.dailyCalorieTarget()).isEqualTo(1500);
@@ -310,7 +298,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        UserResponse response = userProfileService.update(1L, request);
+        UserResponse response = userProfileApplicationService.update(1L, request);
 
         assertThat(response.tdee()).isEqualByComparingTo("2100.00");
         assertThat(response.goalMode()).isEqualTo(GoalMode.LOSE);
@@ -342,7 +330,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        UserResponse response = userProfileService.update(1L, request);
+        UserResponse response = userProfileApplicationService.update(1L, request);
 
         assertThat(response.goalMode()).isEqualTo(GoalMode.GAIN);
         assertThat(response.goalCalorieDelta()).isEqualTo(300);
@@ -374,7 +362,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        userProfileService.update(1L, request);
+        userProfileApplicationService.update(1L, request);
 
         verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
     }
@@ -405,7 +393,7 @@ class UserProfileServiceTest {
                 null
         );
 
-        userProfileService.update(1L, request);
+        userProfileApplicationService.update(1L, request);
 
         verify(bodyMetricRecordRepository, never()).save(any(BodyMetricRecord.class));
     }

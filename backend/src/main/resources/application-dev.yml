@@ -17,6 +17,3 @@ wechat:
 auth:
   token-secret: ${AUTH_TOKEN_SECRET:diet-dev-secret-change-me}
   token-expire-days: ${AUTH_TOKEN_EXPIRE_DAYS:30}
-
-app:
-  demo-seed-enabled: ${APP_DEMO_SEED_ENABLED:false}

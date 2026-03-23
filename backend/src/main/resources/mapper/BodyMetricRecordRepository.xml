@@ -21,6 +21,29 @@
         LIMIT 1
     </select>
 
+    <select id="findDailyLatestByDate" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            r.id,
+            r.user_id,
+            r.metric_type,
+            r.metric_value,
+            r.unit,
+            r.record_date,
+            r.created_at,
+            r.updated_at
+        FROM body_metric_record r
+        INNER JOIN (
+            SELECT
+                metric_type,
+                MAX(id) AS max_id
+            FROM body_metric_record
+            WHERE user_id = #{userId}
+              AND record_date = #{date}
+            GROUP BY metric_type
+        ) daily ON daily.max_id = r.id
+        ORDER BY r.metric_type ASC, r.id DESC
+    </select>
+
     <select id="findDailyLatestByMetricTypeAndDateRange" resultType="com.diet.domain.metric.BodyMetricRecord">
         SELECT
             r.id,

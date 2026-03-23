@@ -19,7 +19,7 @@ public class AuthContextService {
     public Long requireCurrentUserId(HttpServletRequest request) {
         Long userId = getCurrentUserId(request);
         if (userId == null) {
-            throw new UnauthorizedException("missing or invalid access token");
+            throw buildUnauthorizedException(request);
         }
         return userId;
     }
@@ -27,15 +27,23 @@ public class AuthContextService {
     public Long resolveUserId(HttpServletRequest request, Long requestedUserId) {
         Long currentUserId = getCurrentUserId(request);
         if (currentUserId == null) {
-            if (requestedUserId == null) {
-                throw new UnauthorizedException("missing user id");
-            }
-            return requestedUserId;
+            throw buildUnauthorizedException(request);
         }
 
         if (requestedUserId != null && !currentUserId.equals(requestedUserId)) {
             throw new ForbiddenException("user id mismatch");
         }
         return currentUserId;
+    }
+
+    private UnauthorizedException buildUnauthorizedException(HttpServletRequest request) {
+        Object statusValue = request.getAttribute(AuthConstants.ACCESS_TOKEN_STATUS_ATTR);
+        if (statusValue == AccessTokenStatus.EXPIRED) {
+            return new UnauthorizedException("TOKEN_EXPIRED", "登录状态已过期，请重新登录");
+        }
+        if (statusValue == AccessTokenStatus.INVALID) {
+            return new UnauthorizedException("TOKEN_INVALID", "登录状态无效，请重新登录");
+        }
+        return new UnauthorizedException("TOKEN_MISSING", "请先登录");
     }
 }

@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class MealRecordServiceTest {
+class MealRecordCommandServiceTest {
 
     @Mock
     private MealRecordRepository mealRecordRepository;
@@ -35,15 +35,16 @@ class MealRecordServiceTest {
     @Mock
     private FoodRepository foodRepository;
 
-    private MealRecordService mealRecordService;
+    private MealRecordCommandService mealRecordCommandService;
 
     @BeforeEach
     void setUp() {
-        mealRecordService = new MealRecordService(
+        MealRecordSupport mealRecordSupport = new MealRecordSupport(
                 mealRecordRepository,
                 userProfileRepository,
                 foodRepository
         );
+        mealRecordCommandService = new MealRecordCommandService(mealRecordRepository, mealRecordSupport);
     }
 
     @Test
@@ -57,7 +58,7 @@ class MealRecordServiceTest {
         when(mealRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
         when(foodRepository.findAccessibleById(userId, food.getId())).thenReturn(Optional.of(food));
 
-        MealRecordResponse response = mealRecordService.updateRecord(
+        MealRecordResponse response = mealRecordCommandService.updateRecord(
                 userId,
                 recordId,
                 new UpdateMealRecordRequest(

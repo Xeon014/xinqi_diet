@@ -1,4 +1,3 @@
-const { getCurrentUserId } = require("../utils/auth");
 const { request } = require("../utils/request");
 
 function createRecord(payload) {
@@ -20,11 +19,7 @@ function createRecordBatch(payload) {
 }
 
 function getRecords({ date, mealType }) {
-  const userId = getCurrentUserId();
   const params = [];
-  if (userId) {
-    params.push(`userId=${userId}`);
-  }
   params.push(`date=${encodeURIComponent(date)}`);
   if (mealType) {
     params.push(`mealType=${encodeURIComponent(mealType)}`);

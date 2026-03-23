@@ -12,7 +12,7 @@ const {
   getRecentExerciseSearches,
   saveRecentExerciseSearch,
 } = require("../../utils/recent-exercise-searches");
-const { getRecentExercises, saveRecentExercise } = require("../../utils/recent-exercises");
+const { getRecentExercises, removeRecentExercise, saveRecentExercise } = require("../../utils/recent-exercises");
 const {
   EXERCISE_CATEGORIES,
   INTENSITY_OPTIONS,
@@ -40,6 +40,9 @@ const SYSTEM_FILTERS = [
 const BUILTIN_CATEGORIES = EXERCISE_CATEGORIES.filter((item) => item.key !== "ALL");
 const DEFAULT_DURATION_MINUTES = 30;
 const PREVIEW_WEIGHT_KG = 60;
+const DELETE_ACTION_WIDTH = 84;
+const SWIPE_OPEN_THRESHOLD = 42;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 const INTENSITY_FACTOR_MAP = {
   LOW: 0.8,
   MEDIUM: 1,
@@ -116,6 +119,30 @@ function getKeywordFromConfirmEvent(event, fallbackKeyword) {
   return fallbackKeyword;
 }
 
+function clampSwipeOffset(offsetX) {
+  if (!Number.isFinite(offsetX) || offsetX < 0) {
+    return 0;
+  }
+  if (offsetX > DELETE_ACTION_WIDTH) {
+    return DELETE_ACTION_WIDTH;
+  }
+  return offsetX;
+}
+
+function applyRecentExerciseSwipeState(items, swipedExerciseId, swipingExerciseId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.id) === swipingExerciseId;
+    const isOpened = Number(item.id) === swipedExerciseId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
 Page({
   data: {
     recordDate: getToday(),
@@ -136,6 +163,10 @@ Page({
     recentExercises: [],
     recentSearches: [],
     displayedExercises: [],
+    enableRecentExerciseSwipe: false,
+    swipedRecentExerciseId: null,
+    swipingRecentExerciseId: null,
+    recentExerciseSwipeOffsetX: 0,
     emptyTitle: "最近运动为空",
     emptyDescription: "完成一次运动记录后会出现在这里。",
     intensityOptions: INTENSITY_OPTIONS,
@@ -160,6 +191,10 @@ Page({
   onLoad(options = {}) {
     this.openerEventChannel = this.getOpenerEventChannel();
     this.userId = getCurrentUserId();
+    this.recentExerciseSwipeStartX = null;
+    this.recentExerciseSwipeStartY = null;
+    this.recentExerciseSwipeBaseOffsetX = 0;
+    this.recentExerciseSwipeMode = "";
     const recordDate = options.recordDate || getToday();
     const source = options.source || "";
     const pageMode = options.mode === "edit" ? "edit" : "create";
@@ -274,6 +309,7 @@ Page({
   },
 
   handleCategoryTap(event) {
+    this.closeRecentExerciseSwipeActions();
     this.setData({ selectedCategoryKey: event.currentTarget.dataset.key }, () => {
       this.refreshDisplayedExercises();
     });
@@ -285,6 +321,7 @@ Page({
       return;
     }
 
+    this.closeRecentExerciseSwipeActions();
     this.setData({ keyword, isSearching: true }, () => {
       if (this.userId) {
         saveRecentExerciseSearch(this.userId, keyword);
@@ -302,10 +339,130 @@ Page({
     });
   },
 
+  handleRecentExerciseTouchStart(event) {
+    if (!this.data.enableRecentExerciseSwipe) {
+      return;
+    }
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!Number.isFinite(id) || !touch) {
+      return;
+    }
+    const nextOpenedId = this.data.swipedRecentExerciseId === id ? id : null;
+    this.recentExerciseSwipeStartX = touch.clientX;
+    this.recentExerciseSwipeStartY = touch.clientY;
+    this.recentExerciseSwipeBaseOffsetX = this.data.swipedRecentExerciseId === id ? DELETE_ACTION_WIDTH : 0;
+    this.recentExerciseSwipeMode = "";
+    this.setData({
+      swipingRecentExerciseId: id,
+      recentExerciseSwipeOffsetX: this.recentExerciseSwipeBaseOffsetX,
+      swipedRecentExerciseId: nextOpenedId,
+      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, nextOpenedId, id, this.recentExerciseSwipeBaseOffsetX),
+    });
+  },
+
+  handleRecentExerciseTouchMove(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const touch = event.touches && event.touches[0];
+    if (!this.data.enableRecentExerciseSwipe || !Number.isFinite(id) || !touch) {
+      return;
+    }
+    if (this.data.swipingRecentExerciseId !== id || !Number.isFinite(this.recentExerciseSwipeStartX)) {
+      return;
+    }
+    const deltaX = this.recentExerciseSwipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.recentExerciseSwipeStartY || 0) - touch.clientY);
+    if (!this.recentExerciseSwipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.recentExerciseSwipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.recentExerciseSwipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.recentExerciseSwipeBaseOffsetX + deltaX);
+    this.setData({
+      recentExerciseSwipeOffsetX: nextOffsetX,
+      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, this.data.swipedRecentExerciseId, id, nextOffsetX),
+    });
+  },
+
+  handleRecentExerciseTouchEnd(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!this.data.enableRecentExerciseSwipe || !Number.isFinite(id) || this.data.swipingRecentExerciseId !== id) {
+      return;
+    }
+    if (this.recentExerciseSwipeMode !== "horizontal") {
+      this.resetRecentExerciseSwipeGesture();
+      this.setData({
+        swipingRecentExerciseId: null,
+        recentExerciseSwipeOffsetX: 0,
+        displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, this.data.swipedRecentExerciseId, null, 0),
+      });
+      return;
+    }
+    this.finishRecentExerciseSwipe(id, this.data.recentExerciseSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  handleRecentExerciseContentTap(event) {
+    if (this.data.swipedRecentExerciseId != null) {
+      this.closeRecentExerciseSwipeActions();
+      return;
+    }
+    this.handleSelectExercise(event);
+  },
+
+  handleRecentExerciseListBackgroundTap() {
+    this.closeRecentExerciseSwipeActions();
+  },
+
+  handleDeleteRecentExercise(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!this.userId || !Number.isFinite(id)) {
+      return;
+    }
+    removeRecentExercise(this.userId, id);
+    this.closeRecentExerciseSwipeActions();
+    this.loadExercises();
+    wx.showToast({ title: "已移除", icon: "success" });
+  },
+
+  resetRecentExerciseSwipeGesture() {
+    this.recentExerciseSwipeStartX = null;
+    this.recentExerciseSwipeStartY = null;
+    this.recentExerciseSwipeBaseOffsetX = 0;
+    this.recentExerciseSwipeMode = "";
+  },
+
+  finishRecentExerciseSwipe(id, shouldOpen) {
+    this.resetRecentExerciseSwipeGesture();
+    this.setData({
+      swipedRecentExerciseId: shouldOpen ? id : null,
+      swipingRecentExerciseId: null,
+      recentExerciseSwipeOffsetX: 0,
+      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, shouldOpen ? id : null, null, 0),
+    });
+  },
+
+  closeRecentExerciseSwipeActions() {
+    if (this.data.swipedRecentExerciseId == null && this.data.swipingRecentExerciseId == null) {
+      return;
+    }
+    this.resetRecentExerciseSwipeGesture();
+    this.setData({
+      swipedRecentExerciseId: null,
+      swipingRecentExerciseId: null,
+      recentExerciseSwipeOffsetX: 0,
+      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, null, null, 0),
+    });
+  },
+
   refreshDisplayedExercises() {
     const keyword = this.data.keyword.trim().toLowerCase();
     const isSearching = Boolean(keyword);
     const selectedCategoryKey = this.data.selectedCategoryKey;
+    const enableRecentExerciseSwipe = !isSearching && selectedCategoryKey === FILTER_KEYS.RECENT;
 
     let displayedExercises = [];
     let showRecentSearchList = false;
@@ -328,9 +485,33 @@ Page({
 
     const emptyState = this.resolveEmptyState({ categoryKey: selectedCategoryKey, isSearching });
 
+    const nextSwipedRecentExerciseId = enableRecentExerciseSwipe
+      && displayedExercises.some((item) => Number(item.id) === Number(this.data.swipedRecentExerciseId))
+      ? this.data.swipedRecentExerciseId
+      : null;
+    const nextSwipingRecentExerciseId = enableRecentExerciseSwipe
+      && displayedExercises.some((item) => Number(item.id) === Number(this.data.swipingRecentExerciseId))
+      ? this.data.swipingRecentExerciseId
+      : null;
+    const nextRecentExerciseSwipeOffsetX = enableRecentExerciseSwipe && nextSwipingRecentExerciseId != null
+      ? this.data.recentExerciseSwipeOffsetX
+      : 0;
+    if (enableRecentExerciseSwipe) {
+      displayedExercises = applyRecentExerciseSwipeState(
+        displayedExercises,
+        nextSwipedRecentExerciseId,
+        nextSwipingRecentExerciseId,
+        nextRecentExerciseSwipeOffsetX
+      );
+    }
+
     this.setData({
       isSearching,
       displayedExercises,
+      enableRecentExerciseSwipe,
+      swipedRecentExerciseId: nextSwipedRecentExerciseId,
+      swipingRecentExerciseId: nextSwipingRecentExerciseId,
+      recentExerciseSwipeOffsetX: nextRecentExerciseSwipeOffsetX,
       showRecentSearchList,
       showExerciseSection: displayedExercises.length > 0 || showCustomCreateAction,
       showCustomCreateAction,
