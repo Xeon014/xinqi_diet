@@ -134,6 +134,24 @@ function applySwipeState(items, swipedId, swipingId, swipeOffsetX) {
   });
 }
 
+function applyEditItemSwipeState(items, swipedFoodId, swipingFoodId, swipeOffsetX) {
+  return (items || []).map((item) => {
+    const isSwiping = Number(item.foodId) === swipingFoodId;
+    const isOpened = Number(item.foodId) === swipedFoodId;
+    const offsetX = isSwiping
+      ? clampSwipeOffset(swipeOffsetX)
+      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+    return Object.assign({}, item, {
+      swipeOffsetX: offsetX,
+      swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
+    });
+  });
+}
+
+function isSwipeIgnoredTarget(target) {
+  return Boolean(target && target.dataset && target.dataset.swipeIgnore);
+}
+
 function syncNavigationTitle(editing, editMode) {
   let title = "自定义套餐";
   if (editing) {
@@ -148,6 +166,9 @@ Page({
     swipedComboId: null,
     swipingComboId: null,
     swipeOffsetX: 0,
+    editSwipedFoodId: null,
+    editSwipingFoodId: null,
+    editFoodSwipeOffsetX: 0,
     editing: false,
     editMode: "create",
     editForm: buildEmptyForm(),
@@ -155,6 +176,10 @@ Page({
   },
 
   onLoad(options = {}) {
+    this.editFoodSwipeStartX = null;
+    this.editFoodSwipeStartY = null;
+    this.editFoodSwipeBaseOffsetX = 0;
+    this.editFoodSwipeMode = "";
     syncNavigationTitle(false, "create");
     if (options.mode === "create") {
       this.handleStartCreate();
@@ -184,11 +209,14 @@ Page({
   },
 
   startEditing(mode, form) {
-    const items = (form.items || []).map(normalizeItem);
+    const items = applyEditItemSwipeState((form.items || []).map(normalizeItem), null, null, 0);
     const summary = buildSummary(items);
     this.setData({
       editing: true,
       editMode: mode,
+      editSwipedFoodId: null,
+      editSwipingFoodId: null,
+      editFoodSwipeOffsetX: 0,
       editForm: {
         ...buildEmptyForm(),
         ...form,
@@ -207,9 +235,14 @@ Page({
   },
 
   updateEditItems(items) {
-    const summary = buildSummary(items);
+    const nextItems = applyEditItemSwipeState(items, null, null, 0);
+    const summary = buildSummary(nextItems);
+    this.resetEditFoodSwipeGesture();
     this.setData({
-      "editForm.items": items,
+      editSwipedFoodId: null,
+      editSwipingFoodId: null,
+      editFoodSwipeOffsetX: 0,
+      "editForm.items": nextItems,
       editSummary: {
         totalCalories: summary.totalCalories,
         totalProtein: toMacro(summary.totalProtein),
@@ -322,9 +355,119 @@ Page({
   },
 
   handleRemoveFood(event) {
+    const foodId = Number(event.currentTarget.dataset.foodId);
     const index = Number(event.currentTarget.dataset.index);
-    const items = this.data.editForm.items.filter((_, itemIndex) => itemIndex !== index);
+    const items = Number.isFinite(foodId)
+      ? this.data.editForm.items.filter((item) => Number(item.foodId) !== foodId)
+      : this.data.editForm.items.filter((_, itemIndex) => itemIndex !== index);
     this.updateEditItems(items);
+  },
+
+  handleEditFoodTouchStart(event) {
+    const foodId = Number(event.currentTarget.dataset.foodId);
+    const touch = event.touches && event.touches[0];
+    if (!this.data.editing || !Number.isFinite(foodId) || !touch) {
+      return;
+    }
+    if (isSwipeIgnoredTarget(event.target)) {
+      this.closeEditFoodSwipeActions();
+      return;
+    }
+    const nextOpenedId = this.data.editSwipedFoodId === foodId ? foodId : null;
+    this.editFoodSwipeStartX = touch.clientX;
+    this.editFoodSwipeStartY = touch.clientY;
+    this.editFoodSwipeBaseOffsetX = this.data.editSwipedFoodId === foodId ? DELETE_ACTION_WIDTH : 0;
+    this.editFoodSwipeMode = "";
+    this.setData({
+      editSwipingFoodId: foodId,
+      editFoodSwipeOffsetX: this.editFoodSwipeBaseOffsetX,
+      editSwipedFoodId: nextOpenedId,
+      "editForm.items": applyEditItemSwipeState(this.data.editForm.items, nextOpenedId, foodId, this.editFoodSwipeBaseOffsetX),
+    });
+  },
+
+  handleEditFoodTouchMove(event) {
+    const foodId = Number(event.currentTarget.dataset.foodId);
+    const touch = event.touches && event.touches[0];
+    if (!this.data.editing || !Number.isFinite(foodId) || !touch) {
+      return;
+    }
+    if (this.data.editSwipingFoodId !== foodId || !Number.isFinite(this.editFoodSwipeStartX)) {
+      return;
+    }
+    const deltaX = this.editFoodSwipeStartX - touch.clientX;
+    const deltaY = Math.abs((this.editFoodSwipeStartY || 0) - touch.clientY);
+    if (!this.editFoodSwipeMode) {
+      if (Math.abs(deltaX) < SWIPE_ACTIVATE_DISTANCE && deltaY < SWIPE_ACTIVATE_DISTANCE) {
+        return;
+      }
+      this.editFoodSwipeMode = Math.abs(deltaX) > deltaY ? "horizontal" : "vertical";
+    }
+    if (this.editFoodSwipeMode !== "horizontal") {
+      return;
+    }
+    const nextOffsetX = clampSwipeOffset(this.editFoodSwipeBaseOffsetX + deltaX);
+    this.setData({
+      editFoodSwipeOffsetX: nextOffsetX,
+      "editForm.items": applyEditItemSwipeState(this.data.editForm.items, this.data.editSwipedFoodId, foodId, nextOffsetX),
+    });
+  },
+
+  handleEditFoodTouchEnd(event) {
+    const foodId = Number(event.currentTarget.dataset.foodId);
+    if (!this.data.editing || !Number.isFinite(foodId) || this.data.editSwipingFoodId !== foodId) {
+      return;
+    }
+    if (this.editFoodSwipeMode !== "horizontal") {
+      this.resetEditFoodSwipeGesture();
+      this.setData({
+        editSwipingFoodId: null,
+        editFoodSwipeOffsetX: 0,
+        "editForm.items": applyEditItemSwipeState(this.data.editForm.items, this.data.editSwipedFoodId, null, 0),
+      });
+      return;
+    }
+    this.finishEditFoodSwipe(foodId, this.data.editFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+  },
+
+  handleEditFoodSwipeContentTap() {
+    if (this.data.editSwipedFoodId != null) {
+      this.closeEditFoodSwipeActions();
+    }
+  },
+
+  handleEditFoodListBackgroundTap() {
+    this.closeEditFoodSwipeActions();
+  },
+
+  resetEditFoodSwipeGesture() {
+    this.editFoodSwipeStartX = null;
+    this.editFoodSwipeStartY = null;
+    this.editFoodSwipeBaseOffsetX = 0;
+    this.editFoodSwipeMode = "";
+  },
+
+  finishEditFoodSwipe(foodId, shouldOpen) {
+    this.resetEditFoodSwipeGesture();
+    this.setData({
+      editSwipedFoodId: shouldOpen ? foodId : null,
+      editSwipingFoodId: null,
+      editFoodSwipeOffsetX: 0,
+      "editForm.items": applyEditItemSwipeState(this.data.editForm.items, shouldOpen ? foodId : null, null, 0),
+    });
+  },
+
+  closeEditFoodSwipeActions() {
+    if (this.data.editSwipedFoodId == null && this.data.editSwipingFoodId == null) {
+      return;
+    }
+    this.resetEditFoodSwipeGesture();
+    this.setData({
+      editSwipedFoodId: null,
+      editSwipingFoodId: null,
+      editFoodSwipeOffsetX: 0,
+      "editForm.items": applyEditItemSwipeState(this.data.editForm.items, null, null, 0),
+    });
   },
 
   handleComboTouchStart(event) {
@@ -428,9 +571,13 @@ Page({
   },
 
   handleCancelEdit(shouldReload = true) {
+    this.resetEditFoodSwipeGesture();
     this.setData({
       editing: false,
       editMode: "create",
+      editSwipedFoodId: null,
+      editSwipingFoodId: null,
+      editFoodSwipeOffsetX: 0,
       editForm: buildEmptyForm(),
       editSummary: buildEmptySummary(),
     }, () => {
