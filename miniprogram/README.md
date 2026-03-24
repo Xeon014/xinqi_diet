@@ -42,7 +42,7 @@
 
 ## 当前无可见业务入口的页面
 
-- `pages/food-item-editor`
+- `pages/food-item-editor`（历史代码保留，已不再注册到 `app.json`）
 
 ## 趋势与体征链路（当前实现）
 

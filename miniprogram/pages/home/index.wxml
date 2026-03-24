@@ -60,11 +60,21 @@
     <view class="section-title">记录</view>
   </view>
 
-  <view wx:if="{{dailyWeight.hasRecord || recordGroups.length}}" class="record-groups" bindtap="handleRecordListTap">
+  <view
+    wx:if="{{dailyWeight.hasRecord || recordGroups.length || recommendedMealPrompt.visible}}"
+    class="record-groups"
+    bindtap="handleRecordListTap"
+  >
     <view wx:if="{{dailyWeight.hasRecord}}" class="panel weight-record-panel">
       <view class="weight-record-line">
         <view class="weight-record-title">{{dailyWeight.title}}</view>
       </view>
+    </view>
+    <view wx:if="{{recommendedMealPrompt.visible}}" class="panel record-prompt-card" catchtap="handleOpenRecommendedMealPrompt">
+      <view class="record-prompt-main">
+        <view class="record-prompt-title">{{recommendedMealPrompt.title}}</view>
+      </view>
+      <view class="record-prompt-action">{{recommendedMealPrompt.actionText}}</view>
     </view>
     <view
       wx:for="{{recordGroups}}"

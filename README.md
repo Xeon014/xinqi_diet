@@ -26,6 +26,10 @@
 1. 用微信开发者工具打开 `miniprogram/`
 2. 修改小程序后执行：`cd miniprogram && node scripts/verify-miniprogram-files.js`
 
+仓库级串行校验：
+
+1. 在仓库根目录执行：`bash scripts/verify-project.sh`
+
 ## 目录约定
 
 - 后端专属脚本、SQL 与部署说明放在 `backend/`

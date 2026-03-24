@@ -41,12 +41,13 @@ function getProgress({ startDate, endDate }) {
   }));
 }
 
-function updateProfile(payload) {
+function updateProfile(payload, requestOptions = {}) {
   return withUserId((userId) => request({
     url: "/api/users/" + userId,
     method: "PUT",
     data: payload,
-    loadingTitle: "???",
+    loadingTitle: "保存中",
+    ...requestOptions,
   }));
 }
 

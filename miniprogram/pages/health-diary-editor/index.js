@@ -119,7 +119,7 @@ Page({
         }
         wx.showLoading({
           title: "上传中",
-          mask: true,
+          mask: false,
         });
         Promise.all(tempFilePaths.map((filePath, index) => this.uploadImage(filePath, index)))
           .then((fileIds) => {

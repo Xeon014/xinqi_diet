@@ -13,6 +13,27 @@ const AUTH_ERROR_CODES = new Set([
   "UNAUTHORIZED",
 ]);
 
+const DEFAULT_LOADING_DELAY = 250;
+const LOADING_MODE_NONE = "none";
+const LOADING_MODE_AUTO = "auto";
+const LOADING_MODE_NAV = "nav";
+const LOADING_MODE_TOAST = "toast";
+const LOADING_MODE_MODAL = "modal";
+
+const loadingState = {
+  nextTaskId: 0,
+  nav: {
+    visible: false,
+    tasks: new Set(),
+  },
+  overlay: {
+    visible: false,
+    title: "",
+    mask: false,
+    tasks: new Map(),
+  },
+};
+
 function pickErrorMessage(error) {
   if (error && error.data && Array.isArray(error.data.details) && error.data.details.length > 0) {
     return error.data.details[0];
@@ -115,14 +136,140 @@ function requestByHttp({ url, method, data, header, complete }) {
   });
 }
 
-function doRequest({ url, method = "GET", data, showLoading = true, loadingTitle = "加载中" }) {
-  if (showLoading) {
-    wx.showLoading({
-      title: loadingTitle,
-      mask: true,
-    });
+function syncNavigationLoading() {
+  if (loadingState.nav.tasks.size > 0) {
+    if (!loadingState.nav.visible) {
+      wx.showNavigationBarLoading();
+      loadingState.nav.visible = true;
+    }
+    return;
   }
 
+  if (loadingState.nav.visible) {
+    wx.hideNavigationBarLoading();
+    loadingState.nav.visible = false;
+  }
+}
+
+function syncOverlayLoading() {
+  const tasks = Array.from(loadingState.overlay.tasks.values());
+  if (!tasks.length) {
+    if (loadingState.overlay.visible) {
+      wx.hideLoading();
+      loadingState.overlay.visible = false;
+      loadingState.overlay.title = "";
+      loadingState.overlay.mask = false;
+    }
+    return;
+  }
+
+  const currentTask = tasks[tasks.length - 1];
+  const nextTitle = currentTask.title || "加载中";
+  const nextMask = tasks.some((task) => task.mask);
+  if (
+    !loadingState.overlay.visible
+    || loadingState.overlay.title !== nextTitle
+    || loadingState.overlay.mask !== nextMask
+  ) {
+    wx.showLoading({
+      title: nextTitle,
+      mask: nextMask,
+    });
+    loadingState.overlay.visible = true;
+    loadingState.overlay.title = nextTitle;
+    loadingState.overlay.mask = nextMask;
+  }
+}
+
+function resolveLoadingMode({ method = "GET", showLoading, loadingMode }) {
+  if (showLoading === false) {
+    return LOADING_MODE_NONE;
+  }
+  if (
+    loadingMode === LOADING_MODE_NAV
+    || loadingMode === LOADING_MODE_TOAST
+    || loadingMode === LOADING_MODE_MODAL
+    || loadingMode === LOADING_MODE_NONE
+  ) {
+    return loadingMode;
+  }
+
+  const requestMethod = String(method || "GET").toUpperCase();
+  if (loadingMode === LOADING_MODE_AUTO || !loadingMode) {
+    return requestMethod === "GET" ? LOADING_MODE_NAV : LOADING_MODE_TOAST;
+  }
+
+  return requestMethod === "GET" ? LOADING_MODE_NAV : LOADING_MODE_TOAST;
+}
+
+function startLoadingTask({ method, showLoading, loadingMode, loadingDelay, loadingTitle }) {
+  const mode = resolveLoadingMode({ method, showLoading, loadingMode });
+  if (mode === LOADING_MODE_NONE) {
+    return () => {};
+  }
+
+  const delay = Number.isFinite(loadingDelay) && loadingDelay >= 0
+    ? loadingDelay
+    : DEFAULT_LOADING_DELAY;
+  const taskId = ++loadingState.nextTaskId;
+  let stopped = false;
+  let visible = false;
+  const timer = setTimeout(() => {
+    if (stopped) {
+      return;
+    }
+
+    visible = true;
+    if (mode === LOADING_MODE_NAV) {
+      loadingState.nav.tasks.add(taskId);
+      syncNavigationLoading();
+      return;
+    }
+
+    loadingState.overlay.tasks.set(taskId, {
+      title: loadingTitle || "加载中",
+      mask: mode === LOADING_MODE_MODAL,
+    });
+    syncOverlayLoading();
+  }, delay);
+
+  return () => {
+    if (stopped) {
+      return;
+    }
+    stopped = true;
+    clearTimeout(timer);
+    if (!visible) {
+      return;
+    }
+
+    if (mode === LOADING_MODE_NAV) {
+      loadingState.nav.tasks.delete(taskId);
+      syncNavigationLoading();
+      return;
+    }
+
+    loadingState.overlay.tasks.delete(taskId);
+    syncOverlayLoading();
+  };
+}
+
+function doRequest({
+  url,
+  method = "GET",
+  data,
+  showLoading = true,
+  loadingTitle = "加载中",
+  loadingMode = LOADING_MODE_AUTO,
+  loadingDelay = DEFAULT_LOADING_DELAY,
+}) {
+  const stopLoading = startLoadingTask({
+    method,
+    showLoading,
+    loadingMode,
+    loadingDelay,
+    loadingTitle,
+  });
   const accessToken = getAccessToken();
   const header = {
     "content-type": "application/json",
@@ -132,9 +279,7 @@ function doRequest({ url, method = "GET", data, showLoading = true, loadingTitle
   }
 
   const complete = () => {
-    if (showLoading) {
-      wx.hideLoading();
-    }
+    stopLoading();
   };
 
   if (USE_CLOUD_CONTAINER) {
@@ -144,7 +289,7 @@ function doRequest({ url, method = "GET", data, showLoading = true, loadingTitle
       data,
       header,
       complete,
-    });
+    }).finally(stopLoading);
   }
 
   // 直连域名方案保留为兜底，默认不启用。
@@ -154,7 +299,7 @@ function doRequest({ url, method = "GET", data, showLoading = true, loadingTitle
     data,
     header,
     complete,
-  });
+  }).finally(stopLoading);
 }
 
 function requestWithoutLogin(options) {

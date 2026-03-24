@@ -15,74 +15,118 @@ class ArchitectureGuardTest {
     private static final Path MAIN_SOURCE_ROOT = Path.of("src/main/java/com/diet");
 
     @Test
-    void controllerShouldNotDependOnMapperOrRepository() throws IOException {
+    void controllerShouldStayInSingleTriggerDirectory() throws IOException {
+        List<String> violations = findControllerOutside(MAIN_SOURCE_ROOT.resolve("trigger/controller"), MAIN_SOURCE_ROOT.resolve("trigger"));
+
+        assertThat(violations)
+                .as("所有 Controller 都应收敛到 trigger/controller 目录")
+                .isEmpty();
+    }
+
+    @Test
+    void triggerShouldNotDependOnInfraImplementations() throws IOException {
         List<String> violations = findViolations(
-                MAIN_SOURCE_ROOT.resolve("controller"),
+                MAIN_SOURCE_ROOT.resolve("trigger"),
+                List.of("import com.diet.infra.")
+        );
+
+        assertThat(violations)
+                .as("trigger 层不应直接依赖 infra 实现")
+                .isEmpty();
+    }
+
+    @Test
+    void appShouldNotDependOnInfraImplementations() throws IOException {
+        List<String> violations = findViolations(
+                MAIN_SOURCE_ROOT.resolve("app"),
+                List.of("import com.diet.infra.")
+        );
+
+        assertThat(violations)
+                .as("app 层不应直接依赖 infra 实现")
+                .isEmpty();
+    }
+
+    @Test
+    void apiShouldNotDependOnAppInfraOrTrigger() throws IOException {
+        List<String> violations = findViolations(
+                MAIN_SOURCE_ROOT.resolve("api"),
                 List.of(
+                        "import com.diet.app.",
+                        "import com.diet.infra.",
+                        "import com.diet.trigger."
+                )
+        );
+
+        assertThat(violations)
+                .as("api 层不应反向依赖 app、infra 或 trigger")
+                .isEmpty();
+    }
+
+    @Test
+    void domainShouldRemainPure() throws IOException {
+        List<String> violations = findViolations(
+                MAIN_SOURCE_ROOT.resolve("domain"),
+                List.of(
+                        "import org.springframework.",
+                        "import org.mybatis.",
+                        "import jakarta.servlet.",
+                        "import com.diet.app.",
+                        "import com.diet.infra.",
+                        "import com.diet.trigger."
+                )
+        );
+
+        assertThat(violations)
+                .as("domain 层应保持纯净，不依赖 Spring、MyBatis、Servlet 或上层实现")
+                .isEmpty();
+    }
+
+    @Test
+    void typesShouldOnlyContainCommonPackage() throws IOException {
+        List<String> violations = findFilesOutside(MAIN_SOURCE_ROOT.resolve("types/common"), MAIN_SOURCE_ROOT.resolve("types"));
+
+        assertThat(violations)
+                .as("types 层只保留 common 等公共类型")
+                .isEmpty();
+    }
+
+    @Test
+    void typesShouldNotDependOnTriggerAppOrInfra() throws IOException {
+        List<String> violations = findViolations(
+                MAIN_SOURCE_ROOT.resolve("types"),
+                List.of(
+                        "import com.diet.trigger.",
+                        "import com.diet.app.",
+                        "import com.diet.infra.",
+                        "import com.diet.api."
+                )
+        );
+
+        assertThat(violations)
+                .as("types 层不应反向依赖 trigger、app、infra 或 api")
+                .isEmpty();
+    }
+
+    @Test
+    void sourceShouldNotImportLegacyHorizontalPackages() throws IOException {
+        List<String> violations = findViolations(
+                MAIN_SOURCE_ROOT,
+                List.of(
+                        "import com.diet.auth.",
+                        "import com.diet.common.",
+                        "import com.diet.config.",
+                        "import com.diet.controller.",
+                        "import com.diet.dto.",
                         "import com.diet.mapper.",
                         "import com.diet.repository.",
-                        "Repository;"
+                        "import com.diet.service.",
+                        "import com.diet.user."
                 )
         );
 
         assertThat(violations)
-                .as("Controller 不应直接依赖 mapper 或 repository")
-                .isEmpty();
-    }
-
-    @Test
-    void serviceShouldNotImportMapper() throws IOException {
-        List<String> violations = findViolations(
-                MAIN_SOURCE_ROOT.resolve("service"),
-                List.of("import com.diet.mapper.")
-        );
-
-        assertThat(violations)
-                .as("Service 不应直接依赖 mapper")
-                .isEmpty();
-    }
-
-    @Test
-    void sourceShouldNotImportRemovedUserPackage() throws IOException {
-        List<String> violations = findViolations(
-                MAIN_SOURCE_ROOT,
-                List.of("import com.diet.user.")
-        );
-
-        assertThat(violations)
-                .as("主源码不应继续引用已废弃的 com.diet.user 包")
-                .isEmpty();
-    }
-
-    @Test
-    void controllerShouldNotDependOnCompatibilityFacadeService() throws IOException {
-        List<String> violations = findViolations(
-                MAIN_SOURCE_ROOT.resolve("controller"),
-                List.of(
-                        "import com.diet.service.UserProfileService;",
-                        "import com.diet.service.MealRecordService;",
-                        "import com.diet.service.ExerciseRecordService;"
-                )
-        );
-
-        assertThat(violations)
-                .as("Controller 不应再回退依赖兼容层 service")
-                .isEmpty();
-    }
-
-    @Test
-    void mainSourceShouldNotDependOnRemovedCompatibilityService() throws IOException {
-        List<String> violations = findViolations(
-                MAIN_SOURCE_ROOT,
-                List.of(
-                        "import com.diet.service.UserProfileService;",
-                        "import com.diet.service.MealRecordService;",
-                        "import com.diet.service.ExerciseRecordService;"
-                )
-        );
-
-        assertThat(violations)
-                .as("主源码不应继续引用已删除的兼容层 service")
+                .as("主源码不应继续引用旧的横向分层包")
                 .isEmpty();
     }
 
@@ -97,6 +141,32 @@ class ArchitectureGuardTest {
                     .flatMap(path -> readLines(path)
                             .filter(line -> forbiddenSnippets.stream().anyMatch(line::contains))
                             .map(line -> path + " -> " + line.trim()))
+                    .toList();
+        }
+    }
+
+    private List<String> findControllerOutside(Path allowedRoot, Path scanRoot) throws IOException {
+        if (Files.notExists(scanRoot)) {
+            return List.of();
+        }
+        try (Stream<Path> stream = Files.walk(scanRoot)) {
+            return stream
+                    .filter(path -> path.toString().endsWith("Controller.java"))
+                    .filter(path -> !path.startsWith(allowedRoot))
+                    .map(Path::toString)
+                    .toList();
+        }
+    }
+
+    private List<String> findFilesOutside(Path allowedRoot, Path scanRoot) throws IOException {
+        if (Files.notExists(scanRoot)) {
+            return List.of();
+        }
+        try (Stream<Path> stream = Files.walk(scanRoot)) {
+            return stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.startsWith(allowedRoot))
+                    .map(Path::toString)
                     .toList();
         }
     }

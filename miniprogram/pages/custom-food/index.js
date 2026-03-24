@@ -395,6 +395,9 @@ Page({
 
   handleDelete(event) {
     this.closeSwipeActions();
+    if (this.data.saving) {
+      return;
+    }
     const foodId = Number(event.currentTarget.dataset.id || this.data.editForm.id);
     const target = this.data.foods.find((item) => Number(item.id) === foodId);
     if (!target) {
@@ -408,6 +411,7 @@ Page({
         if (!result.confirm) {
           return;
         }
+        this.setData({ saving: true });
         deleteFood(foodId)
           .then(() => {
             wx.showToast({ title: "已删除", icon: "success" });
@@ -416,6 +420,9 @@ Page({
           })
           .catch((error) => {
             wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+          })
+          .finally(() => {
+            this.setData({ saving: false });
           });
       },
     });

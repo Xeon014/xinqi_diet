@@ -169,6 +169,34 @@ function buildRecordGroups(records) {
   ].filter((group) => group.records.length > 0);
 }
 
+function buildRecommendedMealPrompt(recordDate, recommendedMealType, records) {
+  const hiddenPrompt = {
+    visible: false,
+    title: "",
+    actionText: "",
+    mealType: "",
+  };
+
+  if (recordDate !== getToday() || !recommendedMealType) {
+    return hiddenPrompt;
+  }
+
+  const hasRecommendedMealRecord = (records || []).some((record) => (
+    record.recordType === "DIET" && record.mealType === recommendedMealType
+  ));
+  if (hasRecommendedMealRecord) {
+    return hiddenPrompt;
+  }
+
+  const mealLabel = MEAL_TYPE_LABELS[recommendedMealType] || "当前餐次";
+  return {
+    visible: true,
+    title: mealLabel,
+    actionText: "去记录",
+    mealType: recommendedMealType,
+  };
+}
+
 function clampSwipeOffset(offsetX) {
   if (!Number.isFinite(offsetX) || offsetX < 0) {
     return 0;
@@ -255,6 +283,12 @@ Page({
     swipedRecordKey: null,
     swipingRecordKey: null,
     swipeOffsetX: 0,
+    recommendedMealPrompt: {
+      visible: false,
+      title: "",
+      actionText: "",
+      mealType: "",
+    },
     summary: {
       targetCalories: null,
       dietCalories: 0,
@@ -416,12 +450,18 @@ Page({
       .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
         const recordGroups = applySwipeStateToGroups(buildRecordGroups(normalized.records), null, null, 0);
+        const recommendedMealPrompt = buildRecommendedMealPrompt(
+          this.data.recordDate,
+          this.data.recommendedMealType,
+          normalized.records
+        );
         this.setData({
           summary: normalized,
           recordGroups,
           swipedRecordKey: null,
           swipingRecordKey: null,
           swipeOffsetX: 0,
+          recommendedMealPrompt,
           healthDiary: normalizeDiary(diary),
           dailyWeight: normalizeDailyWeight(dailyWeightSnapshot),
         });
@@ -500,6 +540,21 @@ Page({
   handleQuickAddMeal(event) {
     this.closeSwipeActions();
     const { mealType } = event.currentTarget.dataset;
+    if (!mealType) {
+      return;
+    }
+    wx.navigateTo({
+      url: buildFoodSearchUrl({
+        mealType,
+        recordDate: this.data.recordDate,
+        source: "home",
+      }),
+    });
+  },
+
+  handleOpenRecommendedMealPrompt() {
+    this.closeSwipeActions();
+    const mealType = this.data.recommendedMealPrompt.mealType;
     if (!mealType) {
       return;
     }
