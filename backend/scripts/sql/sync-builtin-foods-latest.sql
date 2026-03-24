@@ -336,6 +336,270 @@ WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'MANUAL:STAPLE:015');
 
 UPDATE food
 SET user_id = NULL,
+    name = '挂面',
+    calories_per_100g = 353,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 11.4,
+    carbs_per_100g = 75.1,
+    fat_per_100g = 0.9,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '挂面,挂面条',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 16
+WHERE source_ref = 'CN_FCT:011301x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '挂面', 353, 'KCAL', 11.4, 75.1, 0.9, 'G', '主食', 'CURATED_CN', 'CN_FCT:011301x', '挂面,挂面条', NULL, 1, 16, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:011301x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '通心面',
+    calories_per_100g = 351,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 11.9,
+    carbs_per_100g = 75.8,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '通心面,通心粉',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 17
+WHERE source_ref = 'CN_FCT:11312';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '通心面', 351, 'KCAL', 11.9, 75.8, 0.1, 'G', '主食', 'CURATED_CN', 'CN_FCT:11312', '通心面,通心粉', NULL, 1, 17, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:11312');
+
+UPDATE food
+SET user_id = NULL,
+    name = '米粉',
+    calories_per_100g = 349,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.4,
+    carbs_per_100g = 85.8,
+    fat_per_100g = 0.8,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '米粉,干米粉',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 18
+WHERE source_ref = 'CN_FCT:12410';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '米粉', 349, 'KCAL', 0.4, 85.8, 0.8, 'G', '主食', 'CURATED_CN', 'CN_FCT:12410', '米粉,干米粉', NULL, 1, 18, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:12410');
+
+UPDATE food
+SET user_id = NULL,
+    name = '河粉',
+    calories_per_100g = 359,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 7.7,
+    carbs_per_100g = 79.2,
+    fat_per_100g = 1.5,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '河粉,沙河粉',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 19
+WHERE source_ref = 'CN_FCT:12411';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '河粉', 359, 'KCAL', 7.7, 79.2, 1.5, 'G', '主食', 'CURATED_CN', 'CN_FCT:12411', '河粉,沙河粉', NULL, 1, 19, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:12411');
+
+UPDATE food
+SET user_id = NULL,
+    name = '面条',
+    calories_per_100g = 301,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 8.9,
+    carbs_per_100g = 65.6,
+    fat_per_100g = 0.6,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '面条,鲜面条',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 25
+WHERE source_ref = 'CN_FCT:011305x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '面条', 301, 'KCAL', 8.9, 65.6, 0.6, 'G', '主食', 'CURATED_CN', 'CN_FCT:011305x', '面条,鲜面条', NULL, 1, 25, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:011305x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '花卷',
+    calories_per_100g = 214,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 6.4,
+    carbs_per_100g = 45.6,
+    fat_per_100g = 1,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '花卷',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 26
+WHERE source_ref = 'CN_FCT:11401';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '花卷', 214, 'KCAL', 6.4, 45.6, 1, 'G', '主食', 'CURATED_CN', 'CN_FCT:11401', '花卷', NULL, 1, 26, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:11401');
+
+UPDATE food
+SET user_id = NULL,
+    name = '油条',
+    calories_per_100g = 388,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 6.9,
+    carbs_per_100g = 51,
+    fat_per_100g = 17.6,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '油条',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 27
+WHERE source_ref = 'CN_FCT:11409';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '油条', 388, 'KCAL', 6.9, 51, 17.6, 'G', '主食', 'CURATED_CN', 'CN_FCT:11409', '油条', NULL, 1, 27, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:11409');
+
+UPDATE food
+SET user_id = NULL,
+    name = '糯米',
+    calories_per_100g = 350,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 7.3,
+    carbs_per_100g = 78.3,
+    fat_per_100g = 1,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '糯米,江米',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 28
+WHERE source_ref = 'CN_FCT:12301';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '糯米', 350, 'KCAL', 7.3, 78.3, 1, 'G', '主食', 'CURATED_CN', 'CN_FCT:12301', '糯米,江米', NULL, 1, 28, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:12301');
+
+UPDATE food
+SET user_id = NULL,
+    name = '粳米',
+    calories_per_100g = 345,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 7.7,
+    carbs_per_100g = 77.4,
+    fat_per_100g = 0.6,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '粳米,大米',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 29
+WHERE source_ref = 'CN_FCT:12101';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '粳米', 345, 'KCAL', 7.7, 77.4, 0.6, 'G', '主食', 'CURATED_CN', 'CN_FCT:12101', '粳米,大米', NULL, 1, 29, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:12101');
+
+UPDATE food
+SET user_id = NULL,
+    name = '籼米',
+    calories_per_100g = 340,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 7.5,
+    carbs_per_100g = 78,
+    fat_per_100g = 1.1,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '籼米,机米',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 30
+WHERE source_ref = 'CN_FCT:12214';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '籼米', 340, 'KCAL', 7.5, 78, 1.1, 'G', '主食', 'CURATED_CN', 'CN_FCT:12214', '籼米,机米', NULL, 1, 30, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:12214');
+
+UPDATE food
+SET user_id = NULL,
+    name = '芋头',
+    calories_per_100g = 56,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.3,
+    carbs_per_100g = 12.7,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '芋头,毛芋',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 31
+WHERE source_ref = 'CN_FCT:47203';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '芋头', 56, 'KCAL', 1.3, 12.7, 0.2, 'G', '主食', 'CURATED_CN', 'CN_FCT:47203', '芋头,毛芋', NULL, 1, 31, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:47203');
+
+UPDATE food
+SET user_id = NULL,
+    name = '山药',
+    calories_per_100g = 57,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.9,
+    carbs_per_100g = 12.4,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '主食',
+    source = 'CURATED_CN',
+    aliases = '山药,薯蓣',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 32
+WHERE source_ref = 'CN_FCT:47104';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '山药', 57, 'KCAL', 1.9, 12.4, 0.2, 'G', '主食', 'CURATED_CN', 'CN_FCT:47104', '山药,薯蓣', NULL, 1, 32, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:47104');
+
+UPDATE food
+SET user_id = NULL,
     name = '鸡胸肉',
     calories_per_100g = 133,
     calorie_unit = 'KCAL',
@@ -663,6 +927,314 @@ INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_10
 SELECT NULL, '奶酪', 328, 'KCAL', 25, 3.5, 25, 'G', '肉蛋奶', 'CURATED_MANUAL', 'MANUAL:PROTEIN:015', '奶酪,芝士', NULL, 1, 15, NOW()
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'MANUAL:PROTEIN:015');
+
+UPDATE food
+SET user_id = NULL,
+    name = '酸奶',
+    calories_per_100g = 70,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 3.2,
+    carbs_per_100g = 10,
+    fat_per_100g = 1.9,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '酸奶,原味酸奶',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 16
+WHERE source_ref = 'CN_FCT:103001';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '酸奶', 70, 'KCAL', 3.2, 10, 1.9, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:103001', '酸奶,原味酸奶', NULL, 1, 16, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:103001');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鸭胸肉',
+    calories_per_100g = 90,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 15,
+    carbs_per_100g = 4,
+    fat_per_100g = 1.5,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鸭胸肉,鸭胸脯肉',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 17
+WHERE source_ref = 'CN_FCT:92104';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鸭胸肉', 90, 'KCAL', 15, 4, 1.5, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:92104', '鸭胸肉,鸭胸脯肉', NULL, 1, 17, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:92104');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鸡翅',
+    calories_per_100g = 202,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 19,
+    carbs_per_100g = 5.5,
+    fat_per_100g = 11.5,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鸡翅',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 18
+WHERE source_ref = 'CN_FCT:91114';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鸡翅', 202, 'KCAL', 19, 5.5, 11.5, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:91114', '鸡翅', NULL, 1, 18, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:91114');
+
+UPDATE food
+SET user_id = NULL,
+    name = '牛肉',
+    calories_per_100g = 160,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 20,
+    carbs_per_100g = 0.5,
+    fat_per_100g = 8.7,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '牛肉',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 19
+WHERE source_ref = 'CN_FCT:082101x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '牛肉', 160, 'KCAL', 20, 0.5, 8.7, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:082101x', '牛肉', NULL, 1, 19, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:082101x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '牛腱',
+    calories_per_100g = 122,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 23,
+    carbs_per_100g = 0,
+    fat_per_100g = 3.3,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '牛腱,牛展,牛腱子',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 20
+WHERE source_ref = 'CN_FCT:82119';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '牛腱', 122, 'KCAL', 23, 0, 3.3, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:82119', '牛腱,牛展,牛腱子', NULL, 1, 20, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:82119');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鲈鱼',
+    calories_per_100g = 105,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 18.6,
+    carbs_per_100g = 0,
+    fat_per_100g = 3.4,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鲈鱼,鲈花',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 21
+WHERE source_ref = 'CN_FCT:121226';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鲈鱼', 105, 'KCAL', 18.6, 0, 3.4, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:121226', '鲈鱼,鲈花', NULL, 1, 21, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:121226');
+
+UPDATE food
+SET user_id = NULL,
+    name = '带鱼',
+    calories_per_100g = 127,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 17.7,
+    carbs_per_100g = 3.1,
+    fat_per_100g = 4.9,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '带鱼,刀鱼,白带鱼',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 22
+WHERE source_ref = 'CN_FCT:121203';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '带鱼', 127, 'KCAL', 17.7, 3.1, 4.9, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:121203', '带鱼,刀鱼,白带鱼', NULL, 1, 22, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:121203');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鲫鱼',
+    calories_per_100g = 108,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 17.1,
+    carbs_per_100g = 3.8,
+    fat_per_100g = 2.7,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鲫鱼,喜头鱼',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 23
+WHERE source_ref = 'CN_FCT:121123';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鲫鱼', 108, 'KCAL', 17.1, 3.8, 2.7, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:121123', '鲫鱼,喜头鱼', NULL, 1, 23, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:121123');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鲳鱼',
+    calories_per_100g = 140,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 18.5,
+    carbs_per_100g = 0,
+    fat_per_100g = 7.3,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鲳鱼,平鱼',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 24
+WHERE source_ref = 'CN_FCT:121233';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鲳鱼', 140, 'KCAL', 18.5, 0, 7.3, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:121233', '鲳鱼,平鱼', NULL, 1, 24, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:121233');
+
+UPDATE food
+SET user_id = NULL,
+    name = '蛤蜊',
+    calories_per_100g = 62,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 10.1,
+    carbs_per_100g = 2.8,
+    fat_per_100g = 1.1,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '蛤蜊,花蛤',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 25
+WHERE source_ref = 'CN_FCT:124201x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '蛤蜊', 62, 'KCAL', 10.1, 2.8, 1.1, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:124201x', '蛤蜊,花蛤', NULL, 1, 25, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:124201x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '扇贝',
+    calories_per_100g = 60,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 11.1,
+    carbs_per_100g = 2.6,
+    fat_per_100g = 0.6,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '扇贝',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 26
+WHERE source_ref = 'CN_FCT:124111';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '扇贝', 60, 'KCAL', 11.1, 2.6, 0.6, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:124111', '扇贝', NULL, 1, 26, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:124111');
+
+UPDATE food
+SET user_id = NULL,
+    name = '蛏子',
+    calories_per_100g = 40,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 7.3,
+    carbs_per_100g = 2.1,
+    fat_per_100g = 0.3,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '蛏子',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 27
+WHERE source_ref = 'CN_FCT:124103';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '蛏子', 40, 'KCAL', 7.3, 2.1, 0.3, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:124103', '蛏子', NULL, 1, 27, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:124103');
+
+UPDATE food
+SET user_id = NULL,
+    name = '鱿鱼',
+    calories_per_100g = 84,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 17.4,
+    carbs_per_100g = 0,
+    fat_per_100g = 1.6,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '鱿鱼,枪乌贼',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 28
+WHERE source_ref = 'CN_FCT:129008';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '鱿鱼', 84, 'KCAL', 17.4, 0, 1.6, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:129008', '鱿鱼,枪乌贼', NULL, 1, 28, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:129008');
+
+UPDATE food
+SET user_id = NULL,
+    name = '章鱼',
+    calories_per_100g = 52,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 10.6,
+    carbs_per_100g = 1.4,
+    fat_per_100g = 0.4,
+    quantity_unit = 'G',
+    category = '肉蛋奶',
+    source = 'CURATED_CN',
+    aliases = '章鱼,八爪鱼',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 29
+WHERE source_ref = 'CN_FCT:129012';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '章鱼', 52, 'KCAL', 10.6, 1.4, 0.4, 'G', '肉蛋奶', 'CURATED_CN', 'CN_FCT:129012', '章鱼,八爪鱼', NULL, 1, 29, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:129012');
 
 UPDATE food
 SET user_id = NULL,
@@ -996,6 +1568,468 @@ WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'MANUAL:VEGETABLE_FRUIT:
 
 UPDATE food
 SET user_id = NULL,
+    name = '茄子',
+    calories_per_100g = 23,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.1,
+    carbs_per_100g = 4.9,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '茄子',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 16
+WHERE source_ref = 'CN_FCT:043101x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '茄子', 23, 'KCAL', 1.1, 4.9, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:043101x', '茄子', NULL, 1, 16, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:043101x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '苦瓜',
+    calories_per_100g = 22,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1,
+    carbs_per_100g = 4.9,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '苦瓜,凉瓜,癞瓜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 17
+WHERE source_ref = 'CN_FCT:43212';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '苦瓜', 22, 'KCAL', 1, 4.9, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:43212', '苦瓜,凉瓜,癞瓜', NULL, 1, 17, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:43212');
+
+UPDATE food
+SET user_id = NULL,
+    name = '莲藕',
+    calories_per_100g = 47,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.2,
+    carbs_per_100g = 11.5,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '莲藕,藕',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 18
+WHERE source_ref = 'CN_FCT:46010';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '莲藕', 47, 'KCAL', 1.2, 11.5, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:46010', '莲藕,藕', NULL, 1, 18, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:46010');
+
+UPDATE food
+SET user_id = NULL,
+    name = '南瓜',
+    calories_per_100g = 23,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.7,
+    carbs_per_100g = 5.3,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '南瓜,倭瓜,番瓜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 19
+WHERE source_ref = 'CN_FCT:43213';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '南瓜', 23, 'KCAL', 0.7, 5.3, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:43213', '南瓜,倭瓜,番瓜', NULL, 1, 19, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:43213');
+
+UPDATE food
+SET user_id = NULL,
+    name = '冬瓜',
+    calories_per_100g = 10,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.3,
+    carbs_per_100g = 2.4,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '冬瓜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 20
+WHERE source_ref = 'CN_FCT:43221';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '冬瓜', 10, 'KCAL', 0.3, 2.4, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:43221', '冬瓜', NULL, 1, 20, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:43221');
+
+UPDATE food
+SET user_id = NULL,
+    name = '西葫芦',
+    calories_per_100g = 19,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.8,
+    carbs_per_100g = 3.8,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '西葫芦',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 21
+WHERE source_ref = 'CN_FCT:43218';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '西葫芦', 19, 'KCAL', 0.8, 3.8, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:43218', '西葫芦', NULL, 1, 21, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:43218');
+
+UPDATE food
+SET user_id = NULL,
+    name = '芹菜',
+    calories_per_100g = 13,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.4,
+    carbs_per_100g = 3.1,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '芹菜,旱芹',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 22
+WHERE source_ref = 'CN_FCT:45331';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '芹菜', 13, 'KCAL', 0.4, 3.1, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:45331', '芹菜,旱芹', NULL, 1, 22, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:45331');
+
+UPDATE food
+SET user_id = NULL,
+    name = '西芹',
+    calories_per_100g = 17,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.6,
+    carbs_per_100g = 4.8,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '西芹,西洋芹菜,美芹',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 23
+WHERE source_ref = 'CN_FCT:45332';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '西芹', 17, 'KCAL', 0.6, 4.8, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:45332', '西芹,西洋芹菜,美芹', NULL, 1, 23, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:45332');
+
+UPDATE food
+SET user_id = NULL,
+    name = '韭菜',
+    calories_per_100g = 25,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 2.4,
+    carbs_per_100g = 4.5,
+    fat_per_100g = 0.4,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '韭菜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 24
+WHERE source_ref = 'CN_FCT:44404';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '韭菜', 25, 'KCAL', 2.4, 4.5, 0.4, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:44404', '韭菜', NULL, 1, 24, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:44404');
+
+UPDATE food
+SET user_id = NULL,
+    name = '菜花',
+    calories_per_100g = 20,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.7,
+    carbs_per_100g = 4.2,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '菜花,花椰菜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 25
+WHERE source_ref = 'CN_FCT:45216';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '菜花', 20, 'KCAL', 1.7, 4.2, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:45216', '菜花,花椰菜', NULL, 1, 25, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:45216');
+
+UPDATE food
+SET user_id = NULL,
+    name = '卷心菜',
+    calories_per_100g = 24,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.5,
+    carbs_per_100g = 4.6,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '卷心菜,圆白菜,包菜',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 26
+WHERE source_ref = 'CN_FCT:45201';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '卷心菜', 24, 'KCAL', 1.5, 4.6, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:45201', '卷心菜,圆白菜,包菜', NULL, 1, 26, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:45201');
+
+UPDATE food
+SET user_id = NULL,
+    name = '洋葱',
+    calories_per_100g = 40,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.1,
+    carbs_per_100g = 9,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '洋葱,葱头',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 27
+WHERE source_ref = 'CN_FCT:44301';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '洋葱', 40, 'KCAL', 1.1, 9, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:44301', '洋葱,葱头', NULL, 1, 27, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:44301');
+
+UPDATE food
+SET user_id = NULL,
+    name = '蒜薹',
+    calories_per_100g = 66,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 2,
+    carbs_per_100g = 15.4,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '蒜薹,蒜苔',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 28
+WHERE source_ref = 'CN_FCT:44107';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '蒜薹', 66, 'KCAL', 2, 15.4, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:44107', '蒜薹,蒜苔', NULL, 1, 28, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:44107');
+
+UPDATE food
+SET user_id = NULL,
+    name = '豆角',
+    calories_per_100g = 34,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 2.5,
+    carbs_per_100g = 6.7,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '豆角',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 29
+WHERE source_ref = 'CN_FCT:42104';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '豆角', 34, 'KCAL', 2.5, 6.7, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:42104', '豆角', NULL, 1, 29, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42104');
+
+UPDATE food
+SET user_id = NULL,
+    name = '四季豆',
+    calories_per_100g = 24,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 2,
+    carbs_per_100g = 6,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '四季豆,菜豆,芸豆',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 30
+WHERE source_ref = 'CN_FCT:42120';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '四季豆', 24, 'KCAL', 2, 6, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:42120', '四季豆,菜豆,芸豆', NULL, 1, 30, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42120');
+
+UPDATE food
+SET user_id = NULL,
+    name = '黄豆芽',
+    calories_per_100g = 47,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 4.5,
+    carbs_per_100g = 4.5,
+    fat_per_100g = 1.6,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '黄豆芽',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 31
+WHERE source_ref = 'CN_FCT:42202';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '黄豆芽', 47, 'KCAL', 4.5, 4.5, 1.6, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:42202', '黄豆芽', NULL, 1, 31, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42202');
+
+UPDATE food
+SET user_id = NULL,
+    name = '绿豆芽',
+    calories_per_100g = 16,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1.7,
+    carbs_per_100g = 2.6,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '绿豆芽',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 32
+WHERE source_ref = 'CN_FCT:42206';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '绿豆芽', 16, 'KCAL', 1.7, 2.6, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:42206', '绿豆芽', NULL, 1, 32, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42206');
+
+UPDATE food
+SET user_id = NULL,
+    name = '豌豆苗',
+    calories_per_100g = 32,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 4.8,
+    carbs_per_100g = 2.6,
+    fat_per_100g = 0.8,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '豌豆苗',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 33
+WHERE source_ref = 'CN_FCT:42208';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '豌豆苗', 32, 'KCAL', 4.8, 2.6, 0.8, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:42208', '豌豆苗', NULL, 1, 33, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42208');
+
+UPDATE food
+SET user_id = NULL,
+    name = '梨',
+    calories_per_100g = 51,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.3,
+    carbs_per_100g = 13.1,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '梨',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 34
+WHERE source_ref = 'CN_FCT:061201x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '梨', 51, 'KCAL', 0.3, 13.1, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:061201x', '梨', NULL, 1, 34, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:061201x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '桃',
+    calories_per_100g = 42,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.6,
+    carbs_per_100g = 10.1,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '桃,桃子',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 35
+WHERE source_ref = 'CN_FCT:062101x';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '桃', 42, 'KCAL', 0.6, 10.1, 0.1, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:062101x', '桃,桃子', NULL, 1, 35, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:062101x');
+
+UPDATE food
+SET user_id = NULL,
+    name = '小番茄',
+    calories_per_100g = 25,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 1,
+    carbs_per_100g = 5.8,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '蔬果',
+    source = 'CURATED_CN',
+    aliases = '小番茄,樱桃番茄,小西红柿',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 36
+WHERE source_ref = 'CN_FCT:43120';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '小番茄', 25, 'KCAL', 1, 5.8, 0.2, 'G', '蔬果', 'CURATED_CN', 'CN_FCT:43120', '小番茄,樱桃番茄,小西红柿', NULL, 1, 36, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:43120');
+
+UPDATE food
+SET user_id = NULL,
     name = '黄豆',
     calories_per_100g = 446,
     calorie_unit = 'KCAL',
@@ -1323,6 +2357,160 @@ INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_10
 SELECT NULL, '鹰嘴豆', 164, 'KCAL', 8.9, 27.4, 2.6, 'G', '豆制品', 'CURATED_MANUAL', 'MANUAL:BEAN:015', '鹰嘴豆,鸡豆', NULL, 1, 15, NOW()
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'MANUAL:BEAN:015');
+
+UPDATE food
+SET user_id = NULL,
+    name = '油豆腐',
+    calories_per_100g = 245,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 17,
+    carbs_per_100g = 4.9,
+    fat_per_100g = 17.6,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '油豆腐',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 16
+WHERE source_ref = 'CN_FCT:31506';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '油豆腐', 245, 'KCAL', 17, 4.9, 17.6, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:31506', '油豆腐', NULL, 1, 16, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:31506');
+
+UPDATE food
+SET user_id = NULL,
+    name = '千张',
+    calories_per_100g = 262,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 24.5,
+    carbs_per_100g = 5.5,
+    fat_per_100g = 16,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '千张,百页',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 17
+WHERE source_ref = 'CN_FCT:31509';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '千张', 262, 'KCAL', 24.5, 5.5, 16, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:31509', '千张,百页', NULL, 1, 17, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:31509');
+
+UPDATE food
+SET user_id = NULL,
+    name = '豆腐丝',
+    calories_per_100g = 203,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 21.5,
+    carbs_per_100g = 6.2,
+    fat_per_100g = 10.5,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '豆腐丝',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 18
+WHERE source_ref = 'CN_FCT:31501';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '豆腐丝', 203, 'KCAL', 21.5, 6.2, 10.5, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:31501', '豆腐丝', NULL, 1, 18, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:31501');
+
+UPDATE food
+SET user_id = NULL,
+    name = '芸豆',
+    calories_per_100g = 30,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 0.8,
+    carbs_per_100g = 7.4,
+    fat_per_100g = 0.1,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '芸豆',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 19
+WHERE source_ref = 'CN_FCT:42115';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '芸豆', 30, 'KCAL', 0.8, 7.4, 0.1, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:42115', '芸豆', NULL, 1, 19, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42115');
+
+UPDATE food
+SET user_id = NULL,
+    name = '扁豆',
+    calories_per_100g = 32,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 2.3,
+    carbs_per_100g = 7.4,
+    fat_per_100g = 0.2,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '扁豆',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 20
+WHERE source_ref = 'CN_FCT:42118';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '扁豆', 32, 'KCAL', 2.3, 7.4, 0.2, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:42118', '扁豆', NULL, 1, 20, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:42118');
+
+UPDATE food
+SET user_id = NULL,
+    name = '豌豆',
+    calories_per_100g = 334,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 20.3,
+    carbs_per_100g = 65.8,
+    fat_per_100g = 1.1,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '豌豆',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 21
+WHERE source_ref = 'CN_FCT:39301';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '豌豆', 334, 'KCAL', 20.3, 65.8, 1.1, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:39301', '豌豆', NULL, 1, 21, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:39301');
+
+UPDATE food
+SET user_id = NULL,
+    name = '蚕豆',
+    calories_per_100g = 338,
+    calorie_unit = 'KCAL',
+    protein_per_100g = 21.6,
+    carbs_per_100g = 61.5,
+    fat_per_100g = 1,
+    quantity_unit = 'G',
+    category = '豆制品',
+    source = 'CURATED_CN',
+    aliases = '蚕豆',
+    image_url = NULL,
+    is_builtin = 1,
+    sort_order = 22
+WHERE source_ref = 'CN_FCT:35101';
+
+INSERT INTO food (user_id, name, calories_per_100g, calorie_unit, protein_per_100g, carbs_per_100g, fat_per_100g, quantity_unit, category, source, source_ref, aliases, image_url, is_builtin, sort_order, created_at)
+SELECT NULL, '蚕豆', 338, 'KCAL', 21.6, 61.5, 1, 'G', '豆制品', 'CURATED_CN', 'CN_FCT:35101', '蚕豆', NULL, 1, 22, NOW()
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM food WHERE source_ref = 'CN_FCT:35101');
 
 UPDATE food
 SET user_id = NULL,
