@@ -208,6 +208,47 @@
   font-weight: 700;
 }
 
+.record-prompt-card {
+  align-items: center;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(196, 167, 140, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(252, 249, 244, 0.98) 0%, rgba(244, 249, 246, 0.98) 100%);
+  border: 1rpx solid rgba(107, 144, 132, 0.16);
+  display: flex;
+  gap: 20rpx;
+  justify-content: space-between;
+  padding: 22rpx 22rpx 20rpx;
+}
+
+.record-prompt-card:active {
+  opacity: 0.88;
+}
+
+.record-prompt-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-prompt-title {
+  color: #3b4842;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.record-prompt-action {
+  align-items: center;
+  background: rgba(107, 144, 132, 0.12);
+  border-radius: 999rpx;
+  color: #5d8378;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 24rpx;
+}
+
 .record-group {
   padding: 16rpx 18rpx 8rpx;
 }
