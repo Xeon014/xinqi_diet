@@ -1,20 +1,22 @@
 const { request } = require("../utils/request");
 
-function createRecord(payload) {
+function createRecord(payload, requestOptions = {}) {
   return request({
     url: "/api/records",
     method: "POST",
     data: payload,
     loadingTitle: "提交中",
+    ...requestOptions,
   });
 }
 
-function createRecordBatch(payload) {
+function createRecordBatch(payload, requestOptions = {}) {
   return request({
     url: "/api/records/batch",
     method: "POST",
     data: payload,
     loadingTitle: "提交中",
+    ...requestOptions,
   });
 }
 
@@ -31,20 +33,22 @@ function getRecords({ date, mealType }) {
   });
 }
 
-function updateRecord(recordId, payload) {
+function updateRecord(recordId, payload, requestOptions = {}) {
   return request({
     url: `/api/records/${recordId}`,
     method: "PUT",
     data: payload,
     loadingTitle: "保存中",
+    ...requestOptions,
   });
 }
 
-function deleteRecord(recordId) {
+function deleteRecord(recordId, requestOptions = {}) {
   return request({
     url: `/api/records/${recordId}`,
     method: "DELETE",
     loadingTitle: "保存中",
+    ...requestOptions,
   });
 }
 

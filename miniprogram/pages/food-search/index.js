@@ -928,7 +928,7 @@ Page({
           foodId: item.foodId,
           quantityInGram: toNumber(item.quantityInGram),
         })),
-      })
+      }, { loadingMode: "none" })
       : (() => {
         const quantityInGram = toNumber(this.data.editorQuantityInGram);
         return this.data.editorMode === "edit"
@@ -936,13 +936,13 @@ Page({
             quantityInGram,
             mealType: this.data.editorMealType,
             recordDate: this.data.editorRecordDate,
-          })
+          }, { loadingMode: "none" })
           : createRecord({
             foodId: this.data.editorFoodId,
             mealType: this.data.editorMealType,
             quantityInGram,
             recordDate: this.data.editorRecordDate,
-          });
+          }, { loadingMode: "none" });
       })();
 
     this.setData({ editorLoading: true });
@@ -1001,7 +1001,7 @@ Page({
         }
 
         this.setData({ editorLoading: true });
-        deleteRecord(this.data.editorRecordId)
+        deleteRecord(this.data.editorRecordId, { loadingMode: "none" })
           .then(() => {
             app.globalData.refreshHomeOnShow = true;
             wx.showToast({ title: "已删除", icon: "success" });

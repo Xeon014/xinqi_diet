@@ -273,13 +273,13 @@ Page({
 
     const quantityInGram = toNumber(this.data.quantityInGram);
     const saveTask = this.data.mode === "edit"
-      ? updateRecord(this.data.recordId, { quantityInGram })
+      ? updateRecord(this.data.recordId, { quantityInGram }, { loadingMode: "none" })
       : createRecord({
         foodId: this.data.foodId,
         mealType: this.data.mealType,
         quantityInGram,
         recordDate: this.data.recordDate,
-      });
+      }, { loadingMode: "none" });
 
     this.setData({ loading: true });
     saveTask
@@ -339,7 +339,7 @@ Page({
         }
 
         this.setData({ loading: true });
-        deleteRecord(this.data.recordId)
+        deleteRecord(this.data.recordId, { loadingMode: "none" })
           .then(() => {
             app.globalData.refreshHomeOnShow = true;
             wx.showToast({ title: "已删除", icon: "success" });

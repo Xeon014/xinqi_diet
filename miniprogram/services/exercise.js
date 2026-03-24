@@ -19,29 +19,35 @@ function searchExercises({ keyword = "", category = "", scope = "" } = {}) {
   });
 }
 
-function createExercise(payload) {
+function createExercise(payload, requestOptions = {}) {
   return request({
     url: "/api/exercises",
     method: "POST",
     data: payload,
     loadingTitle: "保存中",
+    loadingMode: "none",
+    ...requestOptions,
   });
 }
 
-function updateExercise(exerciseId, payload) {
+function updateExercise(exerciseId, payload, requestOptions = {}) {
   return request({
     url: `/api/exercises/${exerciseId}`,
     method: "PUT",
     data: payload,
     loadingTitle: "保存中",
+    loadingMode: "none",
+    ...requestOptions,
   });
 }
 
-function deleteExercise(exerciseId) {
+function deleteExercise(exerciseId, requestOptions = {}) {
   return request({
     url: `/api/exercises/${exerciseId}`,
     method: "DELETE",
     loadingTitle: "删除中",
+    loadingMode: "none",
+    ...requestOptions,
   });
 }
 

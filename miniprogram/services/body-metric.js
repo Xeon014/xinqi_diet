@@ -1,11 +1,13 @@
 const { request } = require("../utils/request");
 
-function createBodyMetricRecord(payload) {
+function createBodyMetricRecord(payload, requestOptions = {}) {
   return request({
     url: "/api/body-metrics",
     method: "POST",
     data: payload,
     loadingTitle: "保存中...",
+    loadingMode: "none",
+    ...requestOptions,
   });
 }
 
@@ -62,11 +64,13 @@ function getBodyMetricHistory(params) {
   });
 }
 
-function deleteBodyMetricRecord(id) {
+function deleteBodyMetricRecord(id, requestOptions = {}) {
   return request({
     url: `/api/body-metrics/${encodeURIComponent(id)}`,
     method: "DELETE",
     loadingTitle: "删除中...",
+    loadingMode: "none",
+    ...requestOptions,
   });
 }
 

@@ -754,13 +754,13 @@ Page({
         durationMinutes,
         intensityLevel: this.data.editorIntensityLevel,
         recordDate: this.data.editorRecordDate,
-      })
+      }, { loadingMode: "none" })
       : createExerciseRecord({
         exerciseId: this.data.editorExerciseId,
         durationMinutes,
         intensityLevel: this.data.editorIntensityLevel,
         recordDate: this.data.editorRecordDate,
-      });
+      }, { loadingMode: "none" });
 
     this.setData({ editorLoading: true });
     task
@@ -803,7 +803,7 @@ Page({
         }
 
         this.setData({ editorLoading: true });
-        deleteExerciseRecord(this.data.editorRecordId)
+        deleteExerciseRecord(this.data.editorRecordId, { loadingMode: "none" })
           .then(() => {
             app.globalData.refreshHomeOnShow = true;
             wx.showToast({ title: "已删除", icon: "success" });
