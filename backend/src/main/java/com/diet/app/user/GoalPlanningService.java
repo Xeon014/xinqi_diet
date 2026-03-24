@@ -7,20 +7,15 @@ import com.diet.domain.user.Gender;
 import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.GoalMode;
 import com.diet.api.user.GoalPlanPreviewResponse;
-import com.diet.api.user.GoalWarningMessage;
-import com.diet.api.user.GoalWarningLevel;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class GoalPlanningService {
-
-    private static final BigDecimal DAILY_CONSUMPTION_BASE_RATIO = new BigDecimal("0.70");
 
     private static final BigDecimal CALORIES_PER_KG = new BigDecimal("7700");
 
@@ -41,14 +36,14 @@ public class GoalPlanningService {
                 ? GoalCalorieStrategy.MANUAL
                 : profile.goalCalorieStrategy();
         BigDecimal effectiveCurrentWeight = resolveEffectiveCurrentWeight(profile.userId(), profile.currentWeight(), LocalDate.now());
-        BigDecimal effectiveBmr = calculateEffectiveBmr(
+        BigDecimal effectiveBmr = GoalPlanMetabolismCalculator.calculateEffectiveBmr(
                 profile.gender(),
                 profile.birthDate(),
                 profile.height(),
                 effectiveCurrentWeight,
                 profile.customBmr()
         );
-        Integer effectiveTdee = calculateEffectiveTdee(
+        Integer effectiveTdee = GoalPlanMetabolismCalculator.calculateEffectiveTdee(
                 profile.gender(),
                 profile.birthDate(),
                 profile.height(),
@@ -147,15 +142,13 @@ public class GoalPlanningService {
             resolvedGoalDelta = 0;
         }
         if (resolvedGoalMode == null) {
-            resolvedGoalMode = inferGoalModeFromDelta(resolvedGoalDelta);
+            resolvedGoalMode = GoalPlanMetabolismCalculator.inferGoalModeFromDelta(resolvedGoalDelta);
         }
         if (resolvedTargetCalories == null) {
             resolvedTargetCalories = effectiveTdee == null ? null : effectiveTdee + resolvedGoalDelta;
         }
 
-        BigDecimal plannedWeeklyChangeKg = BigDecimal.valueOf(resolvedGoalDelta)
-                .multiply(BigDecimal.valueOf(7))
-                .divide(CALORIES_PER_KG, 2, RoundingMode.HALF_UP);
+        BigDecimal plannedWeeklyChangeKg = GoalPlanMetabolismCalculator.calculatePlannedWeeklyChangeKg(resolvedGoalDelta);
 
         return buildPreviewResponse(
                 resolvedTargetCalories,
@@ -177,7 +170,7 @@ public class GoalPlanningService {
             GoalCalorieStrategy goalCalorieStrategy,
             boolean usedTrendAdjustment
     ) {
-        GoalWarning warning = evaluateWarning(
+        GoalPlanWarningEvaluator.GoalPlanWarning warning = GoalPlanWarningEvaluator.evaluate(
                 targetCalories,
                 goalCalorieDelta,
                 plannedWeeklyChangeKg,
@@ -193,76 +186,6 @@ public class GoalPlanningService {
                 warning.message(),
                 usedTrendAdjustment
         );
-    }
-
-    private GoalWarning evaluateWarning(
-            Integer targetCalories,
-            Integer goalCalorieDelta,
-            BigDecimal plannedWeeklyChangeKg,
-            BigDecimal effectiveBmr,
-            GoalCalorieStrategy goalCalorieStrategy
-    ) {
-        if (goalCalorieDelta == null) {
-            return new GoalWarning(GoalWarningLevel.NONE, "");
-        }
-
-        GoalCalorieStrategy strategy = goalCalorieStrategy == null ? GoalCalorieStrategy.MANUAL : goalCalorieStrategy;
-        if (strategy == GoalCalorieStrategy.MANUAL) {
-            return evaluateManualWarning(targetCalories, goalCalorieDelta, plannedWeeklyChangeKg, effectiveBmr);
-        }
-        return evaluateSmartWarning(targetCalories, goalCalorieDelta, plannedWeeklyChangeKg, effectiveBmr);
-    }
-
-    private GoalWarning evaluateManualWarning(
-            Integer targetCalories,
-            Integer goalCalorieDelta,
-            BigDecimal plannedWeeklyChangeKg,
-            BigDecimal effectiveBmr
-    ) {
-        if (effectiveBmr != null
-                && targetCalories != null
-                && BigDecimal.valueOf(targetCalories).compareTo(effectiveBmr.setScale(0, RoundingMode.HALF_UP)) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_BELOW_BMR.text());
-        }
-        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("-1.00")) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_WEEKLY_LOSS_TOO_FAST.text());
-        }
-        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("0.50")) > 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_WEEKLY_GAIN_TOO_FAST.text());
-        }
-        if (goalCalorieDelta <= -900) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_DAILY_DEFICIT_TOO_LARGE.text());
-        }
-        if (goalCalorieDelta >= 500) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.MANUAL_DAILY_SURPLUS_TOO_LARGE.text());
-        }
-        return new GoalWarning(GoalWarningLevel.NONE, "");
-    }
-
-    private GoalWarning evaluateSmartWarning(
-            Integer targetCalories,
-            Integer goalCalorieDelta,
-            BigDecimal plannedWeeklyChangeKg,
-            BigDecimal effectiveBmr
-    ) {
-        if (effectiveBmr != null
-                && targetCalories != null
-                && BigDecimal.valueOf(targetCalories).compareTo(effectiveBmr.setScale(0, RoundingMode.HALF_UP)) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_BELOW_BMR.text());
-        }
-        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("-1.00")) < 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_WEEKLY_LOSS_TOO_FAST.text());
-        }
-        if (plannedWeeklyChangeKg != null && plannedWeeklyChangeKg.compareTo(new BigDecimal("0.50")) > 0) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_WEEKLY_GAIN_TOO_FAST.text());
-        }
-        if (goalCalorieDelta <= -900) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_DAILY_DEFICIT_TOO_LARGE.text());
-        }
-        if (goalCalorieDelta >= 500) {
-            return new GoalWarning(GoalWarningLevel.EXTREME, GoalWarningMessage.SMART_DAILY_SURPLUS_TOO_LARGE.text());
-        }
-        return new GoalWarning(GoalWarningLevel.NONE, "");
     }
 
     private TrendAdjustment resolveTrendAdjustment(Long userId, BigDecimal plannedWeeklyChangeKg) {
@@ -322,61 +245,7 @@ public class GoalPlanningService {
         return currentWeight;
     }
 
-    private BigDecimal calculateEffectiveBmr(
-            Gender gender,
-            LocalDate birthDate,
-            BigDecimal height,
-            BigDecimal currentWeight,
-            Integer customBmr
-    ) {
-        if (customBmr != null && customBmr > 0) {
-            return BigDecimal.valueOf(customBmr).setScale(2, RoundingMode.HALF_UP);
-        }
-        if (gender == null || birthDate == null || height == null || currentWeight == null) {
-            return null;
-        }
-        int age = Period.between(birthDate, LocalDate.now()).getYears();
-        if (age < 0) {
-            return null;
-        }
-        BigDecimal base = currentWeight.multiply(BigDecimal.TEN)
-                .add(height.multiply(BigDecimal.valueOf(6.25)))
-                .subtract(BigDecimal.valueOf(age).multiply(BigDecimal.valueOf(5)));
-        BigDecimal offset = gender == Gender.MALE ? BigDecimal.valueOf(5) : BigDecimal.valueOf(-161);
-        return base.add(offset).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private Integer calculateEffectiveTdee(
-            Gender gender,
-            LocalDate birthDate,
-            BigDecimal height,
-            BigDecimal currentWeight,
-            Integer customBmr,
-            Integer customTdee
-    ) {
-        if (customTdee != null && customTdee > 0) {
-            return customTdee;
-        }
-        BigDecimal bmr = calculateEffectiveBmr(gender, birthDate, height, currentWeight, customBmr);
-        if (bmr == null) {
-            return null;
-        }
-        return bmr.divide(DAILY_CONSUMPTION_BASE_RATIO, 2, RoundingMode.HALF_UP)
-                .setScale(0, RoundingMode.HALF_UP)
-                .intValue();
-    }
-
-    private GoalMode inferGoalModeFromDelta(Integer goalCalorieDelta) {
-        if (goalCalorieDelta == null || goalCalorieDelta == 0) {
-            return GoalMode.MAINTAIN;
-        }
-        return goalCalorieDelta > 0 ? GoalMode.GAIN : GoalMode.LOSE;
-    }
-
     private record TrendAdjustment(BigDecimal adjustmentKcal, boolean usedTrendAdjustment) {
-    }
-
-    private record GoalWarning(GoalWarningLevel level, String message) {
     }
 
     public record GoalPlanningProfile(

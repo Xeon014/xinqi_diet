@@ -30,7 +30,7 @@
 
 - Java 17
 - Maven
-- MySQL 8
+- MySQL 5.7+（开发与生产都按 MySQL 5.7 兼容约束实现）
 
 ## 配置说明
 
@@ -49,6 +49,11 @@
 4. 如需带演示数据启动：`mvn spring-boot:run -Dspring-boot.run.profiles=dev,demo-seed`
 5. 启动生产环境：`mvn spring-boot:run -Dspring-boot.run.profiles=prod`
 6. 服务默认地址：`http://localhost:8080`
+
+## 自检命令
+
+- 后端回归：`mvn -q test`
+- 仓库串行校验：`cd .. && bash scripts/verify-project.sh`
 
 ## 数据库基线
 

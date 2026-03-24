@@ -4,7 +4,6 @@
                   "pages/onboarding-profile/index",
                   "pages/health-diary-editor/index",
                   "pages/food-search/index",
-                  "pages/food-item-editor/index",
                   "pages/custom-food/index",
                   "pages/exercise-search/index",
                   "pages/custom-exercise/index",
