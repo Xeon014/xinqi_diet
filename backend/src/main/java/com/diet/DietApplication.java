@@ -4,7 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@MapperScan("com.diet.mapper")
+@MapperScan("com.diet.infra")
 @SpringBootApplication
 public class DietApplication {
 

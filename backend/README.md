@@ -4,6 +4,26 @@
 
 > 本文默认命令都在 `backend/` 目录下执行。
 
+## 代码结构
+
+后端包结构已调整为六层目录：
+
+- `com.diet.trigger`：HTTP 触发层，不按业务域拆分；所有 Controller 收敛在 `com.diet.trigger.controller`
+- `com.diet.app`：应用层，负责用例编排、事务边界、查询与命令服务
+- `com.diet.domain`：领域层，包含实体、枚举、领域仓储接口与紧密相关的纯规则
+- `com.diet.infra`：基础设施层，包含 MyBatis Mapper、Repository 实现、外部客户端与启动配置
+- `com.diet.api`：接口契约层，包含 Controller 直接使用的 request/response DTO，以及跨层 Port
+- `com.diet.types`：公共类型层，只保留 `common` 等通用返回、异常、常量
+
+当前代码组织采用“先层后域”为主、`trigger/types` 例外的方式，例如：
+
+- `com.diet.trigger.controller`
+- `com.diet.app.record.meal`
+- `com.diet.domain.metric`
+- `com.diet.infra.food`
+- `com.diet.api.user`
+- `com.diet.types.common`
+
 ## 运行前准备
 
 请先确认本机已安装并启动：
