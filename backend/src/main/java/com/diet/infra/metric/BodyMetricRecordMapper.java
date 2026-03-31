@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricType;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -31,7 +32,7 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
     List<BodyMetricRecord> findDailyLatestByMetricTypeWithCursor(
             @Param("userId") Long userId,
             @Param("metricType") BodyMetricType metricType,
-            @Param("cursorDate") LocalDate cursorDate,
+            @Param("cursorMeasuredAt") LocalDateTime cursorMeasuredAt,
             @Param("cursorId") Long cursorId,
             @Param("limit") int limit
     );
@@ -39,7 +40,7 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
     List<BodyMetricRecord> findByMetricTypeWithCursor(
             @Param("userId") Long userId,
             @Param("metricType") BodyMetricType metricType,
-            @Param("cursorDate") LocalDate cursorDate,
+            @Param("cursorMeasuredAt") LocalDateTime cursorMeasuredAt,
             @Param("cursorId") Long cursorId,
             @Param("limit") int limit
     );
@@ -47,5 +48,13 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
     BodyMetricRecord findByIdAndUserId(
             @Param("id") Long id,
             @Param("userId") Long userId
+    );
+
+    void batchInsert(@Param("list") List<BodyMetricRecord> records);
+
+    List<BodyMetricRecord> findByUserIdAndMetricTypeAndMeasuredAtIn(
+            @Param("userId") Long userId,
+            @Param("metricType") BodyMetricType metricType,
+            @Param("measuredAts") List<LocalDateTime> measuredAts
     );
 }

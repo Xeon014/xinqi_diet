@@ -11,14 +11,22 @@ import com.diet.api.metric.BodyMetricTrendMetricKey;
 import com.diet.api.metric.BodyMetricTrendResponse;
 import com.diet.api.metric.CreateBodyMetricRecordRequest;
 import com.diet.api.metric.MetricTrendRangeType;
+import com.diet.api.metric.WeightImportConfirmRequest;
+import com.diet.api.metric.WeightImportPreviewRequest;
+import com.diet.api.metric.WeightImportPreviewResponse;
+import com.diet.api.metric.WeightImportResultResponse;
 import com.diet.app.metric.BodyMetricRecordCommandService;
 import com.diet.app.metric.BodyMetricRecordQueryService;
+import com.diet.app.metric.WeightImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,15 +48,19 @@ public class BodyMetricRecordController {
 
     private final BodyMetricRecordQueryService bodyMetricRecordQueryService;
 
+    private final WeightImportService weightImportService;
+
     private final AuthContextService authContextService;
 
     public BodyMetricRecordController(
             BodyMetricRecordCommandService bodyMetricRecordCommandService,
             BodyMetricRecordQueryService bodyMetricRecordQueryService,
+            WeightImportService weightImportService,
             AuthContextService authContextService
     ) {
         this.bodyMetricRecordCommandService = bodyMetricRecordCommandService;
         this.bodyMetricRecordQueryService = bodyMetricRecordQueryService;
+        this.weightImportService = weightImportService;
         this.authContextService = authContextService;
     }
 
@@ -96,8 +108,8 @@ public class BodyMetricRecordController {
     public ApiResponse<BodyMetricHistoryResponse> getHistory(
             @Parameter(description = "指标类型")
             @RequestParam BodyMetricTrendMetricKey metricKey,
-            @Parameter(description = "游标日期，格式 yyyy-MM-dd")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate cursorDate,
+            @Parameter(description = "游标测量时间，仅体重多条记录分页使用，格式 yyyy-MM-dd'T'HH:mm:ss")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursorMeasuredAt,
             @Parameter(description = "游标记录 ID")
             @RequestParam(required = false) Long cursorId,
             @Parameter(description = "分页大小，默认 120")
@@ -105,7 +117,7 @@ public class BodyMetricRecordController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordQueryService.getHistory(userId, metricKey, cursorDate, cursorId, pageSize));
+        return ApiResponse.success(bodyMetricRecordQueryService.getHistory(userId, metricKey, cursorMeasuredAt, cursorId, pageSize));
     }
 
     @Operation(summary = "查询身体指标趋势", description = "按指标和时间区间查询趋势点，ALL 支持游标分页")
@@ -115,8 +127,8 @@ public class BodyMetricRecordController {
             @RequestParam BodyMetricTrendMetricKey metricKey,
             @Parameter(description = "时间区间，MONTH/YEAR/ALL")
             @RequestParam MetricTrendRangeType rangeType,
-            @Parameter(description = "游标日期，仅 ALL 模式使用，格式 yyyy-MM-dd")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate cursorDate,
+            @Parameter(description = "游标测量时间，仅 ALL 模式使用，格式 yyyy-MM-dd'T'HH:mm:ss")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursorMeasuredAt,
             @Parameter(description = "游标记录 ID，仅 ALL 模式使用")
             @RequestParam(required = false) Long cursorId,
             @Parameter(description = "分页大小，仅 ALL 模式使用，默认 120")
@@ -124,6 +136,26 @@ public class BodyMetricRecordController {
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorDate, cursorId, pageSize));
+        return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorMeasuredAt, cursorId, pageSize));
+    }
+
+    @Operation(summary = "预览体重数据导入", description = "解析 CSV / XLSX 文件并返回预览数据，不写入数据库")
+    @PostMapping("/import/preview")
+    public ApiResponse<WeightImportPreviewResponse> previewImport(
+            @Valid @RequestBody WeightImportPreviewRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(weightImportService.preview(userId, request));
+    }
+
+    @Operation(summary = "确认体重数据导入", description = "将预览确认的数据导入为体重记录，支持分钟级时间")
+    @PostMapping("/import/confirm")
+    public ApiResponse<WeightImportResultResponse> confirmImport(
+            @Valid @RequestBody WeightImportConfirmRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(weightImportService.confirm(userId, request));
     }
 }

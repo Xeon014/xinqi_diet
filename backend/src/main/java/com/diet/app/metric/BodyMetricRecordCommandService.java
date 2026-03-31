@@ -15,6 +15,9 @@ import com.diet.types.common.NotFoundException;
 import com.diet.api.user.GoalPlanPreviewResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,20 +44,21 @@ public class BodyMetricRecordCommandService {
     public BodyMetricRecordResponse create(Long userId, CreateBodyMetricRecordRequest request) {
         UserProfile user = getUser(userId);
         validateUnit(request.metricType(), request.unit());
+        LocalDateTime measuredAt = resolveMeasuredAt(request);
+        LocalDate recordDate = measuredAt.toLocalDate();
 
         BodyMetricRecord record = new BodyMetricRecord(
                 user.getId(),
                 request.metricType(),
                 request.metricValue(),
                 request.unit(),
-                request.recordDate()
+                recordDate,
+                measuredAt
         );
         bodyMetricRecordRepository.save(record);
 
-        if (request.metricType() == BodyMetricType.WEIGHT && request.recordDate().equals(LocalDate.now())) {
-            user.setCurrentWeight(request.metricValue());
-            refreshSmartGoalSnapshot(user);
-            userProfileRepository.update(user);
+        if (request.metricType() == BodyMetricType.WEIGHT) {
+            syncCurrentWeightFromLatestWeight(user);
         }
 
         return new BodyMetricRecordResponse(
@@ -64,15 +68,19 @@ public class BodyMetricRecordCommandService {
                 record.getMetricValue(),
                 record.getUnit(),
                 record.getRecordDate(),
+                record.getMeasuredAt(),
                 record.getCreatedAt()
         );
     }
 
     public BodyMetricDeleteResponse delete(Long userId, Long recordId) {
-        getUser(userId);
+        UserProfile user = getUser(userId);
         BodyMetricRecord existing = bodyMetricRecordRepository.findByIdAndUserId(recordId, userId)
                 .orElseThrow(() -> new NotFoundException("body metric record not found, id=" + recordId));
         bodyMetricRecordRepository.deleteById(existing.getId());
+        if (existing.getMetricType() == BodyMetricType.WEIGHT) {
+            syncCurrentWeightFromLatestWeight(user);
+        }
         return new BodyMetricDeleteResponse(true);
     }
 
@@ -88,7 +96,8 @@ public class BodyMetricRecordCommandService {
                 BodyMetricType.WEIGHT,
                 currentWeight,
                 BodyMetricUnit.KG,
-                recordDate
+                recordDate,
+                recordDate.atStartOfDay()
         ));
     }
 
@@ -107,6 +116,38 @@ public class BodyMetricRecordCommandService {
     private UserProfile getUser(Long id) {
         return userProfileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("user not found, id=" + id));
+    }
+
+    private LocalDateTime resolveMeasuredAt(CreateBodyMetricRecordRequest request) {
+        if (request.measuredAt() != null) {
+            return truncateToMinute(request.measuredAt());
+        }
+        return LocalDateTime.of(
+                request.recordDate(),
+                LocalTime.now().truncatedTo(ChronoUnit.MINUTES)
+        );
+    }
+
+    private LocalDateTime truncateToMinute(LocalDateTime measuredAt) {
+        return measuredAt.truncatedTo(ChronoUnit.MINUTES);
+    }
+
+    private void syncCurrentWeightFromLatestWeight(UserProfile user) {
+        java.util.Optional<BodyMetricRecord> latestWeightOptional = bodyMetricRecordRepository.findLatestByMetricType(
+                user.getId(),
+                BodyMetricType.WEIGHT
+        );
+        BodyMetricRecord latestWeightRecord = latestWeightOptional == null ? null : latestWeightOptional.orElse(null);
+        if (latestWeightRecord == null) {
+            return;
+        }
+        if (user.getCurrentWeight() != null
+                && user.getCurrentWeight().compareTo(latestWeightRecord.getMetricValue()) == 0) {
+            return;
+        }
+        user.setCurrentWeight(latestWeightRecord.getMetricValue());
+        refreshSmartGoalSnapshot(user);
+        userProfileRepository.update(user);
     }
 
     private void refreshSmartGoalSnapshot(UserProfile user) {

@@ -14,6 +14,9 @@ public record BodyMetricHistoryRecordResponse(
         @Schema(description = "记录日期")
         LocalDate recordDate,
 
+        @Schema(description = "业务测量时间")
+        LocalDateTime measuredAt,
+
         @Schema(description = "创建时间")
         LocalDateTime createdAt,
 

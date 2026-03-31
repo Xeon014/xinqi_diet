@@ -1,0 +1,655 @@
+package com.diet.app.metric;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.diet.api.metric.DuplicatePolicy;
+import com.diet.api.metric.WeightImportConfirmRequest;
+import com.diet.api.metric.WeightImportConfirmRow;
+import com.diet.api.metric.WeightImportPreviewRequest;
+import com.diet.api.metric.WeightImportPreviewResponse;
+import com.diet.api.metric.WeightImportResultResponse;
+import com.diet.domain.metric.BodyMetricRecord;
+import com.diet.domain.metric.BodyMetricRecordRepository;
+import com.diet.domain.metric.BodyMetricType;
+import com.diet.domain.metric.BodyMetricUnit;
+import com.diet.domain.user.UserProfile;
+import com.diet.domain.user.UserProfileRepository;
+import com.diet.app.user.GoalPlanningService;
+import java.math.BigDecimal;
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class WeightImportServiceTest {
+
+    @Mock
+    private BodyMetricRecordRepository bodyMetricRecordRepository;
+
+    @Mock
+    private UserProfileRepository userProfileRepository;
+
+    @Mock
+    private GoalPlanningService goalPlanningService;
+
+    private WeightImportService weightImportService;
+
+    @BeforeEach
+    void setUp() {
+        weightImportService = new WeightImportService(
+                bodyMetricRecordRepository,
+                userProfileRepository,
+                goalPlanningService
+        );
+    }
+
+    // --- Preview: Delimiter Detection ---
+
+    @Test
+    void shouldDetectCommaDelimiter() {
+        String csv = "date,weight\n2025-01-01,70.5\n2025-01-02,71.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedDelimiter()).isEqualTo(",");
+        assertThat(response.parsedRows()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldDetectTabDelimiter() {
+        String csv = "日期\t体重 (斤)\t体重变化 (斤)\t状态\t备注\n2025-01-01\t130.0\t0\t正常\t\n2025-01-02\t131.5\t1.5\t正常\t";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedDelimiter()).isEqualTo("Tab");
+        assertThat(response.parsedRows()).isEqualTo(2);
+        assertThat(response.detectedUnit()).isEqualTo("斤");
+    }
+
+    @Test
+    void shouldDetectSemicolonDelimiter() {
+        String csv = "DateTime;Weight\n25.12.2024;75.5\n26.12.2024;76.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedDelimiter()).isEqualTo(";");
+    }
+
+    // --- Preview: Column Detection ---
+
+    @Test
+    void shouldFindDateColumnByChineseName() {
+        String csv = "日期,体重\n2025-01-01,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.parsedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+    }
+
+    @Test
+    void shouldFindWeightColumnByChineseName() {
+        String csv = "date,体重(kg)\n2025-01-01,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.parsedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+    }
+
+    @Test
+    void shouldThrowWhenDateColumnNotFound() {
+        String csv = "weight,value\n70.5,100";
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("未找到日期列");
+    }
+
+    @Test
+    void shouldThrowWhenWeightColumnNotFound() {
+        String csv = "date,height\n2025-01-01,170";
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("未找到体重列");
+    }
+
+    // --- Preview: Date Parsing ---
+
+    @Test
+    void shouldParseIsoDate() {
+        String csv = "date,weight\n2025-03-31,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+    }
+
+    @Test
+    void shouldParseIsoDateTime() {
+        String csv = "date,weight\n2025-03-31T07:30:00,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+    }
+
+    @Test
+    void shouldParseSlashDateTimeToDate() {
+        String csv = "date,weight\n2026/3/28 09:39,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
+        assertThat(response.rows().get(0).parsedMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 28, 9, 39));
+    }
+
+    @Test
+    void shouldParseSlashDate() {
+        String csv = "date,weight\n2025/03/31,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+    }
+
+    @Test
+    void shouldParseNonZeroPaddedSlashDate() {
+        String csv = "date,weight\n2025/3/1,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 1));
+    }
+
+    @Test
+    void shouldMarkInvalidDateRow() {
+        String csv = "date,weight\nnot-a-date,70.5\n2025-01-01,71.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.skippedRows()).isEqualTo(1);
+        assertThat(response.parsedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).error()).isNotNull();
+        assertThat(response.rows().get(1).parsedDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+    }
+
+    // --- Preview: Unit Detection ---
+
+    @Test
+    void shouldDetectJinUnitFromColumnName() {
+        String csv = "日期\t体重 (斤)\n2025-01-01\t130.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedUnit()).isEqualTo("斤");
+        assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("65.00");
+    }
+
+    @Test
+    void shouldDetectLbsUnitFromColumnName() {
+        String csv = "date,Weight (lbs)\n2025-01-01,154.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedUnit()).isEqualTo("lbs");
+        assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("69.85");
+    }
+
+    @Test
+    void shouldKeepKgByDefault() {
+        String csv = "date,weight\n2025-01-01,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedUnit()).isEqualTo("kg");
+        assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+    }
+
+    // --- Preview: Weight Validation ---
+
+    @Test
+    void shouldRejectWeightBelowMinimum() {
+        String csv = "date,weight\n2025-01-01,15.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.skippedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).error()).contains("超出合理范围");
+    }
+
+    @Test
+    void shouldRejectFutureDate() {
+        String futureDate = LocalDate.now().plusDays(1).toString();
+        String csv = "date,weight\n" + futureDate + ",70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.skippedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).error()).contains("未来日期");
+    }
+
+    // --- Preview: Edge Cases ---
+
+    @Test
+    void shouldHandleEmptyFile() {
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, "")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("文件内容为空");
+    }
+
+    @Test
+    void shouldHandleHeaderOnlyCsv() {
+        String csv = "date,weight";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.totalRows()).isEqualTo(0);
+        assertThat(response.parsedRows()).isEqualTo(0);
+    }
+
+    @Test
+    void shouldHandleMixedValidAndInvalidRows() {
+        String csv = "date,weight\n2025-01-01,70.5\nbad-date,abc\n2025-01-02,72.0";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.totalRows()).isEqualTo(3);
+        assertThat(response.parsedRows()).isEqualTo(2);
+        assertThat(response.skippedRows()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldSkipEmptyLines() {
+        String csv = "date,weight\n\n2025-01-01,70.5\n\n2025-01-02,71.0\n";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.totalRows()).isEqualTo(2);
+        assertThat(response.parsedRows()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldAllowPreviewAtImportLimit() {
+        StringBuilder csv = new StringBuilder("date,weight\n");
+        for (int i = 1; i <= 1000; i++) {
+            csv.append("2025-01-")
+                    .append(String.format("%02d", ((i - 1) % 28) + 1))
+                    .append(",")
+                    .append(60 + (i % 10))
+                    .append(".0\n");
+        }
+
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv.toString()));
+
+        assertThat(response.totalRows()).isEqualTo(1000);
+        assertThat(response.rows()).hasSize(1000);
+    }
+
+    @Test
+    void shouldRejectPreviewWhenRowsExceedLimit() {
+        StringBuilder csv = new StringBuilder("date,weight\n");
+        for (int i = 1; i <= 1001; i++) {
+            csv.append("2025-01-")
+                    .append(String.format("%02d", ((i - 1) % 28) + 1))
+                    .append(",")
+                    .append(60 + (i % 10))
+                    .append(".0\n");
+        }
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv.toString())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("单次最多导入 1000 行");
+    }
+
+    @Test
+    void shouldParseQuotedMultilineField() {
+        String csv = "date,weight,note\n2025-01-01,70.5,\"第一行\n第二行\"";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.totalRows()).isEqualTo(1);
+        assertThat(response.parsedRows()).isEqualTo(1);
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+    }
+
+    @Test
+    void shouldRejectPreviewWhenQuoteIsUnclosed() {
+        String csv = "date,weight,note\n2025-01-01,70.5,\"第一行\n第二行";
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("未闭合的引号");
+    }
+
+    @Test
+    void shouldPreviewXlsxWithChineseHeaders() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("体重记录");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重(kg)");
+            sheet.createRow(1).createCell(0).setCellValue("2025-03-31");
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("test.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedFileType()).isEqualTo("XLSX");
+            assertThat(response.detectedSheetName()).isEqualTo("体重记录");
+            assertThat(response.parsedRows()).isEqualTo(1);
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+        }
+    }
+
+    @Test
+    void shouldUseFirstValidSheetInXlsx() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet introSheet = workbook.createSheet("说明");
+            introSheet.createRow(0).createCell(0).setCellValue("导出说明");
+
+            Sheet dataSheet = workbook.createSheet("体重数据");
+            dataSheet.createRow(0).createCell(0).setCellValue("日期");
+            dataSheet.getRow(0).createCell(1).setCellValue("体重(lbs)");
+            dataSheet.createRow(1).createCell(0).setCellValue("2025-01-01");
+            dataSheet.getRow(1).createCell(1).setCellValue(154.0);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("multi-sheet.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedFileType()).isEqualTo("XLSX");
+            assertThat(response.detectedSheetName()).isEqualTo("体重数据");
+            assertThat(response.detectedUnit()).isEqualTo("lbs");
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("69.85");
+        }
+    }
+
+    @Test
+    void shouldParseExcelDateCell() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            CreationHelper creationHelper = workbook.getCreationHelper();
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(creationHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+
+            Sheet sheet = workbook.createSheet("原生日期");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重");
+            sheet.createRow(1).createCell(0).setCellValue(java.sql.Date.valueOf(LocalDate.of(2025, 3, 31)));
+            sheet.getRow(1).getCell(0).setCellStyle(dateStyle);
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("native-date.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedDateFormat()).isEqualTo("Excel 日期单元格");
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+        }
+    }
+
+    @Test
+    void shouldParseXlsxTextDateTimeCell() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("文本日期时间");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重");
+            sheet.createRow(1).createCell(0).setCellValue("2026/3/28 09:39");
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("datetime-text.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
+            assertThat(response.rows().get(0).parsedMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 28, 9, 39));
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+        }
+    }
+
+    @Test
+    void shouldRejectLegacyXlsFile() {
+        byte[] xlsHeader = new byte[] {
+                (byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
+                (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1
+        };
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("legacy.xls", Base64.getEncoder().encodeToString(xlsHeader), null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("暂不支持 xls 文件");
+    }
+
+    // --- Confirm: SKIP Policy ---
+
+    @Test
+    void shouldSkipExistingRecordsWhenPolicyIsSkip() {
+        LocalDateTime measuredAt1 = LocalDateTime.of(2025, 1, 1, 0, 0);
+        LocalDateTime measuredAt2 = LocalDateTime.of(2025, 1, 2, 0, 0);
+
+        BodyMetricRecord existingRecord = buildRecord(10L, measuredAt1, new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of(existingRecord));
+
+        WeightImportResultResponse result = weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(
+                                new WeightImportConfirmRow(measuredAt1, new BigDecimal("70.5")),
+                                new WeightImportConfirmRow(measuredAt2, new BigDecimal("71.0"))
+                        ),
+                        DuplicatePolicy.SKIP
+                ));
+
+        assertThat(result.skipped()).isEqualTo(1);
+        assertThat(result.imported()).isEqualTo(1);
+        verify(bodyMetricRecordRepository).batchInsert(anyList());
+    }
+
+    // --- Confirm: OVERWRITE Policy ---
+
+    @Test
+    void shouldOverwriteExistingRecordsWhenPolicyIsOverwrite() {
+        LocalDateTime measuredAt1 = LocalDateTime.of(2025, 1, 1, 0, 0);
+
+        BodyMetricRecord existingRecord = buildRecord(10L, measuredAt1, new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of(existingRecord));
+
+        WeightImportResultResponse result = weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(
+                                new WeightImportConfirmRow(measuredAt1, new BigDecimal("70.5"))
+                        ),
+                        DuplicatePolicy.OVERWRITE
+                ));
+
+        assertThat(result.overwritten()).isEqualTo(1);
+        assertThat(existingRecord.getMetricValue()).isEqualByComparingTo("70.5");
+        verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
+    }
+
+    // --- Confirm: Deduplication ---
+
+    @Test
+    void shouldDeduplicateRequestRowsByDate() {
+        LocalDateTime measuredAt = LocalDateTime.of(2025, 1, 1, 7, 35);
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of());
+
+        WeightImportResultResponse result = weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(
+                                new WeightImportConfirmRow(measuredAt, new BigDecimal("70.0")),
+                                new WeightImportConfirmRow(measuredAt, new BigDecimal("70.5"))
+                        ),
+                        DuplicatePolicy.SKIP
+                ));
+
+        assertThat(result.imported()).isEqualTo(1);
+    }
+
+    // --- Confirm: Today's Weight Sync ---
+
+    @Test
+    void shouldSyncCurrentWeightWhenTodayIsImported() {
+        UserProfile user = new UserProfile();
+        user.setId(1L);
+        user.setCurrentWeight(new BigDecimal("68.0"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of());
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(100L, LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getDayOfMonth(), 7, 35), new BigDecimal("70.5"))));
+
+        weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(
+                                new WeightImportConfirmRow(LocalDate.now().atTime(7, 35), new BigDecimal("70.5"))
+                        ),
+                        DuplicatePolicy.SKIP
+                ));
+
+        assertThat(user.getCurrentWeight()).isEqualByComparingTo("70.5");
+        verify(userProfileRepository).update(user);
+    }
+
+    @Test
+    void shouldNotSyncCurrentWeightWhenTodayRecordIsSkipped() {
+        LocalDateTime today = LocalDate.now().atTime(7, 35);
+        BodyMetricRecord existingRecord = buildRecord(10L, today, new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of(existingRecord));
+
+        weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(new WeightImportConfirmRow(today, new BigDecimal("70.5"))),
+                        DuplicatePolicy.SKIP
+                ));
+
+        verify(userProfileRepository, never()).findById(any());
+        verify(userProfileRepository, never()).update(any());
+    }
+
+    @Test
+    void shouldSyncCurrentWeightWhenTodayRecordIsOverwritten() {
+        LocalDateTime today = LocalDate.now().atTime(7, 35);
+        BodyMetricRecord existingRecord = buildRecord(10L, today, new BigDecimal("68.0"));
+        UserProfile user = new UserProfile();
+        user.setId(1L);
+        user.setCurrentWeight(new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of(existingRecord));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(10L, today, new BigDecimal("70.5"))));
+
+        weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(new WeightImportConfirmRow(today, new BigDecimal("70.5"))),
+                        DuplicatePolicy.OVERWRITE
+                ));
+
+        assertThat(user.getCurrentWeight()).isEqualByComparingTo("70.5");
+        verify(userProfileRepository).update(user);
+    }
+
+    @Test
+    void shouldKeepCurrentWeightWhenImportedRecordIsNotLatest() {
+        UserProfile user = new UserProfile();
+        user.setId(1L);
+        user.setCurrentWeight(new BigDecimal("72.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
+                eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
+                .thenReturn(List.of());
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(200L, LocalDateTime.of(2025, 2, 1, 8, 0), new BigDecimal("72.0"))));
+
+        weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(
+                                new WeightImportConfirmRow(LocalDateTime.of(2025, 1, 1, 0, 0), new BigDecimal("70.5"))
+                        ),
+                        DuplicatePolicy.SKIP
+                ));
+
+        assertThat(user.getCurrentWeight()).isEqualByComparingTo("72.0");
+        verify(userProfileRepository, never()).update(any());
+    }
+
+    @Test
+    void shouldRejectFutureDateDuringConfirm() {
+        assertThatThrownBy(() -> weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(new WeightImportConfirmRow(LocalDate.now().plusDays(1).atStartOfDay(), new BigDecimal("70.5"))),
+                        DuplicatePolicy.SKIP
+                )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("导入时间不能晚于今天");
+    }
+
+    @Test
+    void shouldRejectOutOfRangeWeightDuringConfirm() {
+        assertThatThrownBy(() -> weightImportService.confirm(1L,
+                new WeightImportConfirmRequest(
+                        List.of(new WeightImportConfirmRow(LocalDate.now().atTime(7, 35), new BigDecimal("10.0"))),
+                        DuplicatePolicy.SKIP
+                )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("体重超出合理范围");
+    }
+
+    // --- Helper ---
+
+    private BodyMetricRecord buildRecord(Long id, LocalDateTime measuredAt, BigDecimal weight) {
+        BodyMetricRecord record = new BodyMetricRecord();
+        record.setId(id);
+        record.setUserId(1L);
+        record.setMetricType(BodyMetricType.WEIGHT);
+        record.setMetricValue(weight);
+        record.setUnit(BodyMetricUnit.KG);
+        record.setRecordDate(measuredAt.toLocalDate());
+        record.setMeasuredAt(measuredAt);
+        return record;
+    }
+
+    private String toBase64(Workbook workbook) throws Exception {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            workbook.write(outputStream);
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        }
+    }
+}

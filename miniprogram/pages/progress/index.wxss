@@ -57,6 +57,13 @@
   line-height: 1.4;
 }
 
+.chart-meta {
+  color: #8a877f;
+  font-size: 21rpx;
+  line-height: 1.5;
+  margin-top: 4rpx;
+}
+
 .chart-add-btn {
   align-items: center;
   background: rgba(107, 144, 132, 0.1);
@@ -174,6 +181,10 @@
   text-align: center;
   top: -40rpx;
   transform: translateX(-50%);
+}
+
+.latest-value.below {
+  top: 68rpx;
 }
 
 .date-label {

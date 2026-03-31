@@ -10,7 +10,7 @@
       <view class="sheet-close" bindtap="handleClose">✕</view>
     </view>
 
-    <view class="sheet-date-row">
+    <view class="sheet-meta-row">
       <picker
         wx:if="{{dateEditable}}"
         class="sheet-date-trigger"
@@ -22,6 +22,18 @@
         <view class="sheet-date-picker">{{dateLabel}}{{date}}</view>
       </picker>
       <view wx:else class="sheet-date">{{dateLabel}}{{date}}</view>
+
+      <picker
+        wx:if="{{showTime && timeEditable}}"
+        class="sheet-date-trigger"
+        mode="time"
+        value="{{time}}"
+        bindchange="handleTimeChange"
+        disabled="{{loading}}"
+      >
+        <view class="sheet-date-picker">{{timeLabel}}{{time}}</view>
+      </picker>
+      <view wx:elif="{{showTime}}" class="sheet-date">{{timeLabel}}{{time}}</view>
     </view>
 
     <view class="sheet-input-row">

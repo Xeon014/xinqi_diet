@@ -30,8 +30,8 @@ function getBodyMetricTrend(params) {
     `metricKey=${encodeURIComponent(params.metricKey)}`,
     `rangeType=${encodeURIComponent(params.rangeType)}`,
   ];
-  if (params.cursorDate) {
-    query.push(`cursorDate=${encodeURIComponent(params.cursorDate)}`);
+  if (params.cursorMeasuredAt) {
+    query.push(`cursorMeasuredAt=${encodeURIComponent(params.cursorMeasuredAt)}`);
   }
   if (params.cursorId != null) {
     query.push(`cursorId=${encodeURIComponent(params.cursorId)}`);
@@ -49,8 +49,8 @@ function getBodyMetricHistory(params) {
   const query = [
     `metricKey=${encodeURIComponent(params.metricKey)}`,
   ];
-  if (params.cursorDate) {
-    query.push(`cursorDate=${encodeURIComponent(params.cursorDate)}`);
+  if (params.cursorMeasuredAt) {
+    query.push(`cursorMeasuredAt=${encodeURIComponent(params.cursorMeasuredAt)}`);
   }
   if (params.cursorId != null) {
     query.push(`cursorId=${encodeURIComponent(params.cursorId)}`);
@@ -74,6 +74,24 @@ function deleteBodyMetricRecord(id, requestOptions = {}) {
   });
 }
 
+function previewWeightImport(fileName, fileBase64) {
+  return request({
+    url: "/api/body-metrics/import/preview",
+    method: "POST",
+    data: { fileName, fileBase64 },
+    loadingTitle: "解析中...",
+  });
+}
+
+function confirmWeightImport(rows, duplicatePolicy) {
+  return request({
+    url: "/api/body-metrics/import/confirm",
+    method: "POST",
+    data: { rows, duplicatePolicy },
+    loadingTitle: "导入中...",
+  });
+}
+
 module.exports = {
   createBodyMetricRecord,
   getBodyMetricSnapshot,
@@ -81,4 +99,6 @@ module.exports = {
   getBodyMetricTrend,
   getBodyMetricHistory,
   deleteBodyMetricRecord,
+  previewWeightImport,
+  confirmWeightImport,
 };

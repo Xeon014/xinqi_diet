@@ -34,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,20 +71,19 @@ class BodyMetricRecordServiceTest {
     void shouldCreateWeightRecordAndSyncCurrentWeightWhenRecordDateIsToday() {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        AtomicReference<BodyMetricRecord> savedRecord = new AtomicReference<>();
         doAnswer(invocation -> {
             BodyMetricRecord record = invocation.getArgument(0);
             record.setId(100L);
+            savedRecord.set(record);
             return null;
         }).when(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenAnswer(invocation -> Optional.ofNullable(savedRecord.get()));
 
         BodyMetricRecordResponse response = bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("61.50"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("61.50"), BodyMetricUnit.KG, LocalDate.now())
         );
 
         assertThat(response.id()).isEqualTo(100L);
@@ -99,6 +99,14 @@ class BodyMetricRecordServiceTest {
         user.setGoalTargetDate(LocalDate.now().plusDays(21));
         user.setTargetWeight(new BigDecimal("58.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        AtomicReference<BodyMetricRecord> savedRecord = new AtomicReference<>();
+        doAnswer(invocation -> {
+            BodyMetricRecord record = invocation.getArgument(0);
+            savedRecord.set(record);
+            return null;
+        }).when(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenAnswer(invocation -> Optional.ofNullable(savedRecord.get()));
         when(goalPlanningService.preview(any())).thenReturn(new GoalPlanPreviewResponse(
                 1650,
                 -350,
@@ -111,12 +119,7 @@ class BodyMetricRecordServiceTest {
 
         bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("61.20"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("61.20"), BodyMetricUnit.KG, LocalDate.now())
         );
 
         assertThat(user.getCurrentWeight()).isEqualByComparingTo("61.20");
@@ -130,6 +133,14 @@ class BodyMetricRecordServiceTest {
     void shouldCreateWeightRecordWithoutSyncCurrentWeightWhenRecordDateIsHistory() {
         UserProfile user = buildUser(1L, new BigDecimal("62.00"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(
+                        88L,
+                        BodyMetricType.WEIGHT,
+                        new BigDecimal("62.00"),
+                        LocalDate.now(),
+                        LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getDayOfMonth(), 8, 0)
+                )));
         doAnswer(invocation -> {
             BodyMetricRecord record = invocation.getArgument(0);
             record.setId(101L);
@@ -138,12 +149,7 @@ class BodyMetricRecordServiceTest {
 
         bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("60.80"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now().minusDays(1)
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("60.80"), BodyMetricUnit.KG, LocalDate.now().minusDays(1))
         );
 
         assertThat(user.getCurrentWeight()).isEqualByComparingTo("62.00");
@@ -157,21 +163,11 @@ class BodyMetricRecordServiceTest {
 
         bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("61.50"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("61.50"), BodyMetricUnit.KG, LocalDate.now())
         );
         bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("61.20"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("61.20"), BodyMetricUnit.KG, LocalDate.now())
         );
 
         verify(bodyMetricRecordRepository, times(2)).save(any(BodyMetricRecord.class));
@@ -184,12 +180,7 @@ class BodyMetricRecordServiceTest {
 
         assertThatThrownBy(() -> bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WEIGHT,
-                        new BigDecimal("61.50"),
-                        BodyMetricUnit.CM,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WEIGHT, new BigDecimal("61.50"), BodyMetricUnit.CM, LocalDate.now())
         ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight metric must use KG");
@@ -202,12 +193,7 @@ class BodyMetricRecordServiceTest {
 
         bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WAIST_CIRCUMFERENCE,
-                        new BigDecimal("75.20"),
-                        BodyMetricUnit.CM,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WAIST_CIRCUMFERENCE, new BigDecimal("75.20"), BodyMetricUnit.CM, LocalDate.now())
         );
 
         verify(bodyMetricRecordRepository).save(any(BodyMetricRecord.class));
@@ -221,12 +207,7 @@ class BodyMetricRecordServiceTest {
 
         assertThatThrownBy(() -> bodyMetricRecordCommandService.create(
                 1L,
-                new CreateBodyMetricRecordRequest(
-                        BodyMetricType.WAIST_CIRCUMFERENCE,
-                        new BigDecimal("75.20"),
-                        BodyMetricUnit.KG,
-                        LocalDate.now()
-                )
+                createRequest(BodyMetricType.WAIST_CIRCUMFERENCE, new BigDecimal("75.20"), BodyMetricUnit.KG, LocalDate.now())
         ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("circumference metric must use CM");
@@ -328,11 +309,12 @@ class BodyMetricRecordServiceTest {
         );
 
         assertThat(response.hasMore()).isTrue();
-        assertThat(response.nextCursorDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.nextCursorMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 15, 7, 30));
         assertThat(response.nextCursorId()).isEqualTo(14L);
         assertThat(response.records()).hasSize(2);
         assertThat(response.records().get(0).id()).isEqualTo(15L);
         assertThat(response.records().get(0).recordDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(response.records().get(0).measuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 15, 20, 10));
         assertThat(response.records().get(0).createdAt()).isEqualTo(LocalDateTime.of(2026, 3, 15, 20, 10));
         assertThat(response.records().get(1).id()).isEqualTo(14L);
         assertThat(response.records().get(1).recordDate()).isEqualTo(LocalDate.of(2026, 3, 15));
@@ -367,7 +349,7 @@ class BodyMetricRecordServiceTest {
         );
 
         assertThat(response.hasMore()).isTrue();
-        assertThat(response.nextCursorDate()).isEqualTo(LocalDate.of(2026, 3, 14));
+        assertThat(response.nextCursorMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 14, 8, 0));
         assertThat(response.nextCursorId()).isEqualTo(14L);
         assertThat(response.points()).hasSize(2);
         assertThat(response.points().get(0).date()).isEqualTo(LocalDate.of(2026, 3, 14));
@@ -418,12 +400,12 @@ class BodyMetricRecordServiceTest {
                 1L,
                 BodyMetricTrendMetricKey.WEIGHT,
                 MetricTrendRangeType.ALL,
-                LocalDate.of(2026, 3, 10),
+                LocalDateTime.of(2026, 3, 10, 8, 0),
                 null,
                 120
         ))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("cursorDate and cursorId must be provided together");
+                .hasMessage("cursorMeasuredAt and cursorId must be provided together");
     }
 
     @Test
@@ -466,6 +448,15 @@ class BodyMetricRecordServiceTest {
         return user;
     }
 
+    private CreateBodyMetricRecordRequest createRequest(
+            BodyMetricType metricType,
+            BigDecimal metricValue,
+            BodyMetricUnit unit,
+            LocalDate recordDate
+    ) {
+        return new CreateBodyMetricRecordRequest(metricType, metricValue, unit, recordDate, null);
+    }
+
     private BodyMetricRecord buildRecord(Long id, BodyMetricType metricType, BigDecimal metricValue, LocalDate recordDate) {
         return buildRecord(id, metricType, metricValue, recordDate, LocalDateTime.of(recordDate.getYear(), recordDate.getMonth(), recordDate.getDayOfMonth(), 8, 0));
     }
@@ -482,6 +473,7 @@ class BodyMetricRecordServiceTest {
         record.setMetricType(metricType);
         record.setMetricValue(metricValue);
         record.setRecordDate(recordDate);
+        record.setMeasuredAt(createdAt);
         record.setCreatedAt(createdAt);
         record.setUnit(metricType == BodyMetricType.WEIGHT ? BodyMetricUnit.KG : BodyMetricUnit.CM);
         return record;

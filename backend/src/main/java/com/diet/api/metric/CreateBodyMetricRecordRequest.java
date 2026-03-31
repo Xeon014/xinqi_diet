@@ -7,6 +7,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "新增身体指标记录请求")
 public record CreateBodyMetricRecordRequest(
@@ -25,6 +26,9 @@ public record CreateBodyMetricRecordRequest(
 
         @NotNull(message = "recordDate must not be null")
         @Schema(description = "记录日期", example = "2026-03-12")
-        LocalDate recordDate
+        LocalDate recordDate,
+
+        @Schema(description = "业务测量时间，精确到分钟，未传时按当前时间补齐", example = "2026-03-12T07:35:00")
+        LocalDateTime measuredAt
 ) {
 }

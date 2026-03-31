@@ -81,8 +81,10 @@
   margin-top: 12rpx;
 }
 
-.sheet-date-row {
+.sheet-meta-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .sheet-date-trigger {

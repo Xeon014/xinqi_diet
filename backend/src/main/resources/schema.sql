@@ -111,9 +111,11 @@ CREATE TABLE IF NOT EXISTS body_metric_record (
     metric_value DECIMAL(10, 2) NOT NULL COMMENT '指标数值',
     unit VARCHAR(20) NOT NULL COMMENT '指标单位',
     record_date DATE NOT NULL COMMENT '记录日期',
+    measured_at DATETIME NOT NULL COMMENT '业务测量时间',
     created_at DATETIME NOT NULL COMMENT '创建时间',
     updated_at DATETIME NOT NULL COMMENT '更新时间',
-    KEY idx_body_metric_user_type_date (user_id, metric_type, record_date, id),
+    KEY idx_body_metric_user_type_measured (user_id, metric_type, measured_at, id),
+    KEY idx_body_metric_user_type_date_measured (user_id, metric_type, record_date, measured_at, id),
     KEY idx_body_metric_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='身体指标历史记录表';
 

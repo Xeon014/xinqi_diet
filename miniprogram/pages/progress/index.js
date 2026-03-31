@@ -1,5 +1,5 @@
 const { createBodyMetricRecord, getBodyMetricSnapshot, getBodyMetricTrend } = require("../../services/body-metric");
-const { getToday } = require("../../utils/date");
+const { combineDateAndTime, extractTimePart, getCurrentMinute, getToday } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const RANGE_OPTIONS = [
@@ -32,6 +32,9 @@ const CHART_HORIZONTAL_PADDING_RPX = 44;
 const CHART_TOP_PADDING_RPX = 36;
 const CHART_DRAW_HEIGHT_RPX = 248;
 const CHART_DATE_ROW_TOP_RPX = 330;
+const POINT_WRAP_HALF_HEIGHT_RPX = 54;
+const VALUE_LABEL_TOP_OFFSET_RPX = 40;
+const VALUE_LABEL_SAFE_GAP_RPX = 8;
 
 function toNumber(value) {
   const number = Number(value);
@@ -103,6 +106,7 @@ function normalizeSnapshot(items) {
       dateLabel: "--",
       rawValue: null,
       rawDate: "",
+      rawMeasuredAt: "",
     };
   });
 
@@ -117,6 +121,7 @@ function normalizeSnapshot(items) {
       dateLabel: hasValue ? (item.latestRecordDate || "--") : "--",
       rawValue: hasValue ? Number(item.latestValue) : null,
       rawDate: item.latestRecordDate || "",
+      rawMeasuredAt: item.latestMeasuredAt || "",
     };
   });
 
@@ -199,6 +204,7 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
     const isLatest = index === points.length - 1;
     const isSelected = item.date === selectedPointDate;
     const shouldShowDate = index === 0 || isLatest || index % labelStep === 0;
+    const valueBelow = y <= (POINT_WRAP_HALF_HEIGHT_RPX + VALUE_LABEL_TOP_OFFSET_RPX + VALUE_LABEL_SAFE_GAP_RPX);
     return {
       index,
       x,
@@ -208,6 +214,7 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
       displayValue: toOneDecimal(item.value),
       isLatest,
       isSelected,
+      valueBelow,
       showDateLabel: shouldShowDate,
       pointStyle: `left:${x}rpx;top:${y}rpx;`,
       dateStyle: `left:${x}rpx;top:${CHART_DATE_ROW_TOP_RPX}rpx;`,
@@ -250,9 +257,15 @@ function buildMetricCards(snapshotMap, selectedMetricKey) {
       actionType = "record";
     }
 
-    const metaLabel = metric.key === "BMI"
+    let metaLabel = metric.key === "BMI"
       ? resolveBmiEvaluation(snapshot.rawValue)
       : (snapshot.dateLabel || "--");
+    if (metric.key === "WEIGHT" && hasValue) {
+      const timeText = extractTimePart(snapshot.rawMeasuredAt);
+      metaLabel = timeText
+        ? `${snapshot.dateLabel || "--"} ${timeText}`
+        : (snapshot.dateLabel || "--");
+    }
 
     return {
       ...metric,
@@ -277,6 +290,26 @@ function buildLatestText(snapshotMap, metricKey) {
   return `${metric.label} 待记录`;
 }
 
+function buildRangeText(points, rangeType) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return "";
+  }
+  if (rangeType !== "YEAR" && rangeType !== "ALL") {
+    return "";
+  }
+  const startDate = points[0] && points[0].date ? points[0].date : "";
+  const endDate = points[points.length - 1] && points[points.length - 1].date ? points[points.length - 1].date : "";
+  if (!startDate || !endDate) {
+    return "";
+  }
+  return startDate === endDate ? `范围 ${startDate}` : `范围 ${startDate} - ${endDate}`;
+}
+
+function buildLatestMetaText(snapshotMap, metricKey, rangeType, trendPoints) {
+  const rangeText = buildRangeText(trendPoints, rangeType);
+  return rangeText;
+}
+
 function buildMetricHistoryUrl(metricKey) {
   const metric = METRIC_MAP[metricKey] || METRIC_MAP[DEFAULT_METRIC_KEY];
   return `/pages/metric-history/index?metricKey=${encodeURIComponent(metric.key)}&metricLabel=${encodeURIComponent(metric.label)}&unit=${encodeURIComponent(metric.unit || "")}`;
@@ -289,6 +322,7 @@ Page({
     selectedRange: DEFAULT_RANGE_KEY,
     selectedMetric: DEFAULT_METRIC_KEY,
     currentLatestText: "体重 待记录",
+    currentLatestMetaText: "",
     currentMetricCanCreate: true,
     trendLoading: false,
     snapshotLoading: false,
@@ -301,7 +335,7 @@ Page({
     latestPointViewId: "",
     selectedPointDate: "",
     hasMore: false,
-    nextCursorDate: "",
+    nextCursorMeasuredAt: "",
     nextCursorId: null,
     snapshotMap: {},
     metricCards: buildMetricCards({}, DEFAULT_METRIC_KEY),
@@ -312,6 +346,8 @@ Page({
     metricEditorUnit: "",
     metricEditorValue: "",
     metricEditorDate: getToday(),
+    metricEditorTime: getCurrentMinute(),
+    metricEditorShowTime: true,
   },
 
   onShow() {
@@ -328,7 +364,7 @@ Page({
       snapshotLoading: true,
       selectedPointDate: "",
       hasMore: false,
-      nextCursorDate: "",
+      nextCursorMeasuredAt: "",
       nextCursorId: null,
     });
 
@@ -363,7 +399,7 @@ Page({
     if (this.data.selectedRange === "ALL") {
       requestData.pageSize = ALL_PAGE_SIZE;
       if (append) {
-        requestData.cursorDate = this.data.nextCursorDate;
+        requestData.cursorMeasuredAt = this.data.nextCursorMeasuredAt;
         requestData.cursorId = this.data.nextCursorId;
       }
     }
@@ -375,6 +411,12 @@ Page({
       snapshotMap,
       metricCards: buildMetricCards(snapshotMap, this.data.selectedMetric),
       currentLatestText: buildLatestText(snapshotMap, this.data.selectedMetric),
+      currentLatestMetaText: buildLatestMetaText(
+        snapshotMap,
+        this.data.selectedMetric,
+        this.data.selectedRange,
+        this.data.trendPointsRaw
+      ),
       currentMetricCanCreate: Boolean((METRIC_MAP[this.data.selectedMetric] || {}).canCreate),
     });
   },
@@ -399,8 +441,14 @@ Page({
       latestPointViewId: chartModel.latestPointViewId,
       selectedPointDate: chartModel.selectedPointDate,
       hasMore: this.data.selectedRange === "ALL" ? Boolean(response && response.hasMore) : false,
-      nextCursorDate: response && response.nextCursorDate ? response.nextCursorDate : "",
+      nextCursorMeasuredAt: response && response.nextCursorMeasuredAt ? response.nextCursorMeasuredAt : "",
       nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
+      currentLatestMetaText: buildLatestMetaText(
+        this.data.snapshotMap,
+        this.data.selectedMetric,
+        this.data.selectedRange,
+        mergedPoints
+      ),
     });
   },
 
@@ -408,6 +456,12 @@ Page({
     this.setData({
       metricCards: buildMetricCards(this.data.snapshotMap, this.data.selectedMetric),
       currentLatestText: buildLatestText(this.data.snapshotMap, this.data.selectedMetric),
+      currentLatestMetaText: buildLatestMetaText(
+        this.data.snapshotMap,
+        this.data.selectedMetric,
+        this.data.selectedRange,
+        this.data.trendPointsRaw
+      ),
       currentMetricCanCreate: Boolean((METRIC_MAP[this.data.selectedMetric] || {}).canCreate),
     });
   },
@@ -419,7 +473,7 @@ Page({
     this.setData({
       selectedMetric: metricKey,
       hasMore: false,
-      nextCursorDate: "",
+      nextCursorMeasuredAt: "",
       nextCursorId: null,
     }, () => {
       this.refreshMetricHeader();
@@ -436,7 +490,7 @@ Page({
       trendLoading: true,
       selectedPointDate: "",
       hasMore: false,
-      nextCursorDate: "",
+      nextCursorMeasuredAt: "",
       nextCursorId: null,
     });
 
@@ -463,7 +517,7 @@ Page({
       trendLoading: true,
       selectedPointDate: "",
       hasMore: false,
-      nextCursorDate: "",
+      nextCursorMeasuredAt: "",
       nextCursorId: null,
     }, () => {
       this.refreshMetricHeader();
@@ -516,6 +570,8 @@ Page({
       metricEditorUnit: metric.unit,
       metricEditorValue: "",
       metricEditorDate: getToday(),
+      metricEditorTime: getCurrentMinute(),
+      metricEditorShowTime: metric.key === "WEIGHT",
     });
   },
 
@@ -539,6 +595,12 @@ Page({
     });
   },
 
+  handleMetricEditorTimeChange(event) {
+    this.setData({
+      metricEditorTime: event.detail.value,
+    });
+  },
+
   handleSubmitMetricEditor() {
     if (this.data.metricEditorLoading) {
       return;
@@ -558,17 +620,22 @@ Page({
     }
 
     this.setData({ metricEditorLoading: true });
-    createBodyMetricRecord({
+    const payload = {
       metricType: metric.key,
       metricValue,
       unit: metric.saveUnit,
       recordDate: this.data.metricEditorDate,
-    })
+    };
+    if (metric.key === "WEIGHT") {
+      payload.measuredAt = combineDateAndTime(this.data.metricEditorDate, this.data.metricEditorTime);
+    }
+    createBodyMetricRecord(payload)
       .then(() => {
         wx.showToast({ title: "已保存", icon: "success" });
         this.setData({
           metricEditorVisible: false,
           metricEditorValue: "",
+          metricEditorTime: getCurrentMinute(),
         });
         this.loadPageData();
       })

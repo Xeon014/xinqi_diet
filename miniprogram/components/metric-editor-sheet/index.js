@@ -24,6 +24,22 @@ Component({
       type: String,
       value: "日期：",
     },
+    showTime: {
+      type: Boolean,
+      value: false,
+    },
+    time: {
+      type: String,
+      value: "",
+    },
+    timeEditable: {
+      type: Boolean,
+      value: true,
+    },
+    timeLabel: {
+      type: String,
+      value: "时间：",
+    },
     value: {
       type: String,
       value: "",
@@ -89,6 +105,10 @@ Component({
 
     handleDateChange(event) {
       this.triggerEvent("datechange", event.detail);
+    },
+
+    handleTimeChange(event) {
+      this.triggerEvent("timechange", event.detail);
     },
 
     handleSubmit() {

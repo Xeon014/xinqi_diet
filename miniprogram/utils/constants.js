@@ -90,13 +90,11 @@ const QUANTITY_UNIT_LABELS = {
   ML: "ml",
 };
 const RECOMMENDED_MEAL_WINDOWS = [
-  { startMinute: 0, endMinute: 419, mealType: "LATE_NIGHT_SNACK" },
-  { startMinute: 420, endMinute: 569, mealType: "BREAKFAST" },
-  { startMinute: 570, endMinute: 689, mealType: "MORNING_SNACK" },
-  { startMinute: 690, endMinute: 869, mealType: "LUNCH" },
-  { startMinute: 870, endMinute: 1049, mealType: "AFTERNOON_SNACK" },
-  { startMinute: 1050, endMinute: 1259, mealType: "DINNER" },
+  { startMinute: 300, endMinute: 659, mealType: "BREAKFAST" },
+  { startMinute: 660, endMinute: 959, mealType: "LUNCH" },
+  { startMinute: 960, endMinute: 1259, mealType: "DINNER" },
   { startMinute: 1260, endMinute: 1439, mealType: "LATE_NIGHT_SNACK" },
+  { startMinute: 0, endMinute: 299, mealType: "LATE_NIGHT_SNACK" },
 ];
 
 function getRecommendedMealType(date = new Date()) {

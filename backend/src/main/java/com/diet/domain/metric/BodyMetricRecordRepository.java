@@ -1,6 +1,7 @@
 package com.diet.domain.metric;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ public interface BodyMetricRecordRepository {
     List<BodyMetricRecord> findDailyLatestByMetricTypeWithCursor(
             Long userId,
             BodyMetricType metricType,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             int limit
     );
@@ -30,7 +31,7 @@ public interface BodyMetricRecordRepository {
     List<BodyMetricRecord> findByMetricTypeWithCursor(
             Long userId,
             BodyMetricType metricType,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             int limit
     );
@@ -38,4 +39,12 @@ public interface BodyMetricRecordRepository {
     Optional<BodyMetricRecord> findByIdAndUserId(Long id, Long userId);
 
     void deleteById(Long id);
+
+    void batchInsert(List<BodyMetricRecord> records);
+
+    List<BodyMetricRecord> findByUserIdAndMetricTypeAndMeasuredAtIn(
+            Long userId,
+            BodyMetricType metricType,
+            List<LocalDateTime> measuredAts
+    );
 }

@@ -14,6 +14,10 @@ const TOOL_ENTRIES = [
     key: "custom-exercise",
     title: "自定义运动",
   },
+  {
+    key: "weight-import",
+    title: "导入体重数据",
+  },
 ];
 
 function toInteger(value) {
@@ -98,6 +102,10 @@ Page({
     }
     if (key === "custom-exercise") {
       wx.navigateTo({ url: "/pages/custom-exercise/index" });
+      return;
+    }
+    if (key === "weight-import") {
+      wx.navigateTo({ url: "/pages/weight-import/index" });
     }
   },
 });
