@@ -8,6 +8,12 @@ public record WeightImportPreviewResponse(
         @Schema(description = "文件名")
         String fileName,
 
+        @Schema(description = "检测到的文件类型", example = "CSV")
+        String detectedFileType,
+
+        @Schema(description = "检测到的工作表名称，CSV 为 null")
+        String detectedSheetName,
+
         @Schema(description = "CSV 数据行总数（不含表头）")
         int totalRows,
 

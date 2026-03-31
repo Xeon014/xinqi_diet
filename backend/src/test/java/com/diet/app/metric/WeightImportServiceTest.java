@@ -23,9 +23,16 @@ import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
 import com.diet.app.user.GoalPlanningService;
 import java.math.BigDecimal;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,6 +154,16 @@ class WeightImportServiceTest {
                 new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+    }
+
+    @Test
+    void shouldParseSlashDateTimeToDate() {
+        String csv = "date,weight\n2026/3/28 09:39,70.5";
+        WeightImportPreviewResponse response = weightImportService.preview(1L,
+                new WeightImportPreviewRequest("test.csv", null, csv));
+
+        assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
+        assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
     }
 
     @Test
@@ -330,6 +347,101 @@ class WeightImportServiceTest {
                 new WeightImportPreviewRequest("test.csv", null, csv)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("未闭合的引号");
+    }
+
+    @Test
+    void shouldPreviewXlsxWithChineseHeaders() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("体重记录");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重(kg)");
+            sheet.createRow(1).createCell(0).setCellValue("2025-03-31");
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("test.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedFileType()).isEqualTo("XLSX");
+            assertThat(response.detectedSheetName()).isEqualTo("体重记录");
+            assertThat(response.parsedRows()).isEqualTo(1);
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+        }
+    }
+
+    @Test
+    void shouldUseFirstValidSheetInXlsx() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet introSheet = workbook.createSheet("说明");
+            introSheet.createRow(0).createCell(0).setCellValue("导出说明");
+
+            Sheet dataSheet = workbook.createSheet("体重数据");
+            dataSheet.createRow(0).createCell(0).setCellValue("日期");
+            dataSheet.getRow(0).createCell(1).setCellValue("体重(lbs)");
+            dataSheet.createRow(1).createCell(0).setCellValue("2025-01-01");
+            dataSheet.getRow(1).createCell(1).setCellValue(154.0);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("multi-sheet.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedFileType()).isEqualTo("XLSX");
+            assertThat(response.detectedSheetName()).isEqualTo("体重数据");
+            assertThat(response.detectedUnit()).isEqualTo("lbs");
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("69.85");
+        }
+    }
+
+    @Test
+    void shouldParseExcelDateCell() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            CreationHelper creationHelper = workbook.getCreationHelper();
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(creationHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+
+            Sheet sheet = workbook.createSheet("原生日期");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重");
+            sheet.createRow(1).createCell(0).setCellValue(java.sql.Date.valueOf(LocalDate.of(2025, 3, 31)));
+            sheet.getRow(1).getCell(0).setCellStyle(dateStyle);
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("native-date.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedDateFormat()).isEqualTo("Excel 日期单元格");
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
+        }
+    }
+
+    @Test
+    void shouldParseXlsxTextDateTimeCell() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("文本日期时间");
+            sheet.createRow(0).createCell(0).setCellValue("日期");
+            sheet.getRow(0).createCell(1).setCellValue("体重");
+            sheet.createRow(1).createCell(0).setCellValue("2026/3/28 09:39");
+            sheet.getRow(1).createCell(1).setCellValue(70.5);
+
+            WeightImportPreviewResponse response = weightImportService.preview(1L,
+                    new WeightImportPreviewRequest("datetime-text.xlsx", toBase64(workbook), null));
+
+            assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
+            assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
+            assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
+        }
+    }
+
+    @Test
+    void shouldRejectLegacyXlsFile() {
+        byte[] xlsHeader = new byte[] {
+                (byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
+                (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1
+        };
+
+        assertThatThrownBy(() -> weightImportService.preview(1L,
+                new WeightImportPreviewRequest("legacy.xls", Base64.getEncoder().encodeToString(xlsHeader), null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("暂不支持 xls 文件");
     }
 
     // --- Confirm: SKIP Policy ---
@@ -518,5 +630,12 @@ class WeightImportServiceTest {
         record.setUnit(BodyMetricUnit.KG);
         record.setRecordDate(date);
         return record;
+    }
+
+    private String toBase64(Workbook workbook) throws Exception {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            workbook.write(outputStream);
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        }
     }
 }

@@ -7,7 +7,12 @@ Page({
     fileName: "",
     parsing: false,
     preview: null,
+    displayRows: [],
     checkedRows: [],
+    showOnlyErrors: false,
+    selectedCount: 0,
+    selectableCount: 0,
+    errorCount: 0,
     duplicatePolicy: "SKIP",
     importing: false,
     result: null,
@@ -17,7 +22,7 @@ Page({
     wx.chooseMessageFile({
       count: 1,
       type: "file",
-      extension: ["csv", "txt"],
+      extension: ["csv", "txt", "xlsx"],
       success: (res) => {
         const file = res.tempFiles[0];
         const filePath = file.path;
@@ -36,11 +41,12 @@ Page({
               const checkedRows = preview.rows
                 ? preview.rows.map((row) => row.error == null)
                 : [];
-              this.setData({
+              this.applyPreviewState({
                 step: "preview",
                 parsing: false,
                 preview,
                 checkedRows,
+                showOnlyErrors: false,
               });
             })
             .catch((error) => {
@@ -55,10 +61,16 @@ Page({
   },
 
   handleRowCheck(event) {
-    const index = event.currentTarget.dataset.index;
+    const index = Number(event.currentTarget.dataset.originalIndex);
+    const previewRow = this.data.preview && this.data.preview.rows
+      ? this.data.preview.rows[index]
+      : null;
+    if (!previewRow || previewRow.error) {
+      return;
+    }
     const checkedRows = this.data.checkedRows.slice();
     checkedRows[index] = !checkedRows[index];
-    this.setData({ checkedRows });
+    this.applyPreviewState({ checkedRows });
   },
 
   handlePolicyChange(event) {
@@ -66,17 +78,29 @@ Page({
     this.setData({ duplicatePolicy: policy });
   },
 
+  handleSelectAllValid() {
+    const previewRows = this.data.preview && this.data.preview.rows
+      ? this.data.preview.rows
+      : [];
+    const checkedRows = previewRows.map((row) => row.error == null);
+    this.applyPreviewState({ checkedRows });
+  },
+
+  handleClearAll() {
+    const previewRows = this.data.preview && this.data.preview.rows
+      ? this.data.preview.rows
+      : [];
+    const checkedRows = previewRows.map(() => false);
+    this.applyPreviewState({ checkedRows });
+  },
+
+  handleToggleErrorFilter() {
+    this.applyPreviewState({ showOnlyErrors: !this.data.showOnlyErrors });
+  },
+
   handleConfirmImport() {
-    const { preview, checkedRows, duplicatePolicy } = this.data;
-    const validRows = [];
-    for (let i = 0; i < preview.rows.length; i++) {
-      if (checkedRows[i] && preview.rows[i].parsedDate && preview.rows[i].parsedWeightKg != null) {
-        validRows.push({
-          date: preview.rows[i].parsedDate,
-          weightKg: preview.rows[i].parsedWeightKg,
-        });
-      }
-    }
+    const { duplicatePolicy } = this.data;
+    const validRows = this.getSelectedRows();
     if (validRows.length === 0) {
       wx.showToast({ title: "没有可导入的数据", icon: "none" });
       return;
@@ -98,7 +122,12 @@ Page({
       fileName: "",
       parsing: false,
       preview: null,
+      displayRows: [],
       checkedRows: [],
+      showOnlyErrors: false,
+      selectedCount: 0,
+      selectableCount: 0,
+      errorCount: 0,
       duplicatePolicy: "SKIP",
       importing: false,
       result: null,
@@ -107,5 +136,74 @@ Page({
 
   handleViewHistory() {
     wx.navigateTo({ url: "/pages/metric-history/index?metricKey=WEIGHT" });
+  },
+
+  getSelectedRows() {
+    const { preview, checkedRows } = this.data;
+    if (!preview || !preview.rows) {
+      return [];
+    }
+
+    const validRows = [];
+    for (let i = 0; i < preview.rows.length; i++) {
+      if (checkedRows[i] && preview.rows[i].parsedDate && preview.rows[i].parsedWeightKg != null) {
+        validRows.push({
+          date: preview.rows[i].parsedDate,
+          weightKg: preview.rows[i].parsedWeightKg,
+        });
+      }
+    }
+    return validRows;
+  },
+
+  applyPreviewState(nextState = {}) {
+    const preview = Object.prototype.hasOwnProperty.call(nextState, "preview")
+      ? nextState.preview
+      : this.data.preview;
+    const checkedRows = Object.prototype.hasOwnProperty.call(nextState, "checkedRows")
+      ? nextState.checkedRows
+      : this.data.checkedRows;
+    const showOnlyErrors = Object.prototype.hasOwnProperty.call(nextState, "showOnlyErrors")
+      ? nextState.showOnlyErrors
+      : this.data.showOnlyErrors;
+
+    if (!preview || !preview.rows) {
+      this.setData(nextState);
+      return;
+    }
+
+    const displayRows = [];
+    let selectedCount = 0;
+    let selectableCount = 0;
+    let errorCount = 0;
+
+    preview.rows.forEach((row, index) => {
+      if (row.error) {
+        errorCount++;
+      } else {
+        selectableCount++;
+        if (checkedRows[index]) {
+          selectedCount++;
+        }
+      }
+
+      if (!showOnlyErrors || row.error) {
+        displayRows.push({
+          ...row,
+          originalIndex: index,
+        });
+      }
+    });
+
+    this.setData({
+      ...nextState,
+      preview,
+      checkedRows,
+      showOnlyErrors,
+      displayRows,
+      selectedCount,
+      selectableCount,
+      errorCount,
+    });
   },
 });

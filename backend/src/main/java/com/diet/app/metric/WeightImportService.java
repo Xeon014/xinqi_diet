@@ -7,6 +7,7 @@ import com.diet.api.metric.WeightImportPreviewRequest;
 import com.diet.api.metric.WeightImportPreviewResponse;
 import com.diet.api.metric.WeightImportPreviewRow;
 import com.diet.api.metric.WeightImportResultResponse;
+import com.diet.api.user.GoalPlanPreviewResponse;
 import com.diet.app.user.GoalPlanningService;
 import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricRecordRepository;
@@ -15,21 +16,32 @@ import com.diet.domain.metric.BodyMetricUnit;
 import com.diet.domain.user.GoalCalorieStrategy;
 import com.diet.domain.user.UserProfile;
 import com.diet.domain.user.UserProfileRepository;
-import com.diet.api.user.GoalPlanPreviewResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,19 +54,7 @@ public class WeightImportService {
     private static final BigDecimal LBS_TO_KG_FACTOR = new BigDecimal("0.45359237");
     private static final BigDecimal JIN_TO_KG_FACTOR = new BigDecimal("2");
     private static final int MAX_IMPORT_ROWS = 1000;
-
-    private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
-            DateTimeFormatter.ISO_LOCAL_DATE,
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("yyyy/M/d"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
-            DateTimeFormatter.ofPattern("M/d/yyyy"),
-            DateTimeFormatter.ofPattern("dd.MM.yyyy"),
-            DateTimeFormatter.ofPattern("d.M.yyyy"),
-            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-            DateTimeFormatter.ofPattern("d/M/yyyy")
-    );
+    private static final int SHEET_HEADER_SCAN_LIMIT = 10;
 
     private static final List<String> DATE_KEYWORDS = List.of(
             "date", "datetime", "start_time", "时间", "日期", "记录时间", "record_date"
@@ -79,109 +79,16 @@ public class WeightImportService {
     }
 
     public WeightImportPreviewResponse preview(Long userId, WeightImportPreviewRequest request) {
-        String content = resolveFileContent(request);
-        content = stripUtf8Bom(content);
-        if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("文件内容为空");
+        UploadedFile uploadedFile = resolveUploadedFile(request);
+        if (uploadedFile.bytes() == null) {
+            return parseCsvPreview(uploadedFile.fileName(), uploadedFile.textContent());
         }
 
-        String headerLine = findFirstNonEmptyLine(content);
-        if (headerLine == null) {
-            throw new IllegalArgumentException("文件内容为空");
-        }
-
-        char delimiter = detectDelimiter(headerLine);
-        String delimiterName = delimiterName(delimiter);
-        List<List<String>> records = parseCsvRecords(content, delimiter);
-        int headerIndex = findFirstNonEmptyRecordIndex(records);
-        if (headerIndex < 0) {
-            throw new IllegalArgumentException("文件内容为空");
-        }
-        int dataRowCount = countNonEmptyRecords(records, headerIndex + 1);
-        if (dataRowCount > MAX_IMPORT_ROWS) {
-            throw new IllegalArgumentException("单次最多导入 1000 行，请拆分文件后重试");
-        }
-
-        List<String> headers = sanitizeRecord(records.get(headerIndex));
-        int dateCol = findColumn(headers, DATE_KEYWORDS);
-        int weightCol = findColumn(headers, WEIGHT_KEYWORDS);
-
-        if (dateCol < 0) {
-            throw new IllegalArgumentException("未找到日期列，请确保表头中包含 date、时间 或 日期 等关键词");
-        }
-        if (weightCol < 0) {
-            throw new IllegalArgumentException("未找到体重列，请确保表头中包含 weight、体重 或 body_mass 等关键词");
-        }
-
-        // Detect unit from weight column name
-        String weightHeader = headers.get(weightCol).trim().toLowerCase();
-        String detectedUnit = detectUnit(weightHeader);
-
-        String detectedDateFormat = null;
-        List<WeightImportPreviewRow> previewRows = new ArrayList<>();
-        int totalRows = 0;
-        int parsedRows = 0;
-        int skippedRows = 0;
-
-        for (int i = headerIndex + 1; i < records.size(); i++) {
-            List<String> fields = sanitizeRecord(records.get(i));
-            if (isBlankRecord(fields)) {
-                continue;
-            }
-            totalRows++;
-
-            String rawDate = fields.size() > dateCol ? fields.get(dateCol).trim() : "";
-            String rawWeight = fields.size() > weightCol ? fields.get(weightCol).trim() : "";
-
-            if (rawDate.isEmpty() && rawWeight.isEmpty()) {
-                skippedRows++;
-                previewRows.add(new WeightImportPreviewRow(rawDate, rawWeight, null, null, "空行"));
-                continue;
-            }
-
-            LocalDate parsedDate = parseDate(rawDate);
-            if (parsedDate != null && detectedDateFormat == null) {
-                detectedDateFormat = detectDateFormat(rawDate);
-            }
-
-            BigDecimal rawWeightValue = parseWeightValue(rawWeight);
-            if (parsedDate == null || rawWeightValue == null) {
-                skippedRows++;
-                String error = parsedDate == null ? "日期格式无法识别: " + rawDate : "体重数值无效: " + rawWeight;
-                previewRows.add(new WeightImportPreviewRow(rawDate, rawWeight, null, null, error));
-                continue;
-            }
-
-            // Convert to kg
-            BigDecimal weightKg = convertToKg(rawWeightValue, detectedUnit);
-
-            if (weightKg.compareTo(MIN_WEIGHT_KG) < 0 || weightKg.compareTo(MAX_WEIGHT_KG) > 0) {
-                skippedRows++;
-                previewRows.add(new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg,
-                        "体重超出合理范围 (" + MIN_WEIGHT_KG + " - " + MAX_WEIGHT_KG + " kg)"));
-                continue;
-            }
-
-            if (parsedDate.isAfter(LocalDate.now())) {
-                skippedRows++;
-                previewRows.add(new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, "未来日期"));
-                continue;
-            }
-
-            parsedRows++;
-            previewRows.add(new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, null));
-        }
-
-        return new WeightImportPreviewResponse(
-                request.fileName(),
-                totalRows,
-                parsedRows,
-                skippedRows,
-                delimiterName,
-                detectedDateFormat,
-                detectedUnit,
-                previewRows
-        );
+        ImportFileType fileType = detectFileType(uploadedFile.bytes(), uploadedFile.fileName());
+        return switch (fileType) {
+            case CSV -> parseCsvPreview(uploadedFile.fileName(), decodeBytesToString(uploadedFile.bytes()));
+            case XLSX -> parseXlsxPreview(uploadedFile.fileName(), uploadedFile.bytes());
+        };
     }
 
     public WeightImportResultResponse confirm(Long userId, WeightImportConfirmRequest request) {
@@ -251,6 +158,234 @@ public class WeightImportService {
         );
     }
 
+    private WeightImportPreviewResponse parseCsvPreview(String fileName, String content) {
+        String normalizedContent = stripBom(content);
+        if (normalizedContent == null || normalizedContent.trim().isEmpty()) {
+            throw new IllegalArgumentException("文件内容为空");
+        }
+
+        String headerLine = findFirstNonEmptyLine(normalizedContent);
+        if (headerLine == null) {
+            throw new IllegalArgumentException("文件内容为空");
+        }
+
+        char delimiter = detectDelimiter(headerLine);
+        String delimiterName = delimiterName(delimiter);
+        List<List<String>> records = parseCsvRecords(normalizedContent, delimiter);
+        int headerIndex = findFirstNonEmptyRecordIndex(records);
+        if (headerIndex < 0) {
+            throw new IllegalArgumentException("文件内容为空");
+        }
+
+        int dataRowCount = countNonEmptyRecords(records, headerIndex + 1);
+        ensureRowLimit(dataRowCount);
+
+        List<String> headers = sanitizeRecord(records.get(headerIndex));
+        int dateCol = findColumn(headers, DATE_KEYWORDS);
+        int weightCol = findColumn(headers, WEIGHT_KEYWORDS);
+
+        if (dateCol < 0) {
+            throw new IllegalArgumentException("未找到日期列，请确保表头中包含 date、时间 或 日期 等关键词");
+        }
+        if (weightCol < 0) {
+            throw new IllegalArgumentException("未找到体重列，请确保表头中包含 weight、体重 或 body_mass 等关键词");
+        }
+
+        String detectedUnit = detectUnit(headers.get(weightCol));
+        PreviewStats stats = buildPreviewStats(records, headerIndex + 1, dateCol, weightCol, detectedUnit);
+        return new WeightImportPreviewResponse(
+                fileName,
+                ImportFileType.CSV.name(),
+                null,
+                stats.totalRows(),
+                stats.parsedRows(),
+                stats.skippedRows(),
+                delimiterName,
+                stats.detectedDateFormat(),
+                detectedUnit,
+                stats.rows()
+        );
+    }
+
+    private WeightImportPreviewResponse parseXlsxPreview(String fileName, byte[] bytes) {
+        try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
+            DataFormatter formatter = new DataFormatter(Locale.getDefault());
+            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+            SheetMatch sheetMatch = findFirstEffectiveSheet(workbook, formatter, evaluator);
+            if (sheetMatch == null) {
+                throw new IllegalArgumentException("未找到包含日期列和体重列的工作表");
+            }
+
+            Sheet sheet = workbook.getSheetAt(sheetMatch.sheetIndex());
+            int dataRowCount = countNonEmptySheetRows(sheet, sheetMatch.headerRowIndex() + 1, formatter, evaluator);
+            ensureRowLimit(dataRowCount);
+
+            PreviewStats stats = buildSheetPreviewStats(sheet, sheetMatch, formatter, evaluator);
+            return new WeightImportPreviewResponse(
+                    fileName,
+                    ImportFileType.XLSX.name(),
+                    sheetMatch.sheetName(),
+                    stats.totalRows(),
+                    stats.parsedRows(),
+                    stats.skippedRows(),
+                    null,
+                    stats.detectedDateFormat(),
+                    sheetMatch.detectedUnit(),
+                    stats.rows()
+            );
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Excel 文件已损坏或格式不正确", e);
+        }
+    }
+
+    private PreviewStats buildPreviewStats(
+            List<List<String>> records,
+            int startIndex,
+            int dateCol,
+            int weightCol,
+            String detectedUnit
+    ) {
+        String detectedDateFormat = null;
+        List<WeightImportPreviewRow> previewRows = new ArrayList<>();
+        int totalRows = 0;
+        int parsedRows = 0;
+        int skippedRows = 0;
+
+        for (int i = startIndex; i < records.size(); i++) {
+            List<String> fields = sanitizeRecord(records.get(i));
+            if (isBlankRecord(fields)) {
+                continue;
+            }
+            totalRows++;
+
+            PreviewEvaluation evaluation = evaluatePreviewRow(
+                    fields.size() > dateCol ? fields.get(dateCol).trim() : "",
+                    fields.size() > weightCol ? fields.get(weightCol).trim() : "",
+                    null,
+                    null,
+                    detectedUnit
+            );
+            if (evaluation.detectedDateFormat() != null && detectedDateFormat == null) {
+                detectedDateFormat = evaluation.detectedDateFormat();
+            }
+            previewRows.add(evaluation.row());
+            if (evaluation.row().error() == null) {
+                parsedRows++;
+            } else {
+                skippedRows++;
+            }
+        }
+
+        return new PreviewStats(totalRows, parsedRows, skippedRows, detectedDateFormat, previewRows);
+    }
+
+    private PreviewStats buildSheetPreviewStats(
+            Sheet sheet,
+            SheetMatch sheetMatch,
+            DataFormatter formatter,
+            FormulaEvaluator evaluator
+    ) {
+        String detectedDateFormat = null;
+        List<WeightImportPreviewRow> previewRows = new ArrayList<>();
+        int totalRows = 0;
+        int parsedRows = 0;
+        int skippedRows = 0;
+
+        for (int rowIndex = sheetMatch.headerRowIndex() + 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            List<String> values = extractRowValues(row, formatter, evaluator);
+            if (isBlankRecord(values)) {
+                continue;
+            }
+            totalRows++;
+
+            Cell dateCell = row == null ? null : row.getCell(sheetMatch.dateCol());
+            Cell weightCell = row == null ? null : row.getCell(sheetMatch.weightCol());
+            String rawDate = getCellDisplayValue(dateCell, formatter, evaluator).trim();
+            String rawWeight = getCellDisplayValue(weightCell, formatter, evaluator).trim();
+
+            PreviewEvaluation evaluation = evaluatePreviewRow(
+                    rawDate,
+                    rawWeight,
+                    dateCell,
+                    weightCell,
+                    sheetMatch.detectedUnit(),
+                    evaluator
+            );
+            if (evaluation.detectedDateFormat() != null && detectedDateFormat == null) {
+                detectedDateFormat = evaluation.detectedDateFormat();
+            }
+            previewRows.add(evaluation.row());
+            if (evaluation.row().error() == null) {
+                parsedRows++;
+            } else {
+                skippedRows++;
+            }
+        }
+
+        return new PreviewStats(totalRows, parsedRows, skippedRows, detectedDateFormat, previewRows);
+    }
+
+    private PreviewEvaluation evaluatePreviewRow(
+            String rawDate,
+            String rawWeight,
+            Cell dateCell,
+            Cell weightCell,
+            String detectedUnit
+    ) {
+        return evaluatePreviewRow(rawDate, rawWeight, dateCell, weightCell, detectedUnit, null);
+    }
+
+    private PreviewEvaluation evaluatePreviewRow(
+            String rawDate,
+            String rawWeight,
+            Cell dateCell,
+            Cell weightCell,
+            String detectedUnit,
+            FormulaEvaluator evaluator
+    ) {
+        if (rawDate.isEmpty() && rawWeight.isEmpty()) {
+            return new PreviewEvaluation(new WeightImportPreviewRow(rawDate, rawWeight, null, null, "空行"), null);
+        }
+
+        WeightImportDateParser.ParseResult dateParseResult = parseCellDate(dateCell, rawDate, evaluator);
+        LocalDate parsedDate = dateParseResult.date();
+        String detectedDateFormat = dateParseResult.matchedPattern();
+        BigDecimal rawWeightValue = parseCellWeight(weightCell, rawWeight, evaluator);
+        if (parsedDate == null || rawWeightValue == null) {
+            String error = parsedDate == null ? "日期格式无法识别: " + rawDate : "体重数值无效: " + rawWeight;
+            return new PreviewEvaluation(new WeightImportPreviewRow(rawDate, rawWeight, null, null, error), detectedDateFormat);
+        }
+
+        BigDecimal weightKg = convertToKg(rawWeightValue, detectedUnit);
+        if (weightKg.compareTo(MIN_WEIGHT_KG) < 0 || weightKg.compareTo(MAX_WEIGHT_KG) > 0) {
+            return new PreviewEvaluation(
+                    new WeightImportPreviewRow(
+                            rawDate,
+                            rawWeight,
+                            parsedDate,
+                            weightKg,
+                            "体重超出合理范围 (" + MIN_WEIGHT_KG + " - " + MAX_WEIGHT_KG + " kg)"
+                    ),
+                    detectedDateFormat
+            );
+        }
+
+        if (parsedDate.isAfter(LocalDate.now())) {
+            return new PreviewEvaluation(
+                    new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, "未来日期"),
+                    detectedDateFormat
+            );
+        }
+
+        return new PreviewEvaluation(
+                new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, null),
+                detectedDateFormat
+        );
+    }
+
     private void validateConfirmRequest(WeightImportConfirmRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("导入请求不能为空");
@@ -258,6 +393,7 @@ public class WeightImportService {
         if (request.duplicatePolicy() == null) {
             throw new IllegalArgumentException("请选择重复记录处理策略");
         }
+
         List<WeightImportConfirmRow> rows = request.rows();
         if (rows == null || rows.isEmpty()) {
             throw new IllegalArgumentException("没有可导入的数据");
@@ -265,6 +401,7 @@ public class WeightImportService {
         if (rows.size() > MAX_IMPORT_ROWS) {
             throw new IllegalArgumentException("单次最多导入 1000 行，请拆分后重试");
         }
+
         LocalDate today = LocalDate.now();
         for (WeightImportConfirmRow row : rows) {
             if (row == null) {
@@ -285,20 +422,242 @@ public class WeightImportService {
         }
     }
 
+    private UploadedFile resolveUploadedFile(WeightImportPreviewRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("导入请求不能为空");
+        }
+        if (request.fileBase64() != null && !request.fileBase64().isBlank()) {
+            try {
+                return new UploadedFile(request.fileName(), Base64.getDecoder().decode(request.fileBase64()), null);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("文件内容编码无效", e);
+            }
+        }
+        return new UploadedFile(request.fileName(), null, request.fileContent());
+    }
+
+    private ImportFileType detectFileType(byte[] bytes, String fileName) {
+        String extension = extractExtension(fileName);
+        if ("xls".equals(extension) || isOle2Workbook(bytes)) {
+            throw new IllegalArgumentException("暂不支持 xls 文件，请另存为 xlsx 或 CSV 后再导入");
+        }
+        if ("xlsm".equals(extension)) {
+            throw new IllegalArgumentException("暂不支持该文件格式，请上传 CSV 或 xlsx 文件");
+        }
+        if ("xlsx".equals(extension)) {
+            if (!isZipFile(bytes) || !isXlsxWorkbook(bytes)) {
+                throw new IllegalArgumentException("Excel 文件已损坏或格式不正确");
+            }
+            return ImportFileType.XLSX;
+        }
+        if (isZipFile(bytes)) {
+            if (isXlsxWorkbook(bytes)) {
+                return ImportFileType.XLSX;
+            }
+            throw new IllegalArgumentException("暂不支持该文件格式，请上传 CSV 或 xlsx 文件");
+        }
+        if (looksLikeBinary(bytes)) {
+            throw new IllegalArgumentException("暂不支持该文件格式，请上传 CSV 或 xlsx 文件");
+        }
+        return ImportFileType.CSV;
+    }
+
+    private boolean isZipFile(byte[] bytes) {
+        return bytes.length >= 4
+                && (bytes[0] & 0xFF) == 0x50
+                && (bytes[1] & 0xFF) == 0x4B
+                && (bytes[2] & 0xFF) == 0x03
+                && (bytes[3] & 0xFF) == 0x04;
+    }
+
+    private boolean isOle2Workbook(byte[] bytes) {
+        return bytes.length >= 8
+                && (bytes[0] & 0xFF) == 0xD0
+                && (bytes[1] & 0xFF) == 0xCF
+                && (bytes[2] & 0xFF) == 0x11
+                && (bytes[3] & 0xFF) == 0xE0
+                && (bytes[4] & 0xFF) == 0xA1
+                && (bytes[5] & 0xFF) == 0xB1
+                && (bytes[6] & 0xFF) == 0x1A
+                && (bytes[7] & 0xFF) == 0xE1;
+    }
+
+    private boolean isXlsxWorkbook(byte[] bytes) {
+        boolean foundContentTypes = false;
+        boolean foundWorkbook = false;
+        try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(bytes))) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                String name = entry.getName();
+                if ("[Content_Types].xml".equals(name)) {
+                    foundContentTypes = true;
+                }
+                if ("xl/workbook.xml".equals(name)) {
+                    foundWorkbook = true;
+                }
+                if (foundContentTypes && foundWorkbook) {
+                    return true;
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return false;
+    }
+
+    private boolean looksLikeBinary(byte[] bytes) {
+        int sampleSize = Math.min(bytes.length, 512);
+        int suspicious = 0;
+        for (int i = 0; i < sampleSize; i++) {
+            int value = bytes[i] & 0xFF;
+            if (value == 0) {
+                return true;
+            }
+            if (value < 0x09 || (value > 0x0D && value < 0x20)) {
+                suspicious++;
+            }
+        }
+        return sampleSize > 0 && suspicious * 10 > sampleSize;
+    }
+
+    private String extractExtension(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return "";
+        }
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
+            return "";
+        }
+        return fileName.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private SheetMatch findFirstEffectiveSheet(Workbook workbook, DataFormatter formatter, FormulaEvaluator evaluator) {
+        for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+            Sheet sheet = workbook.getSheetAt(sheetIndex);
+            int nonEmptyRowsSeen = 0;
+            for (int rowIndex = sheet.getFirstRowNum(); rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                List<String> values = extractRowValues(row, formatter, evaluator);
+                if (isBlankRecord(values)) {
+                    continue;
+                }
+
+                nonEmptyRowsSeen++;
+                int dateCol = findColumn(values, DATE_KEYWORDS);
+                int weightCol = findColumn(values, WEIGHT_KEYWORDS);
+                if (dateCol >= 0 && weightCol >= 0) {
+                    return new SheetMatch(
+                            sheetIndex,
+                            sheet.getSheetName(),
+                            rowIndex,
+                            dateCol,
+                            weightCol,
+                            detectUnit(values.get(weightCol))
+                    );
+                }
+                if (nonEmptyRowsSeen >= SHEET_HEADER_SCAN_LIMIT) {
+                    break;
+                }
+            }
+        }
+        return null;
+    }
+
+    private int countNonEmptySheetRows(Sheet sheet, int startRowIndex, DataFormatter formatter, FormulaEvaluator evaluator) {
+        int count = 0;
+        for (int rowIndex = startRowIndex; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            if (!isBlankRecord(extractRowValues(sheet.getRow(rowIndex), formatter, evaluator))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private List<String> extractRowValues(Row row, DataFormatter formatter, FormulaEvaluator evaluator) {
+        if (row == null || row.getLastCellNum() < 0) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>(row.getLastCellNum());
+        for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
+            String value = getCellDisplayValue(row.getCell(cellIndex), formatter, evaluator);
+            values.add(cellIndex == 0 ? stripBom(value) : value);
+        }
+        return values;
+    }
+
+    private String getCellDisplayValue(Cell cell, DataFormatter formatter, FormulaEvaluator evaluator) {
+        if (cell == null) {
+            return "";
+        }
+        return formatter.formatCellValue(cell, evaluator);
+    }
+
+    private WeightImportDateParser.ParseResult parseCellDate(Cell cell, String rawDate, FormulaEvaluator evaluator) {
+        Double numericValue = extractNumericCellValue(cell, evaluator);
+        if (numericValue != null && cell != null && DateUtil.isCellDateFormatted(cell)) {
+            return new WeightImportDateParser.ParseResult(
+                    DateUtil.getLocalDateTime(numericValue).toLocalDate(),
+                    "Excel 日期单元格"
+            );
+        }
+        return WeightImportDateParser.parse(rawDate);
+    }
+
+    private BigDecimal parseCellWeight(Cell cell, String rawWeight, FormulaEvaluator evaluator) {
+        Double numericValue = extractNumericCellValue(cell, evaluator);
+        if (numericValue != null) {
+            return BigDecimal.valueOf(numericValue);
+        }
+        return parseWeightValue(rawWeight);
+    }
+
+    private Double extractNumericCellValue(Cell cell, FormulaEvaluator evaluator) {
+        if (cell == null) {
+            return null;
+        }
+
+        CellType cellType = cell.getCellType();
+        if (cellType == CellType.NUMERIC) {
+            return cell.getNumericCellValue();
+        }
+        if (cellType == CellType.FORMULA && evaluator != null) {
+            CellValue cellValue = evaluator.evaluate(cell);
+            if (cellValue != null && cellValue.getCellType() == CellType.NUMERIC) {
+                return cellValue.getNumberValue();
+            }
+        }
+        return null;
+    }
+
+    private void ensureRowLimit(int dataRowCount) {
+        if (dataRowCount > MAX_IMPORT_ROWS) {
+            throw new IllegalArgumentException("单次最多导入 1000 行，请拆分文件后重试");
+        }
+    }
+
     private char detectDelimiter(String line) {
-        int commas = 0, semicolons = 0, tabs = 0;
+        int commas = 0;
+        int semicolons = 0;
+        int tabs = 0;
         boolean inQuotes = false;
         for (char c : line.toCharArray()) {
             if (c == '"') {
                 inQuotes = !inQuotes;
             } else if (!inQuotes) {
-                if (c == ',') commas++;
-                else if (c == ';') semicolons++;
-                else if (c == '\t') tabs++;
+                if (c == ',') {
+                    commas++;
+                } else if (c == ';') {
+                    semicolons++;
+                } else if (c == '\t') {
+                    tabs++;
+                }
             }
         }
-        if (tabs > 0 && tabs >= commas && tabs >= semicolons) return '\t';
-        if (semicolons > 0 && semicolons >= commas) return ';';
+        if (tabs > 0 && tabs >= commas && tabs >= semicolons) {
+            return '\t';
+        }
+        if (semicolons > 0 && semicolons >= commas) {
+            return ';';
+        }
         return ',';
     }
 
@@ -338,36 +697,40 @@ public class WeightImportService {
                     inQuotes = !inQuotes;
                 }
                 continue;
-            } else {
-                if (inQuotes) {
-                    if (c == '\r') {
-                        if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
-                            i++;
-                        }
-                        currentField.append('\n');
-                    } else {
-                        currentField.append(c);
-                    }
-                    continue;
-                }
-                if (c == delimiter) {
-                    currentRecord.add(currentField.toString());
-                    currentField = new StringBuilder();
-                    continue;
-                }
-                if (c == '\n' || c == '\r') {
-                    currentRecord.add(currentField.toString());
-                    records.add(currentRecord);
-                    currentRecord = new ArrayList<>();
-                    currentField = new StringBuilder();
-                    if (c == '\r' && i + 1 < content.length() && content.charAt(i + 1) == '\n') {
+            }
+
+            if (inQuotes) {
+                if (c == '\r') {
+                    if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
                         i++;
                     }
-                    continue;
+                    currentField.append('\n');
+                } else {
+                    currentField.append(c);
                 }
-                currentField.append(c);
+                continue;
             }
+
+            if (c == delimiter) {
+                currentRecord.add(currentField.toString());
+                currentField = new StringBuilder();
+                continue;
+            }
+
+            if (c == '\n' || c == '\r') {
+                currentRecord.add(currentField.toString());
+                records.add(currentRecord);
+                currentRecord = new ArrayList<>();
+                currentField = new StringBuilder();
+                if (c == '\r' && i + 1 < content.length() && content.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                continue;
+            }
+
+            currentField.append(c);
         }
+
         if (inQuotes) {
             throw new IllegalArgumentException("CSV 格式错误：存在未闭合的引号");
         }
@@ -413,40 +776,39 @@ public class WeightImportService {
         List<String> sanitized = new ArrayList<>(record.size());
         for (int i = 0; i < record.size(); i++) {
             String value = record.get(i);
-            sanitized.add(i == 0 ? stripUtf8Bom(value) : value);
+            sanitized.add(i == 0 ? stripBom(value) : value);
         }
         return sanitized;
     }
 
-    private String stripUtf8Bom(String value) {
+    private String stripBom(String value) {
         if (value != null && !value.isEmpty() && value.charAt(0) == '\uFEFF') {
             return value.substring(1);
         }
         return value;
     }
 
-    private String resolveFileContent(WeightImportPreviewRequest request) {
-        if (request.fileBase64() != null && !request.fileBase64().isBlank()) {
-            byte[] bytes = Base64.getDecoder().decode(request.fileBase64());
-            return decodeBytesToString(bytes);
-        }
-        return request.fileContent();
-    }
-
     private String decodeBytesToString(byte[] bytes) {
-        // Check UTF-8 BOM
         if (bytes.length >= 3
                 && (bytes[0] & 0xFF) == 0xEF
                 && (bytes[1] & 0xFF) == 0xBB
                 && (bytes[2] & 0xFF) == 0xBF) {
             return new String(bytes, 3, bytes.length - 3, StandardCharsets.UTF_8);
         }
-        // Try UTF-8: if valid, use it
+        if (bytes.length >= 2
+                && (bytes[0] & 0xFF) == 0xFF
+                && (bytes[1] & 0xFF) == 0xFE) {
+            return new String(bytes, 2, bytes.length - 2, StandardCharsets.UTF_16LE);
+        }
+        if (bytes.length >= 2
+                && (bytes[0] & 0xFF) == 0xFE
+                && (bytes[1] & 0xFF) == 0xFF) {
+            return new String(bytes, 2, bytes.length - 2, StandardCharsets.UTF_16BE);
+        }
         if (isValidUtf8(bytes)) {
             return new String(bytes, StandardCharsets.UTF_8);
         }
-        // Fallback to GBK (common for Chinese CSV exports)
-        return new String(bytes, Charset.forName("GBK"));
+        return new String(bytes, Charset.forName("GB18030"));
     }
 
     private boolean isValidUtf8(byte[] bytes) {
@@ -456,18 +818,24 @@ public class WeightImportService {
             if (b < 0x80) {
                 i++;
             } else if ((b >> 5) == 0x6) {
-                if (i + 1 >= bytes.length || (bytes[i + 1] & 0xC0) != 0x80) return false;
+                if (i + 1 >= bytes.length || (bytes[i + 1] & 0xC0) != 0x80) {
+                    return false;
+                }
                 i += 2;
             } else if ((b >> 4) == 0xE) {
                 if (i + 2 >= bytes.length
                         || (bytes[i + 1] & 0xC0) != 0x80
-                        || (bytes[i + 2] & 0xC0) != 0x80) return false;
+                        || (bytes[i + 2] & 0xC0) != 0x80) {
+                    return false;
+                }
                 i += 3;
             } else if ((b >> 3) == 0x1E) {
                 if (i + 3 >= bytes.length
                         || (bytes[i + 1] & 0xC0) != 0x80
                         || (bytes[i + 2] & 0xC0) != 0x80
-                        || (bytes[i + 3] & 0xC0) != 0x80) return false;
+                        || (bytes[i + 3] & 0xC0) != 0x80) {
+                    return false;
+                }
                 i += 4;
             } else {
                 return false;
@@ -480,7 +848,7 @@ public class WeightImportService {
         for (int i = 0; i < headers.size(); i++) {
             String normalized = normalizeHeader(headers.get(i));
             for (String keyword : keywords) {
-                if (normalized.contains(keyword.toLowerCase())) {
+                if (normalized.contains(keyword.toLowerCase(Locale.ROOT))) {
                     return i;
                 }
             }
@@ -489,14 +857,15 @@ public class WeightImportService {
     }
 
     private String normalizeHeader(String header) {
-        return header.trim().toLowerCase().replaceAll("\\s+", " ");
+        return header == null ? "" : header.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 
     private String detectUnit(String weightHeader) {
-        if (weightHeader.contains("斤")) {
+        String normalizedHeader = normalizeHeader(weightHeader);
+        if (normalizedHeader.contains("斤")) {
             return "斤";
         }
-        if (weightHeader.contains("lbs") || weightHeader.contains("磅")) {
+        if (normalizedHeader.contains("lbs") || normalizedHeader.contains("磅")) {
             return "lbs";
         }
         return "kg";
@@ -508,67 +877,6 @@ public class WeightImportService {
             case "lbs" -> value.multiply(LBS_TO_KG_FACTOR).setScale(2, RoundingMode.HALF_UP);
             default -> value.setScale(2, RoundingMode.HALF_UP);
         };
-    }
-
-    private LocalDate parseDate(String raw) {
-        if (raw == null || raw.trim().isEmpty()) {
-            return null;
-        }
-        String trimmed = raw.trim();
-
-        // Try ISO date-time first (has 'T')
-        if (trimmed.contains("T")) {
-            try {
-                return LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toLocalDate();
-            } catch (DateTimeParseException ignored) {
-            }
-            // Try without timezone offset
-            int tIndex = trimmed.indexOf('T');
-            String datePart = trimmed.substring(0, tIndex);
-            try {
-                return LocalDate.parse(datePart);
-            } catch (DateTimeParseException ignored) {
-            }
-        }
-
-        // Try date-only formats
-        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
-            try {
-                if (formatter == DateTimeFormatter.ISO_LOCAL_DATE || trimmed.contains("T")) {
-                    continue;
-                }
-                return LocalDate.parse(trimmed, formatter);
-            } catch (DateTimeParseException ignored) {
-            }
-        }
-
-        // Try ISO_LOCAL_DATE directly as fallback
-        try {
-            return LocalDate.parse(trimmed);
-        } catch (DateTimeParseException ignored) {
-        }
-
-        return null;
-    }
-
-    private String detectDateFormat(String rawDate) {
-        if (rawDate == null || rawDate.trim().isEmpty()) {
-            return null;
-        }
-        String trimmed = rawDate.trim();
-        if (trimmed.contains("T")) {
-            return "yyyy-MM-dd'T'HH:mm:ss";
-        }
-        if (trimmed.contains("-")) {
-            return "yyyy-MM-dd";
-        }
-        if (trimmed.contains("/")) {
-            return "yyyy/MM/dd";
-        }
-        if (trimmed.contains(".")) {
-            return "dd.MM.yyyy";
-        }
-        return "unknown";
     }
 
     private BigDecimal parseWeightValue(String raw) {
@@ -627,5 +935,35 @@ public class WeightImportService {
             user.setGoalCalorieDelta(preview.recommendedGoalCalorieDelta());
         } catch (IllegalArgumentException ignored) {
         }
+    }
+
+    private enum ImportFileType {
+        CSV,
+        XLSX
+    }
+
+    private record UploadedFile(String fileName, byte[] bytes, String textContent) {
+    }
+
+    private record PreviewStats(
+            int totalRows,
+            int parsedRows,
+            int skippedRows,
+            String detectedDateFormat,
+            List<WeightImportPreviewRow> rows
+    ) {
+    }
+
+    private record PreviewEvaluation(WeightImportPreviewRow row, String detectedDateFormat) {
+    }
+
+    private record SheetMatch(
+            int sheetIndex,
+            String sheetName,
+            int headerRowIndex,
+            int dateCol,
+            int weightCol,
+            String detectedUnit
+    ) {
     }
 }

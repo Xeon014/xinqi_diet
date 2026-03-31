@@ -4,7 +4,7 @@
   <view wx:if="{{step === 'select'}}" class="panel select-panel">
     <view class="select-title">导入体重数据</view>
     <view class="select-desc">
-      支持主流健康应用导出的 CSV 文件数据。
+      支持主流健康应用导出的 CSV / XLSX 文件数据。
     </view>
     <view class="select-tips">
       <view class="tip-item">支持自动识别列名、分隔符和日期格式</view>
@@ -42,38 +42,15 @@
       <view wx:if="{{preview.detectedUnit && preview.detectedUnit !== 'kg'}}" class="stats-info">
         检测到单位：{{preview.detectedUnit}}（已自动转换为 kg）
       </view>
+      <view wx:if="{{preview.detectedFileType}}" class="stats-info">
+        文件类型：{{preview.detectedFileType}}
+        <text wx:if="{{preview.detectedSheetName}}"> · 工作表：{{preview.detectedSheetName}}</text>
+      </view>
       <view wx:if="{{preview.detectedDelimiter}}" class="stats-info">
         分隔符：{{preview.detectedDelimiter}} · 日期格式：{{preview.detectedDateFormat || '自动检测'}}
       </view>
-    </view>
-
-    <view class="panel preview-list">
-      <view class="list-header">
-        <view class="list-title">数据预览</view>
-      </view>
-      <view class="preview-row-header">
-        <view class="col-check"></view>
-        <view class="col-date">日期</view>
-        <view class="col-weight">体重(kg)</view>
-        <view class="col-status">状态</view>
-      </view>
-      <view
-        wx:for="{{preview.rows}}"
-        wx:key="index"
-        class="preview-row {{item.error ? 'row-error' : (checkedRows[index] ? 'row-checked' : 'row-unchecked')}}"
-      >
-        <view class="col-check" data-index="{{index}}" bindtap="handleRowCheck">
-          <view class="check-box {{checkedRows[index] && !item.error ? 'checked' : ''}} {{item.error ? 'disabled' : ''}}">
-            ✓
-          </view>
-        </view>
-        <view class="col-date">{{item.parsedDate || item.rawDate || '-'}}</view>
-        <view class="col-weight">{{item.parsedWeightKg != null ? item.parsedWeightKg : '-'}}</view>
-        <view class="col-status">
-          <text wx:if="{{item.error}}" class="status-error">{{item.error}}</text>
-          <text wx:elif="{{checkedRows[index]}}" class="status-ok">可导入</text>
-          <text wx:else class="status-skip">已排除</text>
-        </view>
+      <view class="stats-info stats-summary">
+        已选 {{selectedCount}} 条 · 可导入 {{selectableCount}} 条 · 异常 {{errorCount}} 条
       </view>
     </view>
 
@@ -97,9 +74,60 @@
       </view>
     </view>
 
-    <view class="action-bar">
+    <view class="top-action-bar">
+      <view class="floating-action-row">
+        <view class="floating-action ghost" bindtap="handleSelectAllValid">全选可导入</view>
+        <view class="floating-action ghost" bindtap="handleClearAll">全不选</view>
+        <view
+          class="floating-action ghost {{showOnlyErrors ? 'active' : ''}}"
+          bindtap="handleToggleErrorFilter"
+        >
+          {{showOnlyErrors ? '查看全部' : '仅看异常'}}
+        </view>
+      </view>
+      <view
+        class="floating-confirm {{selectedCount === 0 ? 'disabled' : ''}}"
+        bindtap="handleConfirmImport"
+      >
+        确认导入
+      </view>
+    </view>
+
+    <view class="panel preview-list">
+      <view class="list-header">
+        <view class="list-title">数据预览</view>
+      </view>
+      <view class="preview-row-header">
+        <view class="col-check"></view>
+        <view class="col-date">日期</view>
+        <view class="col-weight">体重(kg)</view>
+        <view class="col-status">状态</view>
+      </view>
+      <view
+        wx:for="{{displayRows}}"
+        wx:key="originalIndex"
+        class="preview-row {{item.error ? 'row-error' : (checkedRows[item.originalIndex] ? 'row-checked' : 'row-unchecked')}}"
+      >
+        <view class="col-check" data-original-index="{{item.originalIndex}}" bindtap="handleRowCheck">
+          <view class="check-box {{checkedRows[item.originalIndex] && !item.error ? 'checked' : ''}} {{item.error ? 'disabled' : ''}}">
+            ✓
+          </view>
+        </view>
+        <view class="col-date">{{item.parsedDate || item.rawDate || '-'}}</view>
+        <view class="col-weight">{{item.parsedWeightKg != null ? item.parsedWeightKg : '-'}}</view>
+        <view class="col-status">
+          <text wx:if="{{item.error}}" class="status-error">{{item.error}}</text>
+          <text wx:elif="{{checkedRows[item.originalIndex]}}" class="status-ok">可导入</text>
+          <text wx:else class="status-skip">已排除</text>
+        </view>
+      </view>
+      <view wx:if="{{displayRows.length === 0}}" class="preview-empty">
+        当前没有异常数据
+      </view>
+    </view>
+
+    <view class="action-bar action-bar-single">
       <view class="action-btn secondary" bindtap="handleImportAnother">返回</view>
-      <view class="action-btn primary" bindtap="handleConfirmImport">确认导入</view>
     </view>
   </view>
 
