@@ -12,12 +12,13 @@
             metric_value,
             unit,
             record_date,
+            measured_at,
             created_at,
             updated_at
         FROM body_metric_record
         WHERE user_id = #{userId}
           AND metric_type = #{metricType}
-        ORDER BY record_date DESC, id DESC
+        ORDER BY measured_at DESC, id DESC
         LIMIT 1
     </select>
 
@@ -29,19 +30,24 @@
             r.metric_value,
             r.unit,
             r.record_date,
+            r.measured_at,
             r.created_at,
             r.updated_at
         FROM body_metric_record r
-        INNER JOIN (
-            SELECT
-                metric_type,
-                MAX(id) AS max_id
-            FROM body_metric_record
-            WHERE user_id = #{userId}
-              AND record_date = #{date}
-            GROUP BY metric_type
-        ) daily ON daily.max_id = r.id
-        ORDER BY r.metric_type ASC, r.id DESC
+        WHERE r.user_id = #{userId}
+          AND r.record_date = #{date}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM body_metric_record newer
+            WHERE newer.user_id = r.user_id
+              AND newer.metric_type = r.metric_type
+              AND newer.record_date = r.record_date
+              AND (
+                newer.measured_at <![CDATA[>]]> r.measured_at
+                OR (newer.measured_at = r.measured_at AND newer.id <![CDATA[>]]> r.id)
+              )
+          )
+        ORDER BY r.metric_type ASC, r.measured_at DESC, r.id DESC
     </select>
 
     <select id="findDailyLatestByMetricTypeAndDateRange" resultType="com.diet.domain.metric.BodyMetricRecord">
@@ -52,21 +58,26 @@
             r.metric_value,
             r.unit,
             r.record_date,
+            r.measured_at,
             r.created_at,
             r.updated_at
         FROM body_metric_record r
-        INNER JOIN (
-            SELECT
-                record_date,
-                MAX(id) AS max_id
-            FROM body_metric_record
-            WHERE user_id = #{userId}
-              AND metric_type = #{metricType}
-              AND record_date <![CDATA[>=]]> #{startDate}
-              AND record_date <![CDATA[<=]]> #{endDate}
-            GROUP BY record_date
-        ) daily ON daily.max_id = r.id
-        ORDER BY r.record_date ASC, r.id ASC
+        WHERE r.user_id = #{userId}
+          AND r.metric_type = #{metricType}
+          AND r.record_date <![CDATA[>=]]> #{startDate}
+          AND r.record_date <![CDATA[<=]]> #{endDate}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM body_metric_record newer
+            WHERE newer.user_id = r.user_id
+              AND newer.metric_type = r.metric_type
+              AND newer.record_date = r.record_date
+              AND (
+                newer.measured_at <![CDATA[>]]> r.measured_at
+                OR (newer.measured_at = r.measured_at AND newer.id <![CDATA[>]]> r.id)
+              )
+          )
+        ORDER BY r.record_date ASC, r.measured_at ASC, r.id ASC
     </select>
 
     <select id="findDailyLatestByMetricTypeWithCursor" resultType="com.diet.domain.metric.BodyMetricRecord">
@@ -77,25 +88,30 @@
             r.metric_value,
             r.unit,
             r.record_date,
+            r.measured_at,
             r.created_at,
             r.updated_at
         FROM body_metric_record r
-        INNER JOIN (
-            SELECT
-                record_date,
-                MAX(id) AS max_id
-            FROM body_metric_record
-            WHERE user_id = #{userId}
-              AND metric_type = #{metricType}
-            GROUP BY record_date
-        ) daily ON daily.max_id = r.id
-        <if test="cursorDate != null and cursorId != null">
-            WHERE (
-                r.record_date <![CDATA[<]]> #{cursorDate}
-                OR (r.record_date = #{cursorDate} AND r.id <![CDATA[<]]> #{cursorId})
-            )
+        WHERE r.user_id = #{userId}
+          AND r.metric_type = #{metricType}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM body_metric_record newer
+            WHERE newer.user_id = r.user_id
+              AND newer.metric_type = r.metric_type
+              AND newer.record_date = r.record_date
+              AND (
+                newer.measured_at <![CDATA[>]]> r.measured_at
+                OR (newer.measured_at = r.measured_at AND newer.id <![CDATA[>]]> r.id)
+              )
+          )
+        <if test="cursorMeasuredAt != null and cursorId != null">
+          AND (
+                r.measured_at <![CDATA[<]]> #{cursorMeasuredAt}
+                OR (r.measured_at = #{cursorMeasuredAt} AND r.id <![CDATA[<]]> #{cursorId})
+          )
         </if>
-        ORDER BY r.record_date DESC, r.id DESC
+        ORDER BY r.measured_at DESC, r.id DESC
         LIMIT #{limit}
     </select>
 
@@ -107,18 +123,19 @@
             metric_value,
             unit,
             record_date,
+            measured_at,
             created_at,
             updated_at
         FROM body_metric_record
         WHERE user_id = #{userId}
           AND metric_type = #{metricType}
-        <if test="cursorDate != null and cursorId != null">
+        <if test="cursorMeasuredAt != null and cursorId != null">
           AND (
-                record_date <![CDATA[<]]> #{cursorDate}
-                OR (record_date = #{cursorDate} AND id <![CDATA[<]]> #{cursorId})
+                measured_at <![CDATA[<]]> #{cursorMeasuredAt}
+                OR (measured_at = #{cursorMeasuredAt} AND id <![CDATA[<]]> #{cursorId})
           )
         </if>
-        ORDER BY record_date DESC, id DESC
+        ORDER BY measured_at DESC, id DESC
         LIMIT #{limit}
     </select>
 
@@ -130,6 +147,7 @@
             metric_value,
             unit,
             record_date,
+            measured_at,
             created_at,
             updated_at
         FROM body_metric_record
@@ -140,15 +158,15 @@
 
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO body_metric_record
-            (user_id, metric_type, metric_value, unit, record_date, created_at, updated_at)
+            (user_id, metric_type, metric_value, unit, record_date, measured_at, created_at, updated_at)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.userId}, #{item.metricType}, #{item.metricValue},
-             #{item.unit}, #{item.recordDate}, #{item.createdAt}, #{item.updatedAt})
+             #{item.unit}, #{item.recordDate}, #{item.measuredAt}, #{item.createdAt}, #{item.updatedAt})
         </foreach>
     </insert>
 
-    <select id="findByUserIdAndMetricTypeAndRecordDateIn" resultType="com.diet.domain.metric.BodyMetricRecord">
+    <select id="findByUserIdAndMetricTypeAndMeasuredAtIn" resultType="com.diet.domain.metric.BodyMetricRecord">
         SELECT
             id,
             user_id,
@@ -156,14 +174,15 @@
             metric_value,
             unit,
             record_date,
+            measured_at,
             created_at,
             updated_at
         FROM body_metric_record
         WHERE user_id = #{userId}
           AND metric_type = #{metricType}
-          AND record_date IN
-        <foreach item="d" collection="dates" open="(" separator="," close=")">
-            #{d}
+          AND measured_at IN
+        <foreach item="measuredAt" collection="measuredAts" open="(" separator="," close=")">
+            #{measuredAt}
         </foreach>
     </select>
 

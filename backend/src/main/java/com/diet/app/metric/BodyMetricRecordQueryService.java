@@ -18,6 +18,7 @@ import com.diet.api.metric.MetricTrendRangeType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -78,7 +79,7 @@ public class BodyMetricRecordQueryService {
     public BodyMetricHistoryResponse getHistory(
             Long userId,
             BodyMetricTrendMetricKey metricKey,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             Integer pageSize
     ) {
@@ -93,8 +94,8 @@ public class BodyMetricRecordQueryService {
                     null
             );
         }
-        if ((cursorDate == null) != (cursorId == null)) {
-            throw new IllegalArgumentException("cursorDate and cursorId must be provided together");
+        if ((cursorMeasuredAt == null) != (cursorId == null)) {
+            throw new IllegalArgumentException("cursorMeasuredAt and cursorId must be provided together");
         }
 
         int resolvedPageSize = resolvePageSize(pageSize);
@@ -102,7 +103,7 @@ public class BodyMetricRecordQueryService {
         List<BodyMetricRecord> queryResult = bodyMetricRecordRepository.findByMetricTypeWithCursor(
                 user.getId(),
                 sourceMetricType,
-                cursorDate,
+                cursorMeasuredAt,
                 cursorId,
                 resolvedPageSize + 1
         );
@@ -111,11 +112,11 @@ public class BodyMetricRecordQueryService {
                 ? queryResult.subList(0, resolvedPageSize)
                 : queryResult;
 
-        LocalDate nextCursorDate = null;
+        LocalDateTime nextCursorMeasuredAt = null;
         Long nextCursorId = null;
         if (hasMore && !pageRecords.isEmpty()) {
             BodyMetricRecord oldestInPage = pageRecords.get(pageRecords.size() - 1);
-            nextCursorDate = oldestInPage.getRecordDate();
+            nextCursorMeasuredAt = oldestInPage.getMeasuredAt();
             nextCursorId = oldestInPage.getId();
         }
 
@@ -124,7 +125,7 @@ public class BodyMetricRecordQueryService {
                 metricKey.unitLabel(),
                 toHistoryRecords(metricKey, user, pageRecords),
                 hasMore,
-                nextCursorDate,
+                nextCursorMeasuredAt,
                 nextCursorId
         );
     }
@@ -133,7 +134,7 @@ public class BodyMetricRecordQueryService {
             Long userId,
             BodyMetricTrendMetricKey metricKey,
             MetricTrendRangeType rangeType,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             Integer pageSize
     ) {
@@ -151,14 +152,14 @@ public class BodyMetricRecordQueryService {
         }
         BodyMetricType sourceMetricType = resolveSourceMetricType(metricKey);
         if (rangeType == MetricTrendRangeType.ALL) {
-            if ((cursorDate == null) != (cursorId == null)) {
-                throw new IllegalArgumentException("cursorDate and cursorId must be provided together");
+            if ((cursorMeasuredAt == null) != (cursorId == null)) {
+                throw new IllegalArgumentException("cursorMeasuredAt and cursorId must be provided together");
             }
             int resolvedPageSize = resolvePageSize(pageSize);
             List<BodyMetricRecord> queryResult = bodyMetricRecordRepository.findDailyLatestByMetricTypeWithCursor(
                     user.getId(),
                     sourceMetricType,
-                    cursorDate,
+                    cursorMeasuredAt,
                     cursorId,
                     resolvedPageSize + 1
             );
@@ -167,17 +168,18 @@ public class BodyMetricRecordQueryService {
                     ? queryResult.subList(0, resolvedPageSize)
                     : queryResult;
 
-            LocalDate nextCursorDate = null;
+            LocalDateTime nextCursorMeasuredAt = null;
             Long nextCursorId = null;
             if (hasMore && !pageRecords.isEmpty()) {
                 BodyMetricRecord oldestInPage = pageRecords.get(pageRecords.size() - 1);
-                nextCursorDate = oldestInPage.getRecordDate();
+                nextCursorMeasuredAt = oldestInPage.getMeasuredAt();
                 nextCursorId = oldestInPage.getId();
             }
 
             List<BodyMetricRecord> sortedAscRecords = new ArrayList<>(pageRecords);
             sortedAscRecords.sort(Comparator
                     .comparing(BodyMetricRecord::getRecordDate)
+                    .thenComparing(BodyMetricRecord::getMeasuredAt)
                     .thenComparing(BodyMetricRecord::getId));
 
             return new BodyMetricTrendResponse(
@@ -186,7 +188,7 @@ public class BodyMetricRecordQueryService {
                     metricKey.unitLabel(),
                     toTrendPoints(metricKey, user, sortedAscRecords),
                     hasMore,
-                    nextCursorDate,
+                    nextCursorMeasuredAt,
                     nextCursorId
             );
         }
@@ -227,6 +229,7 @@ public class BodyMetricRecordQueryService {
                         return new BodyMetricHistoryRecordResponse(
                                 record.getId(),
                                 record.getRecordDate(),
+                                record.getMeasuredAt(),
                                 record.getCreatedAt(),
                                 bmi,
                                 metricKey.unit()
@@ -240,6 +243,7 @@ public class BodyMetricRecordQueryService {
                 .map(record -> new BodyMetricHistoryRecordResponse(
                         record.getId(),
                         record.getRecordDate(),
+                        record.getMeasuredAt(),
                         record.getCreatedAt(),
                         record.getMetricValue(),
                         record.getUnit()
@@ -269,6 +273,7 @@ public class BodyMetricRecordQueryService {
                         BodyMetricTrendMetricKey.BMI,
                         null,
                         BodyMetricTrendMetricKey.BMI.unitLabel(),
+                        null,
                         null
                 );
             }
@@ -277,7 +282,8 @@ public class BodyMetricRecordQueryService {
                     BodyMetricTrendMetricKey.BMI,
                     bmi,
                     BodyMetricTrendMetricKey.BMI.unitLabel(),
-                    bmi == null ? null : date
+                    bmi == null ? null : date,
+                    bmi == null ? null : latestWeightRecord.getMeasuredAt()
             );
         }
         return toSnapshotItem(metricKey, dailyLatestMap.get(metricKey.metricType()));
@@ -289,14 +295,15 @@ public class BodyMetricRecordQueryService {
                 BodyMetricType.WEIGHT
         ).orElse(null);
         if (latestWeightRecord == null) {
-            return new BodyMetricSnapshotItemResponse(BodyMetricTrendMetricKey.BMI, null, BodyMetricTrendMetricKey.BMI.unitLabel(), null);
+            return new BodyMetricSnapshotItemResponse(BodyMetricTrendMetricKey.BMI, null, BodyMetricTrendMetricKey.BMI.unitLabel(), null, null);
         }
         BigDecimal bmi = calculateBmi(latestWeightRecord.getMetricValue(), user.getHeight());
         return new BodyMetricSnapshotItemResponse(
                 BodyMetricTrendMetricKey.BMI,
                 bmi,
                 BodyMetricTrendMetricKey.BMI.unitLabel(),
-                bmi == null ? null : latestWeightRecord.getRecordDate()
+                bmi == null ? null : latestWeightRecord.getRecordDate(),
+                bmi == null ? null : latestWeightRecord.getMeasuredAt()
         );
     }
 
@@ -305,7 +312,8 @@ public class BodyMetricRecordQueryService {
                 metricKey,
                 record == null ? null : record.getMetricValue(),
                 metricKey.unitLabel(),
-                record == null ? null : record.getRecordDate()
+                record == null ? null : record.getRecordDate(),
+                record == null ? null : record.getMeasuredAt()
         );
     }
 

@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -95,48 +96,52 @@ public class WeightImportService {
         validateConfirmRequest(request);
         List<WeightImportConfirmRow> rows = request.rows();
 
-        Map<LocalDate, BigDecimal> dateWeightMap = new LinkedHashMap<>();
+        Map<LocalDateTime, BigDecimal> measuredAtWeightMap = new LinkedHashMap<>();
         for (WeightImportConfirmRow row : rows) {
-            dateWeightMap.put(row.date(), row.weightKg());
+            measuredAtWeightMap.put(normalizeMeasuredAt(row.measuredAt()), row.weightKg());
         }
-        List<LocalDate> dates = new ArrayList<>(dateWeightMap.keySet());
+        List<LocalDateTime> measuredAts = new ArrayList<>(measuredAtWeightMap.keySet());
         List<BodyMetricRecord> existingRecords = bodyMetricRecordRepository
-                .findByUserIdAndMetricTypeAndRecordDateIn(userId, BodyMetricType.WEIGHT, dates);
+                .findByUserIdAndMetricTypeAndMeasuredAtIn(userId, BodyMetricType.WEIGHT, measuredAts);
 
-        Map<LocalDate, BodyMetricRecord> existingMap = new LinkedHashMap<>();
+        Map<LocalDateTime, BodyMetricRecord> existingMap = new LinkedHashMap<>();
         for (BodyMetricRecord rec : existingRecords) {
-            existingMap.put(rec.getRecordDate(), rec);
+            existingMap.put(normalizeMeasuredAt(rec.getMeasuredAt()), rec);
         }
 
         List<BodyMetricRecord> toInsert = new ArrayList<>();
         int imported = 0;
         int skipped = 0;
         int overwritten = 0;
-        BigDecimal appliedTodayWeight = null;
-        LocalDate today = LocalDate.now();
+        boolean hasAppliedChange = false;
 
-        for (Map.Entry<LocalDate, BigDecimal> entry : dateWeightMap.entrySet()) {
-            LocalDate date = entry.getKey();
+        for (Map.Entry<LocalDateTime, BigDecimal> entry : measuredAtWeightMap.entrySet()) {
+            LocalDateTime measuredAt = entry.getKey();
             BigDecimal weightKg = entry.getValue();
 
-            if (existingMap.containsKey(date)) {
+            if (existingMap.containsKey(measuredAt)) {
                 if (request.duplicatePolicy() == DuplicatePolicy.OVERWRITE) {
-                    BodyMetricRecord existing = existingMap.get(date);
+                    BodyMetricRecord existing = existingMap.get(measuredAt);
                     existing.setMetricValue(weightKg);
+                    existing.setMeasuredAt(measuredAt);
+                    existing.setRecordDate(measuredAt.toLocalDate());
                     existing.setUpdatedAt(LocalDateTime.now());
                     bodyMetricRecordRepository.save(existing);
                     overwritten++;
-                    if (date.equals(today)) {
-                        appliedTodayWeight = weightKg;
-                    }
+                    hasAppliedChange = true;
                 } else {
                     skipped++;
                 }
             } else {
-                toInsert.add(new BodyMetricRecord(userId, BodyMetricType.WEIGHT, weightKg, BodyMetricUnit.KG, date));
-                if (date.equals(today)) {
-                    appliedTodayWeight = weightKg;
-                }
+                toInsert.add(new BodyMetricRecord(
+                        userId,
+                        BodyMetricType.WEIGHT,
+                        weightKg,
+                        BodyMetricUnit.KG,
+                        measuredAt.toLocalDate(),
+                        measuredAt
+                ));
+                hasAppliedChange = true;
             }
         }
 
@@ -145,12 +150,12 @@ public class WeightImportService {
             imported = toInsert.size();
         }
 
-        if (appliedTodayWeight != null) {
-            syncCurrentWeight(userId, appliedTodayWeight);
+        if (hasAppliedChange) {
+            syncCurrentWeight(userId);
         }
 
         return new WeightImportResultResponse(
-                dateWeightMap.size(),
+                measuredAtWeightMap.size(),
                 imported,
                 skipped,
                 overwritten,
@@ -347,16 +352,20 @@ public class WeightImportService {
             FormulaEvaluator evaluator
     ) {
         if (rawDate.isEmpty() && rawWeight.isEmpty()) {
-            return new PreviewEvaluation(new WeightImportPreviewRow(rawDate, rawWeight, null, null, "空行"), null);
+            return new PreviewEvaluation(new WeightImportPreviewRow(rawDate, rawWeight, null, null, null, "空行"), null);
         }
 
         WeightImportDateParser.ParseResult dateParseResult = parseCellDate(dateCell, rawDate, evaluator);
+        LocalDateTime parsedMeasuredAt = dateParseResult.measuredAt();
         LocalDate parsedDate = dateParseResult.date();
         String detectedDateFormat = dateParseResult.matchedPattern();
         BigDecimal rawWeightValue = parseCellWeight(weightCell, rawWeight, evaluator);
         if (parsedDate == null || rawWeightValue == null) {
             String error = parsedDate == null ? "日期格式无法识别: " + rawDate : "体重数值无效: " + rawWeight;
-            return new PreviewEvaluation(new WeightImportPreviewRow(rawDate, rawWeight, null, null, error), detectedDateFormat);
+            return new PreviewEvaluation(
+                    new WeightImportPreviewRow(rawDate, rawWeight, null, null, null, error),
+                    detectedDateFormat
+            );
         }
 
         BigDecimal weightKg = convertToKg(rawWeightValue, detectedUnit);
@@ -366,6 +375,7 @@ public class WeightImportService {
                             rawDate,
                             rawWeight,
                             parsedDate,
+                            parsedMeasuredAt,
                             weightKg,
                             "体重超出合理范围 (" + MIN_WEIGHT_KG + " - " + MAX_WEIGHT_KG + " kg)"
                     ),
@@ -375,13 +385,13 @@ public class WeightImportService {
 
         if (parsedDate.isAfter(LocalDate.now())) {
             return new PreviewEvaluation(
-                    new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, "未来日期"),
+                    new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, parsedMeasuredAt, weightKg, "未来日期"),
                     detectedDateFormat
             );
         }
 
         return new PreviewEvaluation(
-                new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, weightKg, null),
+                new WeightImportPreviewRow(rawDate, rawWeight, parsedDate, parsedMeasuredAt, weightKg, null),
                 detectedDateFormat
         );
     }
@@ -407,11 +417,11 @@ public class WeightImportService {
             if (row == null) {
                 throw new IllegalArgumentException("导入数据存在空行");
             }
-            if (row.date() == null) {
-                throw new IllegalArgumentException("导入日期不能为空");
+            if (row.measuredAt() == null) {
+                throw new IllegalArgumentException("导入时间不能为空");
             }
-            if (row.date().isAfter(today)) {
-                throw new IllegalArgumentException("导入日期不能晚于今天");
+            if (normalizeMeasuredAt(row.measuredAt()).toLocalDate().isAfter(today)) {
+                throw new IllegalArgumentException("导入时间不能晚于今天");
             }
             if (row.weightKg() == null) {
                 throw new IllegalArgumentException("体重不能为空");
@@ -595,7 +605,7 @@ public class WeightImportService {
         Double numericValue = extractNumericCellValue(cell, evaluator);
         if (numericValue != null && cell != null && DateUtil.isCellDateFormatted(cell)) {
             return new WeightImportDateParser.ParseResult(
-                    DateUtil.getLocalDateTime(numericValue).toLocalDate(),
+                    DateUtil.getLocalDateTime(numericValue).truncatedTo(ChronoUnit.MINUTES),
                     "Excel 日期单元格"
             );
         }
@@ -897,12 +907,29 @@ public class WeightImportService {
         }
     }
 
-    private void syncCurrentWeight(Long userId, BigDecimal weightKg) {
-        UserProfile user = userProfileRepository.findById(userId).orElse(null);
+    private LocalDateTime normalizeMeasuredAt(LocalDateTime measuredAt) {
+        return measuredAt.truncatedTo(ChronoUnit.MINUTES);
+    }
+
+    private void syncCurrentWeight(Long userId) {
+        java.util.Optional<UserProfile> userOptional = userProfileRepository.findById(userId);
+        UserProfile user = userOptional == null ? null : userOptional.orElse(null);
         if (user == null) {
             return;
         }
-        user.setCurrentWeight(weightKg);
+        java.util.Optional<BodyMetricRecord> latestWeightOptional = bodyMetricRecordRepository.findLatestByMetricType(
+                userId,
+                BodyMetricType.WEIGHT
+        );
+        BodyMetricRecord latestWeightRecord = latestWeightOptional == null ? null : latestWeightOptional.orElse(null);
+        if (latestWeightRecord == null) {
+            return;
+        }
+        if (user.getCurrentWeight() != null
+                && user.getCurrentWeight().compareTo(latestWeightRecord.getMetricValue()) == 0) {
+            return;
+        }
+        user.setCurrentWeight(latestWeightRecord.getMetricValue());
         refreshSmartGoalSnapshot(user);
         userProfileRepository.update(user);
     }

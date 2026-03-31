@@ -5,7 +5,7 @@ const { deleteRecord, getRecords } = require("../../services/record");
 const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS, getRecommendedMealType: getRecommendedMealTypeByTime } = require("../../utils/constants");
-const { addDays, getToday } = require("../../utils/date");
+const { addDays, combineDateAndTime, getCurrentMinute, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
 
@@ -314,6 +314,7 @@ Page({
     weightEditorVisible: false,
     weightEditorLoading: false,
     weightEditorDate: getToday(),
+    weightEditorTime: getCurrentMinute(),
     weightValue: "",
     quickMenuVisible: false,
     dailyWeight: {
@@ -623,6 +624,7 @@ Page({
       weightEditorVisible: true,
       weightEditorLoading: false,
       weightEditorDate: this.data.recordDate,
+      weightEditorTime: getCurrentMinute(),
       weightValue: "",
     });
   },
@@ -765,6 +767,7 @@ Page({
     this.setData({
       weightEditorVisible: false,
       weightEditorDate: this.data.recordDate,
+      weightEditorTime: getCurrentMinute(),
       weightValue: "",
     });
   },
@@ -778,6 +781,12 @@ Page({
   handleWeightInput(event) {
     this.setData({
       weightValue: event.detail.value,
+    });
+  },
+
+  handleWeightTimeChange(event) {
+    this.setData({
+      weightEditorTime: event.detail.value,
     });
   },
 
@@ -797,6 +806,7 @@ Page({
       metricValue,
       unit: "KG",
       recordDate: this.data.weightEditorDate,
+      measuredAt: combineDateAndTime(this.data.weightEditorDate, this.data.weightEditorTime),
     })
       .then(() => {
         const nextRecordDate = this.data.weightEditorDate;
@@ -804,6 +814,7 @@ Page({
         this.setData({
           weightEditorVisible: false,
           weightEditorDate: nextRecordDate,
+          weightEditorTime: getCurrentMinute(),
           weightValue: "",
           recordDate: nextRecordDate,
         }, () => {

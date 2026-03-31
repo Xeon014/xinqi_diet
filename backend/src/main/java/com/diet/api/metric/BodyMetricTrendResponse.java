@@ -1,7 +1,7 @@
 package com.diet.api.metric;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Schema(description = "身体指标趋势响应")
@@ -21,8 +21,8 @@ public record BodyMetricTrendResponse(
         @Schema(description = "是否还有更多历史数据")
         boolean hasMore,
 
-        @Schema(description = "下一页游标日期")
-        LocalDate nextCursorDate,
+        @Schema(description = "下一页游标测量时间")
+        LocalDateTime nextCursorMeasuredAt,
 
         @Schema(description = "下一页游标记录 ID")
         Long nextCursorId

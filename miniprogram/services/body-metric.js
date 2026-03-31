@@ -30,8 +30,8 @@ function getBodyMetricTrend(params) {
     `metricKey=${encodeURIComponent(params.metricKey)}`,
     `rangeType=${encodeURIComponent(params.rangeType)}`,
   ];
-  if (params.cursorDate) {
-    query.push(`cursorDate=${encodeURIComponent(params.cursorDate)}`);
+  if (params.cursorMeasuredAt) {
+    query.push(`cursorMeasuredAt=${encodeURIComponent(params.cursorMeasuredAt)}`);
   }
   if (params.cursorId != null) {
     query.push(`cursorId=${encodeURIComponent(params.cursorId)}`);
@@ -49,8 +49,8 @@ function getBodyMetricHistory(params) {
   const query = [
     `metricKey=${encodeURIComponent(params.metricKey)}`,
   ];
-  if (params.cursorDate) {
-    query.push(`cursorDate=${encodeURIComponent(params.cursorDate)}`);
+  if (params.cursorMeasuredAt) {
+    query.push(`cursorMeasuredAt=${encodeURIComponent(params.cursorMeasuredAt)}`);
   }
   if (params.cursorId != null) {
     query.push(`cursorId=${encodeURIComponent(params.cursorId)}`);

@@ -99,7 +99,7 @@
       </view>
       <view class="preview-row-header">
         <view class="col-check"></view>
-        <view class="col-date">日期</view>
+        <view class="col-date">日期时间</view>
         <view class="col-weight">体重(kg)</view>
         <view class="col-status">状态</view>
       </view>
@@ -113,7 +113,7 @@
             ✓
           </view>
         </view>
-        <view class="col-date">{{item.parsedDate || item.rawDate || '-'}}</view>
+        <view class="col-date">{{item.displayMeasuredAt}}</view>
         <view class="col-weight">{{item.parsedWeightKg != null ? item.parsedWeightKg : '-'}}</view>
         <view class="col-status">
           <text wx:if="{{item.error}}" class="status-error">{{item.error}}</text>

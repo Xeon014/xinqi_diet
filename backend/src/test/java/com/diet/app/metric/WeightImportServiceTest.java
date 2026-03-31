@@ -25,6 +25,7 @@ import com.diet.app.user.GoalPlanningService;
 import java.math.BigDecimal;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -164,6 +165,7 @@ class WeightImportServiceTest {
 
         assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
+        assertThat(response.rows().get(0).parsedMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 28, 9, 39));
     }
 
     @Test
@@ -427,6 +429,7 @@ class WeightImportServiceTest {
 
             assertThat(response.detectedDateFormat()).isEqualTo("yyyy/M/d H:mm");
             assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2026, 3, 28));
+            assertThat(response.rows().get(0).parsedMeasuredAt()).isEqualTo(LocalDateTime.of(2026, 3, 28, 9, 39));
             assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
         }
     }
@@ -448,19 +451,19 @@ class WeightImportServiceTest {
 
     @Test
     void shouldSkipExistingRecordsWhenPolicyIsSkip() {
-        LocalDate date1 = LocalDate.of(2025, 1, 1);
-        LocalDate date2 = LocalDate.of(2025, 1, 2);
+        LocalDateTime measuredAt1 = LocalDateTime.of(2025, 1, 1, 0, 0);
+        LocalDateTime measuredAt2 = LocalDateTime.of(2025, 1, 2, 0, 0);
 
-        BodyMetricRecord existingRecord = buildRecord(10L, date1, new BigDecimal("68.0"));
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        BodyMetricRecord existingRecord = buildRecord(10L, measuredAt1, new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of(existingRecord));
 
         WeightImportResultResponse result = weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
                         List.of(
-                                new WeightImportConfirmRow(date1, new BigDecimal("70.5")),
-                                new WeightImportConfirmRow(date2, new BigDecimal("71.0"))
+                                new WeightImportConfirmRow(measuredAt1, new BigDecimal("70.5")),
+                                new WeightImportConfirmRow(measuredAt2, new BigDecimal("71.0"))
                         ),
                         DuplicatePolicy.SKIP
                 ));
@@ -474,17 +477,17 @@ class WeightImportServiceTest {
 
     @Test
     void shouldOverwriteExistingRecordsWhenPolicyIsOverwrite() {
-        LocalDate date1 = LocalDate.of(2025, 1, 1);
+        LocalDateTime measuredAt1 = LocalDateTime.of(2025, 1, 1, 0, 0);
 
-        BodyMetricRecord existingRecord = buildRecord(10L, date1, new BigDecimal("68.0"));
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        BodyMetricRecord existingRecord = buildRecord(10L, measuredAt1, new BigDecimal("68.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of(existingRecord));
 
         WeightImportResultResponse result = weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
                         List.of(
-                                new WeightImportConfirmRow(date1, new BigDecimal("70.5"))
+                                new WeightImportConfirmRow(measuredAt1, new BigDecimal("70.5"))
                         ),
                         DuplicatePolicy.OVERWRITE
                 ));
@@ -498,16 +501,16 @@ class WeightImportServiceTest {
 
     @Test
     void shouldDeduplicateRequestRowsByDate() {
-        LocalDate date = LocalDate.of(2025, 1, 1);
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        LocalDateTime measuredAt = LocalDateTime.of(2025, 1, 1, 7, 35);
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of());
 
         WeightImportResultResponse result = weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
                         List.of(
-                                new WeightImportConfirmRow(date, new BigDecimal("70.0")),
-                                new WeightImportConfirmRow(date, new BigDecimal("70.5"))
+                                new WeightImportConfirmRow(measuredAt, new BigDecimal("70.0")),
+                                new WeightImportConfirmRow(measuredAt, new BigDecimal("70.5"))
                         ),
                         DuplicatePolicy.SKIP
                 ));
@@ -523,14 +526,16 @@ class WeightImportServiceTest {
         user.setId(1L);
         user.setCurrentWeight(new BigDecimal("68.0"));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of());
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(100L, LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getDayOfMonth(), 7, 35), new BigDecimal("70.5"))));
 
         weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
                         List.of(
-                                new WeightImportConfirmRow(LocalDate.now(), new BigDecimal("70.5"))
+                                new WeightImportConfirmRow(LocalDate.now().atTime(7, 35), new BigDecimal("70.5"))
                         ),
                         DuplicatePolicy.SKIP
                 ));
@@ -541,9 +546,9 @@ class WeightImportServiceTest {
 
     @Test
     void shouldNotSyncCurrentWeightWhenTodayRecordIsSkipped() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDate.now().atTime(7, 35);
         BodyMetricRecord existingRecord = buildRecord(10L, today, new BigDecimal("68.0"));
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of(existingRecord));
 
@@ -559,15 +564,17 @@ class WeightImportServiceTest {
 
     @Test
     void shouldSyncCurrentWeightWhenTodayRecordIsOverwritten() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime today = LocalDate.now().atTime(7, 35);
         BodyMetricRecord existingRecord = buildRecord(10L, today, new BigDecimal("68.0"));
         UserProfile user = new UserProfile();
         user.setId(1L);
         user.setCurrentWeight(new BigDecimal("68.0"));
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of(existingRecord));
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(10L, today, new BigDecimal("70.5"))));
 
         weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
@@ -580,20 +587,26 @@ class WeightImportServiceTest {
     }
 
     @Test
-    void shouldNotSyncCurrentWeightWhenTodayIsNotImported() {
-        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndRecordDateIn(
+    void shouldKeepCurrentWeightWhenImportedRecordIsNotLatest() {
+        UserProfile user = new UserProfile();
+        user.setId(1L);
+        user.setCurrentWeight(new BigDecimal("72.0"));
+        when(bodyMetricRecordRepository.findByUserIdAndMetricTypeAndMeasuredAtIn(
                 eq(1L), eq(BodyMetricType.WEIGHT), anyList()))
                 .thenReturn(List.of());
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findLatestByMetricType(1L, BodyMetricType.WEIGHT))
+                .thenReturn(Optional.of(buildRecord(200L, LocalDateTime.of(2025, 2, 1, 8, 0), new BigDecimal("72.0"))));
 
         weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
                         List.of(
-                                new WeightImportConfirmRow(LocalDate.of(2025, 1, 1), new BigDecimal("70.5"))
+                                new WeightImportConfirmRow(LocalDateTime.of(2025, 1, 1, 0, 0), new BigDecimal("70.5"))
                         ),
                         DuplicatePolicy.SKIP
                 ));
 
-        verify(userProfileRepository, never()).findById(any());
+        assertThat(user.getCurrentWeight()).isEqualByComparingTo("72.0");
         verify(userProfileRepository, never()).update(any());
     }
 
@@ -601,18 +614,18 @@ class WeightImportServiceTest {
     void shouldRejectFutureDateDuringConfirm() {
         assertThatThrownBy(() -> weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
-                        List.of(new WeightImportConfirmRow(LocalDate.now().plusDays(1), new BigDecimal("70.5"))),
+                        List.of(new WeightImportConfirmRow(LocalDate.now().plusDays(1).atStartOfDay(), new BigDecimal("70.5"))),
                         DuplicatePolicy.SKIP
                 )))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("导入日期不能晚于今天");
+                .hasMessageContaining("导入时间不能晚于今天");
     }
 
     @Test
     void shouldRejectOutOfRangeWeightDuringConfirm() {
         assertThatThrownBy(() -> weightImportService.confirm(1L,
                 new WeightImportConfirmRequest(
-                        List.of(new WeightImportConfirmRow(LocalDate.now(), new BigDecimal("10.0"))),
+                        List.of(new WeightImportConfirmRow(LocalDate.now().atTime(7, 35), new BigDecimal("10.0"))),
                         DuplicatePolicy.SKIP
                 )))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -621,14 +634,15 @@ class WeightImportServiceTest {
 
     // --- Helper ---
 
-    private BodyMetricRecord buildRecord(Long id, LocalDate date, BigDecimal weight) {
+    private BodyMetricRecord buildRecord(Long id, LocalDateTime measuredAt, BigDecimal weight) {
         BodyMetricRecord record = new BodyMetricRecord();
         record.setId(id);
         record.setUserId(1L);
         record.setMetricType(BodyMetricType.WEIGHT);
         record.setMetricValue(weight);
         record.setUnit(BodyMetricUnit.KG);
-        record.setRecordDate(date);
+        record.setRecordDate(measuredAt.toLocalDate());
+        record.setMeasuredAt(measuredAt);
         return record;
     }
 

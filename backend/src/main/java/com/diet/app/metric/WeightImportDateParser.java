@@ -4,6 +4,8 @@ import cn.hutool.core.date.DateException;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 final class WeightImportDateParser {
@@ -50,17 +52,22 @@ final class WeightImportDateParser {
         String trimmed = raw.trim();
         for (PatternCandidate candidate : PATTERN_CANDIDATES) {
             try {
-                LocalDate parsedDate = LocalDateTimeUtil.of(DateUtil.parse(trimmed, candidate.pattern())).toLocalDate();
-                return new ParseResult(parsedDate, candidate.pattern());
+                LocalDateTime measuredAt = LocalDateTimeUtil.of(DateUtil.parse(trimmed, candidate.pattern()))
+                        .truncatedTo(ChronoUnit.MINUTES);
+                return new ParseResult(measuredAt, candidate.pattern());
             } catch (DateException ignored) {
             }
         }
         return ParseResult.empty();
     }
 
-    record ParseResult(LocalDate date, String matchedPattern) {
+    record ParseResult(LocalDateTime measuredAt, String matchedPattern) {
         static ParseResult empty() {
             return new ParseResult(null, null);
+        }
+
+        LocalDate date() {
+            return measuredAt == null ? null : measuredAt.toLocalDate();
         }
     }
 

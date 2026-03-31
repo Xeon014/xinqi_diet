@@ -32,6 +32,9 @@ public class BodyMetricRecord {
     @TableField("record_date")
     private LocalDate recordDate;
 
+    @TableField("measured_at")
+    private LocalDateTime measuredAt;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
@@ -45,12 +48,24 @@ public class BodyMetricRecord {
             BodyMetricUnit unit,
             LocalDate recordDate
     ) {
+        this(userId, metricType, metricValue, unit, recordDate, recordDate.atStartOfDay());
+    }
+
+    public BodyMetricRecord(
+            Long userId,
+            BodyMetricType metricType,
+            BigDecimal metricValue,
+            BodyMetricUnit unit,
+            LocalDate recordDate,
+            LocalDateTime measuredAt
+    ) {
         LocalDateTime now = LocalDateTime.now();
         this.userId = userId;
         this.metricType = metricType;
         this.metricValue = metricValue;
         this.unit = unit;
         this.recordDate = recordDate;
+        this.measuredAt = measuredAt;
         this.createdAt = now;
         this.updatedAt = now;
     }

@@ -1,4 +1,5 @@
 const { previewWeightImport, confirmWeightImport } = require("../../services/body-metric");
+const { formatDateTimeToMinute } = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 Page({
@@ -148,7 +149,7 @@ Page({
     for (let i = 0; i < preview.rows.length; i++) {
       if (checkedRows[i] && preview.rows[i].parsedDate && preview.rows[i].parsedWeightKg != null) {
         validRows.push({
-          date: preview.rows[i].parsedDate,
+          measuredAt: preview.rows[i].parsedMeasuredAt,
           weightKg: preview.rows[i].parsedWeightKg,
         });
       }
@@ -190,6 +191,9 @@ Page({
       if (!showOnlyErrors || row.error) {
         displayRows.push({
           ...row,
+          displayMeasuredAt: row.parsedMeasuredAt
+            ? formatDateTimeToMinute(row.parsedMeasuredAt)
+            : (row.parsedDate || row.rawDate || "-"),
           originalIndex: index,
         });
       }

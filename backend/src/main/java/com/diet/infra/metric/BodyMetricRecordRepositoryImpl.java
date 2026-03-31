@@ -3,8 +3,8 @@ package com.diet.infra.metric;
 import com.diet.domain.metric.BodyMetricRecord;
 import com.diet.domain.metric.BodyMetricRecordRepository;
 import com.diet.domain.metric.BodyMetricType;
-import com.diet.infra.metric.BodyMetricRecordMapper;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -51,22 +51,28 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     public List<BodyMetricRecord> findDailyLatestByMetricTypeWithCursor(
             Long userId,
             BodyMetricType metricType,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             int limit
     ) {
-        return bodyMetricRecordMapper.findDailyLatestByMetricTypeWithCursor(userId, metricType, cursorDate, cursorId, limit);
+        return bodyMetricRecordMapper.findDailyLatestByMetricTypeWithCursor(
+                userId,
+                metricType,
+                cursorMeasuredAt,
+                cursorId,
+                limit
+        );
     }
 
     @Override
     public List<BodyMetricRecord> findByMetricTypeWithCursor(
             Long userId,
             BodyMetricType metricType,
-            LocalDate cursorDate,
+            LocalDateTime cursorMeasuredAt,
             Long cursorId,
             int limit
     ) {
-        return bodyMetricRecordMapper.findByMetricTypeWithCursor(userId, metricType, cursorDate, cursorId, limit);
+        return bodyMetricRecordMapper.findByMetricTypeWithCursor(userId, metricType, cursorMeasuredAt, cursorId, limit);
     }
 
     @Override
@@ -92,14 +98,14 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     }
 
     @Override
-    public List<BodyMetricRecord> findByUserIdAndMetricTypeAndRecordDateIn(
+    public List<BodyMetricRecord> findByUserIdAndMetricTypeAndMeasuredAtIn(
             Long userId,
             BodyMetricType metricType,
-            List<LocalDate> dates
+            List<LocalDateTime> measuredAts
     ) {
-        if (dates == null || dates.isEmpty()) {
+        if (measuredAts == null || measuredAts.isEmpty()) {
             return List.of();
         }
-        return bodyMetricRecordMapper.findByUserIdAndMetricTypeAndRecordDateIn(userId, metricType, dates);
+        return bodyMetricRecordMapper.findByUserIdAndMetricTypeAndMeasuredAtIn(userId, metricType, measuredAts);
     }
 }

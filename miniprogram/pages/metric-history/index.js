@@ -1,5 +1,11 @@
 const { createBodyMetricRecord, deleteBodyMetricRecord, getBodyMetricHistory } = require("../../services/body-metric");
-const { getToday } = require("../../utils/date");
+const {
+  combineDateAndTime,
+  extractDatePart,
+  extractTimePart,
+  getCurrentMinute,
+  getToday,
+} = require("../../utils/date");
 const { pickErrorMessage } = require("../../utils/request");
 
 const ALL_PAGE_SIZE = 120;
@@ -34,21 +40,12 @@ function toOneDecimal(value) {
   return number.toFixed(1);
 }
 
-function formatTime(dateTimeText) {
-  const text = String(dateTimeText || "").trim();
-  if (!text) {
-    return "--";
-  }
-  const match = text.replace("T", " ").match(/(\d{2}:\d{2})/);
-  return match ? match[1] : "--";
-}
-
 function normalizeRecords(records, fallbackUnit) {
   return (records || [])
     .map((item) => ({
       id: item && item.id != null ? Number(item.id) : NaN,
-      date: item && item.recordDate ? item.recordDate : "",
-      time: formatTime(item && item.createdAt),
+      date: extractDatePart(item && (item.measuredAt || item.recordDate)) || "",
+      time: extractTimePart(item && (item.measuredAt || item.createdAt)) || "--",
       value: item && item.metricValue != null ? Number(item.metricValue) : NaN,
       unit: fallbackUnit,
     }))
@@ -106,7 +103,7 @@ Page({
     canCreate: true,
     loading: false,
     hasMore: false,
-    nextCursorDate: "",
+    nextCursorMeasuredAt: "",
     nextCursorId: null,
     records: [],
     swipedRecordId: null,
@@ -117,6 +114,8 @@ Page({
     editorLoading: false,
     editorValue: "",
     editorDate: getToday(),
+    editorTime: getCurrentMinute(),
+    editorShowTime: true,
   },
 
   onLoad(options) {
@@ -144,7 +143,7 @@ Page({
     this.setData({
       loading: true,
       hasMore: false,
-      nextCursorDate: "",
+      nextCursorMeasuredAt: "",
       nextCursorId: null,
       swipedRecordId: null,
       swipingRecordId: null,
@@ -161,7 +160,7 @@ Page({
         this.setData({
           records: applySwipeState(list, null, null, 0),
           hasMore: Boolean(response && response.hasMore),
-          nextCursorDate: response && response.nextCursorDate ? response.nextCursorDate : "",
+          nextCursorMeasuredAt: response && response.nextCursorMeasuredAt ? response.nextCursorMeasuredAt : "",
           nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
         });
       })
@@ -185,7 +184,7 @@ Page({
     getBodyMetricHistory({
       metricKey: this.data.metricKey,
       pageSize: ALL_PAGE_SIZE,
-      cursorDate: this.data.nextCursorDate,
+      cursorMeasuredAt: this.data.nextCursorMeasuredAt,
       cursorId: this.data.nextCursorId,
     })
       .then((response) => {
@@ -198,7 +197,7 @@ Page({
         this.setData({
           records: applySwipeState(merged, null, null, 0),
           hasMore: Boolean(response && response.hasMore),
-          nextCursorDate: response && response.nextCursorDate ? response.nextCursorDate : "",
+          nextCursorMeasuredAt: response && response.nextCursorMeasuredAt ? response.nextCursorMeasuredAt : "",
           nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
           swipedRecordId: null,
           swipingRecordId: null,
@@ -224,6 +223,8 @@ Page({
       editorLoading: false,
       editorValue: "",
       editorDate: getToday(),
+      editorTime: getCurrentMinute(),
+      editorShowTime: this.data.metricKey === "WEIGHT",
     });
   },
 
@@ -244,6 +245,12 @@ Page({
   handleEditorDateChange(event) {
     this.setData({
       editorDate: event.detail.value,
+    });
+  },
+
+  handleEditorTimeChange(event) {
+    this.setData({
+      editorTime: event.detail.value,
     });
   },
 
@@ -406,12 +413,16 @@ Page({
       metricValue,
       unit: metric.saveUnit,
       recordDate: this.data.editorDate,
+      measuredAt: this.data.metricKey === "WEIGHT"
+        ? combineDateAndTime(this.data.editorDate, this.data.editorTime)
+        : undefined,
     })
       .then(() => {
         wx.showToast({ title: "已保存", icon: "success" });
         this.setData({
           editorVisible: false,
           editorValue: "",
+          editorTime: getCurrentMinute(),
         });
         this.loadList(false);
       })

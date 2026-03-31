@@ -18,6 +18,7 @@
     <view class="chart-head">
       <view>
         <view class="chart-latest">{{currentLatestText}}</view>
+        <view wx:if="{{currentLatestMetaText}}" class="chart-meta">{{currentLatestMetaText}}</view>
       </view>
       <view class="chart-add-btn {{currentMetricCanCreate ? '' : 'disabled'}}" bindtap="handleOpenCurrentMetricEditor">+</view>
     </view>
@@ -52,7 +53,7 @@
             bindtap="handleSelectChartPoint"
           >
             <view class="trend-point {{point.isLatest ? 'latest' : ''}} {{point.isSelected ? 'selected' : ''}}"></view>
-            <view wx:if="{{point.isSelected}}" class="latest-value">{{point.displayValue}}</view>
+            <view wx:if="{{point.isSelected}}" class="latest-value {{point.valueBelow ? 'below' : ''}}">{{point.displayValue}}</view>
           </view>
 
           <view
@@ -114,11 +115,14 @@
     title="记录{{metricEditorMetricLabel}}"
     date="{{metricEditorDate}}"
     dateEditable="{{true}}"
+    showTime="{{metricEditorShowTime}}"
+    time="{{metricEditorTime}}"
     value="{{metricEditorValue}}"
     placeholder="请输入数值"
     unit="{{metricEditorUnit}}"
     bind:close="handleCloseMetricEditor"
     bind:datechange="handleMetricEditorDateChange"
+    bind:timechange="handleMetricEditorTimeChange"
     bind:input="handleMetricEditorInput"
     bind:submit="handleSubmitMetricEditor"
   />
