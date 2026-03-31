@@ -24,13 +24,14 @@ Page({
         const fileName = file.name;
         try {
           const fs = wx.getFileSystemManager();
-          const content = fs.readFileSync(filePath, "utf-8");
-          if (!content || !content.trim()) {
+          const buffer = fs.readFileSync(filePath);
+          const base64 = wx.arrayBufferToBase64(buffer);
+          if (!base64) {
             wx.showToast({ title: "文件内容为空", icon: "none" });
             return;
           }
           this.setData({ fileName, parsing: true });
-          previewWeightImport(fileName, content)
+          previewWeightImport(fileName, base64)
             .then((preview) => {
               const checkedRows = preview.rows
                 ? preview.rows.map((row) => row.error == null)

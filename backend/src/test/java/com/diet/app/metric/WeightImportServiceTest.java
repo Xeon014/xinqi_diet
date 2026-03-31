@@ -61,7 +61,7 @@ class WeightImportServiceTest {
     void shouldDetectCommaDelimiter() {
         String csv = "date,weight\n2025-01-01,70.5\n2025-01-02,71.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedDelimiter()).isEqualTo(",");
         assertThat(response.parsedRows()).isEqualTo(2);
@@ -71,7 +71,7 @@ class WeightImportServiceTest {
     void shouldDetectTabDelimiter() {
         String csv = "日期\t体重 (斤)\t体重变化 (斤)\t状态\t备注\n2025-01-01\t130.0\t0\t正常\t\n2025-01-02\t131.5\t1.5\t正常\t";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedDelimiter()).isEqualTo("Tab");
         assertThat(response.parsedRows()).isEqualTo(2);
@@ -82,7 +82,7 @@ class WeightImportServiceTest {
     void shouldDetectSemicolonDelimiter() {
         String csv = "DateTime;Weight\n25.12.2024;75.5\n26.12.2024;76.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedDelimiter()).isEqualTo(";");
     }
@@ -93,7 +93,7 @@ class WeightImportServiceTest {
     void shouldFindDateColumnByChineseName() {
         String csv = "日期,体重\n2025-01-01,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.parsedRows()).isEqualTo(1);
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 1, 1));
@@ -103,7 +103,7 @@ class WeightImportServiceTest {
     void shouldFindWeightColumnByChineseName() {
         String csv = "date,体重(kg)\n2025-01-01,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.parsedRows()).isEqualTo(1);
         assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
@@ -114,7 +114,7 @@ class WeightImportServiceTest {
         String csv = "weight,value\n70.5,100";
 
         assertThatThrownBy(() -> weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv)))
+                new WeightImportPreviewRequest("test.csv", null, csv)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("未找到日期列");
     }
@@ -124,7 +124,7 @@ class WeightImportServiceTest {
         String csv = "date,height\n2025-01-01,170";
 
         assertThatThrownBy(() -> weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv)))
+                new WeightImportPreviewRequest("test.csv", null, csv)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("未找到体重列");
     }
@@ -135,7 +135,7 @@ class WeightImportServiceTest {
     void shouldParseIsoDate() {
         String csv = "date,weight\n2025-03-31,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
     }
@@ -144,7 +144,7 @@ class WeightImportServiceTest {
     void shouldParseIsoDateTime() {
         String csv = "date,weight\n2025-03-31T07:30:00,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
     }
@@ -153,7 +153,7 @@ class WeightImportServiceTest {
     void shouldParseSlashDate() {
         String csv = "date,weight\n2025/03/31,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 31));
     }
@@ -162,7 +162,7 @@ class WeightImportServiceTest {
     void shouldParseNonZeroPaddedSlashDate() {
         String csv = "date,weight\n2025/3/1,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.rows().get(0).parsedDate()).isEqualTo(LocalDate.of(2025, 3, 1));
     }
@@ -171,7 +171,7 @@ class WeightImportServiceTest {
     void shouldMarkInvalidDateRow() {
         String csv = "date,weight\nnot-a-date,70.5\n2025-01-01,71.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.skippedRows()).isEqualTo(1);
         assertThat(response.parsedRows()).isEqualTo(1);
@@ -185,7 +185,7 @@ class WeightImportServiceTest {
     void shouldDetectJinUnitFromColumnName() {
         String csv = "日期\t体重 (斤)\n2025-01-01\t130.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedUnit()).isEqualTo("斤");
         assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("65.00");
@@ -195,7 +195,7 @@ class WeightImportServiceTest {
     void shouldDetectLbsUnitFromColumnName() {
         String csv = "date,Weight (lbs)\n2025-01-01,154.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedUnit()).isEqualTo("lbs");
         assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("69.85");
@@ -205,7 +205,7 @@ class WeightImportServiceTest {
     void shouldKeepKgByDefault() {
         String csv = "date,weight\n2025-01-01,70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.detectedUnit()).isEqualTo("kg");
         assertThat(response.rows().get(0).parsedWeightKg()).isEqualByComparingTo("70.50");
@@ -217,7 +217,7 @@ class WeightImportServiceTest {
     void shouldRejectWeightBelowMinimum() {
         String csv = "date,weight\n2025-01-01,15.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.skippedRows()).isEqualTo(1);
         assertThat(response.rows().get(0).error()).contains("超出合理范围");
@@ -228,7 +228,7 @@ class WeightImportServiceTest {
         String futureDate = LocalDate.now().plusDays(1).toString();
         String csv = "date,weight\n" + futureDate + ",70.5";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.skippedRows()).isEqualTo(1);
         assertThat(response.rows().get(0).error()).contains("未来日期");
@@ -239,7 +239,7 @@ class WeightImportServiceTest {
     @Test
     void shouldHandleEmptyFile() {
         assertThatThrownBy(() -> weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", "")))
+                new WeightImportPreviewRequest("test.csv", null, "")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("文件内容为空");
     }
@@ -248,7 +248,7 @@ class WeightImportServiceTest {
     void shouldHandleHeaderOnlyCsv() {
         String csv = "date,weight";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.totalRows()).isEqualTo(0);
         assertThat(response.parsedRows()).isEqualTo(0);
@@ -258,7 +258,7 @@ class WeightImportServiceTest {
     void shouldHandleMixedValidAndInvalidRows() {
         String csv = "date,weight\n2025-01-01,70.5\nbad-date,abc\n2025-01-02,72.0";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.totalRows()).isEqualTo(3);
         assertThat(response.parsedRows()).isEqualTo(2);
@@ -269,7 +269,7 @@ class WeightImportServiceTest {
     void shouldSkipEmptyLines() {
         String csv = "date,weight\n\n2025-01-01,70.5\n\n2025-01-02,71.0\n";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.totalRows()).isEqualTo(2);
         assertThat(response.parsedRows()).isEqualTo(2);
@@ -287,7 +287,7 @@ class WeightImportServiceTest {
         }
 
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv.toString()));
+                new WeightImportPreviewRequest("test.csv", null, csv.toString()));
 
         assertThat(response.totalRows()).isEqualTo(1000);
         assertThat(response.rows()).hasSize(1000);
@@ -305,7 +305,7 @@ class WeightImportServiceTest {
         }
 
         assertThatThrownBy(() -> weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv.toString())))
+                new WeightImportPreviewRequest("test.csv", null, csv.toString())))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("单次最多导入 1000 行");
     }
@@ -314,7 +314,7 @@ class WeightImportServiceTest {
     void shouldParseQuotedMultilineField() {
         String csv = "date,weight,note\n2025-01-01,70.5,\"第一行\n第二行\"";
         WeightImportPreviewResponse response = weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv));
+                new WeightImportPreviewRequest("test.csv", null, csv));
 
         assertThat(response.totalRows()).isEqualTo(1);
         assertThat(response.parsedRows()).isEqualTo(1);
@@ -327,7 +327,7 @@ class WeightImportServiceTest {
         String csv = "date,weight,note\n2025-01-01,70.5,\"第一行\n第二行";
 
         assertThatThrownBy(() -> weightImportService.preview(1L,
-                new WeightImportPreviewRequest("test.csv", csv)))
+                new WeightImportPreviewRequest("test.csv", null, csv)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("未闭合的引号");
     }

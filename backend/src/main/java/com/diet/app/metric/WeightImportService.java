@@ -18,11 +18,15 @@ import com.diet.domain.user.UserProfileRepository;
 import com.diet.api.user.GoalPlanPreviewResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +79,8 @@ public class WeightImportService {
     }
 
     public WeightImportPreviewResponse preview(Long userId, WeightImportPreviewRequest request) {
-        String content = stripUtf8Bom(request.fileContent());
+        String content = resolveFileContent(request);
+        content = stripUtf8Bom(content);
         if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("文件内容为空");
         }
@@ -418,6 +423,57 @@ public class WeightImportService {
             return value.substring(1);
         }
         return value;
+    }
+
+    private String resolveFileContent(WeightImportPreviewRequest request) {
+        if (request.fileBase64() != null && !request.fileBase64().isBlank()) {
+            byte[] bytes = Base64.getDecoder().decode(request.fileBase64());
+            return decodeBytesToString(bytes);
+        }
+        return request.fileContent();
+    }
+
+    private String decodeBytesToString(byte[] bytes) {
+        // Check UTF-8 BOM
+        if (bytes.length >= 3
+                && (bytes[0] & 0xFF) == 0xEF
+                && (bytes[1] & 0xFF) == 0xBB
+                && (bytes[2] & 0xFF) == 0xBF) {
+            return new String(bytes, 3, bytes.length - 3, StandardCharsets.UTF_8);
+        }
+        // Try UTF-8: if valid, use it
+        if (isValidUtf8(bytes)) {
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+        // Fallback to GBK (common for Chinese CSV exports)
+        return new String(bytes, Charset.forName("GBK"));
+    }
+
+    private boolean isValidUtf8(byte[] bytes) {
+        int i = 0;
+        while (i < bytes.length) {
+            int b = bytes[i] & 0xFF;
+            if (b < 0x80) {
+                i++;
+            } else if ((b >> 5) == 0x6) {
+                if (i + 1 >= bytes.length || (bytes[i + 1] & 0xC0) != 0x80) return false;
+                i += 2;
+            } else if ((b >> 4) == 0xE) {
+                if (i + 2 >= bytes.length
+                        || (bytes[i + 1] & 0xC0) != 0x80
+                        || (bytes[i + 2] & 0xC0) != 0x80) return false;
+                i += 3;
+            } else if ((b >> 3) == 0x1E) {
+                if (i + 3 >= bytes.length
+                        || (bytes[i + 1] & 0xC0) != 0x80
+                        || (bytes[i + 2] & 0xC0) != 0x80
+                        || (bytes[i + 3] & 0xC0) != 0x80) return false;
+                i += 4;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     private int findColumn(List<String> headers, List<String> keywords) {

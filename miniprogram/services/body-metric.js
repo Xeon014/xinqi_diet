@@ -74,11 +74,11 @@ function deleteBodyMetricRecord(id, requestOptions = {}) {
   });
 }
 
-function previewWeightImport(fileName, fileContent) {
+function previewWeightImport(fileName, fileBase64) {
   return request({
     url: "/api/body-metrics/import/preview",
     method: "POST",
-    data: { fileName, fileContent },
+    data: { fileName, fileBase64 },
     loadingTitle: "解析中...",
   });
 }
