@@ -11,8 +11,13 @@ import com.diet.api.metric.BodyMetricTrendMetricKey;
 import com.diet.api.metric.BodyMetricTrendResponse;
 import com.diet.api.metric.CreateBodyMetricRecordRequest;
 import com.diet.api.metric.MetricTrendRangeType;
+import com.diet.api.metric.WeightImportConfirmRequest;
+import com.diet.api.metric.WeightImportPreviewRequest;
+import com.diet.api.metric.WeightImportPreviewResponse;
+import com.diet.api.metric.WeightImportResultResponse;
 import com.diet.app.metric.BodyMetricRecordCommandService;
 import com.diet.app.metric.BodyMetricRecordQueryService;
+import com.diet.app.metric.WeightImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,15 +47,19 @@ public class BodyMetricRecordController {
 
     private final BodyMetricRecordQueryService bodyMetricRecordQueryService;
 
+    private final WeightImportService weightImportService;
+
     private final AuthContextService authContextService;
 
     public BodyMetricRecordController(
             BodyMetricRecordCommandService bodyMetricRecordCommandService,
             BodyMetricRecordQueryService bodyMetricRecordQueryService,
+            WeightImportService weightImportService,
             AuthContextService authContextService
     ) {
         this.bodyMetricRecordCommandService = bodyMetricRecordCommandService;
         this.bodyMetricRecordQueryService = bodyMetricRecordQueryService;
+        this.weightImportService = weightImportService;
         this.authContextService = authContextService;
     }
 
@@ -127,5 +136,25 @@ public class BodyMetricRecordController {
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
         return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorDate, cursorId, pageSize));
+    }
+
+    @Operation(summary = "预览体重数据导入", description = "解析 CSV 文件并返回预览数据，不写入数据库")
+    @PostMapping("/import/preview")
+    public ApiResponse<WeightImportPreviewResponse> previewImport(
+            @Valid @RequestBody WeightImportPreviewRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(weightImportService.preview(userId, request));
+    }
+
+    @Operation(summary = "确认体重数据导入", description = "将预览确认的数据导入为体重记录")
+    @PostMapping("/import/confirm")
+    public ApiResponse<WeightImportResultResponse> confirmImport(
+            @Valid @RequestBody WeightImportConfirmRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(weightImportService.confirm(userId, request));
     }
 }

@@ -74,6 +74,24 @@ function deleteBodyMetricRecord(id, requestOptions = {}) {
   });
 }
 
+function previewWeightImport(fileName, fileContent) {
+  return request({
+    url: "/api/body-metrics/import/preview",
+    method: "POST",
+    data: { fileName, fileContent },
+    loadingTitle: "解析中...",
+  });
+}
+
+function confirmWeightImport(rows, duplicatePolicy) {
+  return request({
+    url: "/api/body-metrics/import/confirm",
+    method: "POST",
+    data: { rows, duplicatePolicy },
+    loadingTitle: "导入中...",
+  });
+}
+
 module.exports = {
   createBodyMetricRecord,
   getBodyMetricSnapshot,
@@ -81,4 +99,6 @@ module.exports = {
   getBodyMetricTrend,
   getBodyMetricHistory,
   deleteBodyMetricRecord,
+  previewWeightImport,
+  confirmWeightImport,
 };

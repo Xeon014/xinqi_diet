@@ -12,7 +12,8 @@
                   "pages/health-profile/index",
                   "pages/progress/index",
                   "pages/metric-history/index",
-                  "pages/meal-combo-manage/index"
+                  "pages/meal-combo-manage/index",
+                  "pages/weight-import/index"
               ],
     "window":  {
                    "navigationBarTitleText":  "心栖轻食",

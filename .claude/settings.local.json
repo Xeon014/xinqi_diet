@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(mvn compile:*)",
+      "Bash(mvn test:*)",
+      "Bash(find /c/Users/x5che/IdeaProjects/diet -type f \\\\\\(-name *.txt -o -name *.rst -o -name CONTRIBUTING* -o -name CHANGELOG* -o -name LICENSE* -o -name AUTHORS* \\\\\\))"
+    ]
+  }
+}

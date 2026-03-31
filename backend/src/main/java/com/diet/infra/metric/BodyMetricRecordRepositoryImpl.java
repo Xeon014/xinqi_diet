@@ -78,4 +78,28 @@ public class BodyMetricRecordRepositoryImpl implements BodyMetricRecordRepositor
     public void deleteById(Long id) {
         bodyMetricRecordMapper.deleteById(id);
     }
+
+    @Override
+    public void batchInsert(List<BodyMetricRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        int batchSize = 500;
+        for (int i = 0; i < records.size(); i += batchSize) {
+            List<BodyMetricRecord> batch = records.subList(i, Math.min(i + batchSize, records.size()));
+            bodyMetricRecordMapper.batchInsert(batch);
+        }
+    }
+
+    @Override
+    public List<BodyMetricRecord> findByUserIdAndMetricTypeAndRecordDateIn(
+            Long userId,
+            BodyMetricType metricType,
+            List<LocalDate> dates
+    ) {
+        if (dates == null || dates.isEmpty()) {
+            return List.of();
+        }
+        return bodyMetricRecordMapper.findByUserIdAndMetricTypeAndRecordDateIn(userId, metricType, dates);
+    }
 }

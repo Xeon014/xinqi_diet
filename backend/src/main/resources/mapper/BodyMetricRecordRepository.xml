@@ -138,4 +138,33 @@
         LIMIT 1
     </select>
 
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO body_metric_record
+            (user_id, metric_type, metric_value, unit, record_date, created_at, updated_at)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.metricType}, #{item.metricValue},
+             #{item.unit}, #{item.recordDate}, #{item.createdAt}, #{item.updatedAt})
+        </foreach>
+    </insert>
+
+    <select id="findByUserIdAndMetricTypeAndRecordDateIn" resultType="com.diet.domain.metric.BodyMetricRecord">
+        SELECT
+            id,
+            user_id,
+            metric_type,
+            metric_value,
+            unit,
+            record_date,
+            created_at,
+            updated_at
+        FROM body_metric_record
+        WHERE user_id = #{userId}
+          AND metric_type = #{metricType}
+          AND record_date IN
+        <foreach item="d" collection="dates" open="(" separator="," close=")">
+            #{d}
+        </foreach>
+    </select>
+
 </mapper>

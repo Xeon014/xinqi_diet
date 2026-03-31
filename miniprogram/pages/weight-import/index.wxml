@@ -1,0 +1,129 @@
+<view class="page-shell weight-import-page">
+
+  <!-- Step 1: Select File -->
+  <view wx:if="{{step === 'select'}}" class="panel select-panel">
+    <view class="select-title">导入体重数据</view>
+    <view class="select-desc">
+      支持主流健康应用导出的 CSV 文件数据。
+    </view>
+    <view class="select-tips">
+      <view class="tip-item">支持自动识别列名、分隔符和日期格式</view>
+      <view class="tip-item">自动检测体重单位并转换</view>
+      <view class="tip-item">预览确认后才写入</view>
+    </view>
+    <view class="select-btn" bindtap="handleChooseFile">
+      <view class="select-btn-text">选择文件</view>
+    </view>
+  </view>
+
+  <!-- Parsing Loading -->
+  <view wx:if="{{step === 'select' && parsing}}" class="panel select-panel">
+    <view class="select-title">正在解析文件...</view>
+  </view>
+
+  <!-- Step 2: Preview -->
+  <view wx:if="{{step === 'preview'}}" class="preview-section">
+    <view class="panel preview-stats">
+      <view class="stats-file">{{preview.fileName}}</view>
+      <view class="stats-row">
+        <view class="stat-item">
+          <view class="stat-value">{{preview.totalRows}}</view>
+          <view class="stat-label">总行数</view>
+        </view>
+        <view class="stat-item stat-ok">
+          <view class="stat-value">{{preview.parsedRows}}</view>
+          <view class="stat-label">可导入</view>
+        </view>
+        <view class="stat-item stat-warn">
+          <view class="stat-value">{{preview.skippedRows}}</view>
+          <view class="stat-label">跳过</view>
+        </view>
+      </view>
+      <view wx:if="{{preview.detectedUnit && preview.detectedUnit !== 'kg'}}" class="stats-info">
+        检测到单位：{{preview.detectedUnit}}（已自动转换为 kg）
+      </view>
+      <view wx:if="{{preview.detectedDelimiter}}" class="stats-info">
+        分隔符：{{preview.detectedDelimiter}} · 日期格式：{{preview.detectedDateFormat || '自动检测'}}
+      </view>
+    </view>
+
+    <view class="panel preview-list">
+      <view class="list-header">
+        <view class="list-title">数据预览</view>
+      </view>
+      <view class="preview-row-header">
+        <view class="col-check"></view>
+        <view class="col-date">日期</view>
+        <view class="col-weight">体重(kg)</view>
+        <view class="col-status">状态</view>
+      </view>
+      <view
+        wx:for="{{preview.rows}}"
+        wx:key="index"
+        class="preview-row {{item.error ? 'row-error' : (checkedRows[index] ? 'row-checked' : 'row-unchecked')}}"
+      >
+        <view class="col-check" data-index="{{index}}" bindtap="handleRowCheck">
+          <view class="check-box {{checkedRows[index] && !item.error ? 'checked' : ''}} {{item.error ? 'disabled' : ''}}">
+            ✓
+          </view>
+        </view>
+        <view class="col-date">{{item.parsedDate || item.rawDate || '-'}}</view>
+        <view class="col-weight">{{item.parsedWeightKg != null ? item.parsedWeightKg : '-'}}</view>
+        <view class="col-status">
+          <text wx:if="{{item.error}}" class="status-error">{{item.error}}</text>
+          <text wx:elif="{{checkedRows[index]}}" class="status-ok">可导入</text>
+          <text wx:else class="status-skip">已排除</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel policy-panel">
+      <view class="policy-title">重复记录处理</view>
+      <view class="policy-options">
+        <view
+          class="policy-option {{duplicatePolicy === 'SKIP' ? 'active' : ''}}"
+          data-policy="SKIP"
+          bindtap="handlePolicyChange"
+        >
+          跳过已有记录
+        </view>
+        <view
+          class="policy-option {{duplicatePolicy === 'OVERWRITE' ? 'active' : ''}}"
+          data-policy="OVERWRITE"
+          bindtap="handlePolicyChange"
+        >
+          覆盖已有记录
+        </view>
+      </view>
+    </view>
+
+    <view class="action-bar">
+      <view class="action-btn secondary" bindtap="handleImportAnother">返回</view>
+      <view class="action-btn primary" bindtap="handleConfirmImport">确认导入</view>
+    </view>
+  </view>
+
+  <!-- Step 3: Result -->
+  <view wx:if="{{step === 'result'}}" class="panel result-panel">
+    <view class="result-title">导入完成</view>
+    <view class="result-stats">
+      <view class="result-item result-imported">
+        <view class="result-value">{{result.imported}}</view>
+        <view class="result-label">成功导入</view>
+      </view>
+      <view class="result-item result-skipped">
+        <view class="result-value">{{result.skipped}}</view>
+        <view class="result-label">跳过</view>
+      </view>
+      <view class="result-item result-overwritten">
+        <view class="result-value">{{result.overwritten}}</view>
+        <view class="result-label">覆盖</view>
+      </view>
+    </view>
+    <view class="result-actions">
+      <view class="action-btn primary" bindtap="handleViewHistory">查看历史记录</view>
+      <view class="action-btn secondary" bindtap="handleImportAnother">继续导入</view>
+    </view>
+  </view>
+
+</view>

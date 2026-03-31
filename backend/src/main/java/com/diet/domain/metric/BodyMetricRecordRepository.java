@@ -38,4 +38,12 @@ public interface BodyMetricRecordRepository {
     Optional<BodyMetricRecord> findByIdAndUserId(Long id, Long userId);
 
     void deleteById(Long id);
+
+    void batchInsert(List<BodyMetricRecord> records);
+
+    List<BodyMetricRecord> findByUserIdAndMetricTypeAndRecordDateIn(
+            Long userId,
+            BodyMetricType metricType,
+            List<LocalDate> dates
+    );
 }

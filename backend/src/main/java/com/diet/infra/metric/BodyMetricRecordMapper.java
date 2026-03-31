@@ -48,4 +48,12 @@ public interface BodyMetricRecordMapper extends BaseMapper<BodyMetricRecord> {
             @Param("id") Long id,
             @Param("userId") Long userId
     );
+
+    void batchInsert(@Param("list") List<BodyMetricRecord> records);
+
+    List<BodyMetricRecord> findByUserIdAndMetricTypeAndRecordDateIn(
+            @Param("userId") Long userId,
+            @Param("metricType") BodyMetricType metricType,
+            @Param("dates") List<LocalDate> dates
+    );
 }
