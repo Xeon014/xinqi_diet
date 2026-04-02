@@ -82,17 +82,22 @@
       wx:for-item="group"
       class="record-group panel {{group.type === 'EXERCISE' ? 'record-group-exercise' : 'record-group-diet'}}"
     >
-      <view class="group-head">
+      <view
+        class="group-head {{group.collapsed ? 'collapsed' : ''}}"
+        data-meal-type="{{group.type === 'DIET' ? group.mealType : ''}}"
+        bindtap="handleToggleMealGroup"
+      >
         <view class="group-main">
           <view class="group-accent"></view>
           <view class="group-title">{{group.label}}</view>
+          <view wx:if="{{group.type === 'DIET' && group.collapsed}}" class="group-inline-calories">{{group.totalCaloriesLabel}}</view>
         </view>
         <view class="group-side">
           <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
             <view
               class="group-action-btn group-action-nutrition"
               data-meal-type="{{group.mealType}}"
-              bindtap="handleOpenMealNutrition"
+              catchtap="handleOpenMealNutrition"
             >
               <view class="nutrition-icon">
                 <view class="nutrition-bar nutrition-bar-1"></view>
@@ -103,7 +108,7 @@
             <view
               class="group-action-btn group-action-add"
               data-meal-type="{{group.mealType}}"
-              bindtap="handleQuickAddMeal"
+              catchtap="handleQuickAddMeal"
             >
               +
             </view>
@@ -111,7 +116,7 @@
           <view wx:else class="group-actions">
             <view
               class="group-action-btn group-action-exercise"
-              bindtap="handleQuickAddExercise"
+              catchtap="handleQuickAddExercise"
             >
               <view class="group-exercise-icon">
                 <view class="group-exercise-stroke"></view>
@@ -121,7 +126,7 @@
         </view>
       </view>
 
-      <view wx:if="{{group.records.length}}" class="group-list" catchtap="noop">
+      <view wx:if="{{group.records.length && !group.collapsed}}" class="group-list" catchtap="noop">
         <view
           wx:for="{{group.records}}"
           wx:key="recordKey"

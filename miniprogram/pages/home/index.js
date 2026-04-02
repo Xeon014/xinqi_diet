@@ -167,10 +167,12 @@ function buildRecordGroups(records) {
     ...DIET_GROUPS.map((group) => ({
       ...group,
       records: groupedRecords[group.key] || [],
+      totalCalories: toInteger((groupedRecords[group.key] || []).reduce((sum, record) => sum + toNumber(record.totalCalories), 0)),
     })),
     {
       ...EXERCISE_GROUP,
       records: groupedRecords.EXERCISE,
+      totalCalories: toInteger((groupedRecords.EXERCISE || []).reduce((sum, record) => sum + toNumber(record.totalCalories), 0)),
     },
   ].filter((group) => group.records.length > 0);
 }
@@ -286,6 +288,7 @@ Page({
     displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
     recordGroups: [],
+    collapsedMealGroups: {},
     swipedRecordKey: null,
     swipingRecordKey: null,
     swipeOffsetX: 0,
@@ -459,7 +462,12 @@ Page({
     ])
       .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
-        const recordGroups = applySwipeStateToGroups(buildRecordGroups(normalized.records), null, null, 0);
+        const recordGroups = applySwipeStateToGroups(
+          this.decorateRecordGroups(buildRecordGroups(normalized.records)),
+          null,
+          null,
+          0
+        );
         const recommendedMealPrompt = buildRecommendedMealPrompt(
           this.data.recordDate,
           this.data.recommendedMealType,
@@ -618,6 +626,33 @@ Page({
       .finally(() => {
         this.setData({ mealNutritionLoading: false });
       });
+  },
+
+  decorateRecordGroups(groups) {
+    const collapsedMealGroups = this.data.collapsedMealGroups || {};
+    return (groups || []).map((group) => ({
+      ...group,
+      collapsed: group.type === "DIET" ? Boolean(collapsedMealGroups[group.key]) : false,
+      totalCaloriesLabel: `${toInteger(group.totalCalories)} kcal`,
+    }));
+  },
+
+  handleToggleMealGroup(event) {
+    const { mealType } = event.currentTarget.dataset;
+    if (!mealType) {
+      return;
+    }
+
+    const collapsedMealGroups = {
+      ...(this.data.collapsedMealGroups || {}),
+      [mealType]: !Boolean((this.data.collapsedMealGroups || {})[mealType]),
+    };
+
+    this.closeSwipeActions();
+    this.setData({
+      collapsedMealGroups,
+      recordGroups: this.decorateRecordGroups(this.data.recordGroups),
+    });
   },
 
   handleCloseMealNutrition() {

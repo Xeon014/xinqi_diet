@@ -260,6 +260,10 @@
   min-height: 72rpx;
 }
 
+.group-head.collapsed {
+  padding-bottom: 4rpx;
+}
+
 .group-main,
 .group-side,
 .group-actions {
@@ -269,6 +273,10 @@
 
 .group-main {
   gap: 12rpx;
+}
+
+.group-head:active {
+  opacity: 0.9;
 }
 
 .group-actions {
@@ -293,6 +301,17 @@
   color: #3b4842;
   font-size: 29rpx;
   font-weight: 800;
+}
+
+.group-inline-calories {
+  color: #5d8378;
+  flex-shrink: 0;
+  font-family: "DIN Alternate", "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 1;
+  margin-left: 8rpx;
+  white-space: nowrap;
 }
 
 .group-action-btn {
@@ -382,6 +401,7 @@
 .group-list {
   padding: 4rpx 2rpx;
 }
+
 
 .stream-swipe-cell {
   overflow: hidden;
