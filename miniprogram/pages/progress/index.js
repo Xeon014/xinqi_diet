@@ -24,17 +24,13 @@ const METRIC_MAP = METRIC_OPTIONS.reduce((result, item) => {
 
 const DEFAULT_METRIC_KEY = "WEIGHT";
 const DEFAULT_RANGE_KEY = "MONTH";
-const ALL_PAGE_SIZE = 120;
+const ALL_PAGE_SIZE = 240;
 
-const MIN_CHART_WIDTH_RPX = 640;
-const CHART_POINT_GAP_RPX = 108;
-const CHART_HORIZONTAL_PADDING_RPX = 44;
+const CHART_CONTENT_WIDTH_RPX = 658;
+const CHART_HORIZONTAL_PADDING_RPX = 28;
 const CHART_TOP_PADDING_RPX = 36;
 const CHART_DRAW_HEIGHT_RPX = 248;
 const CHART_DATE_ROW_TOP_RPX = 330;
-const POINT_WRAP_HALF_HEIGHT_RPX = 54;
-const VALUE_LABEL_TOP_OFFSET_RPX = 40;
-const VALUE_LABEL_SAFE_GAP_RPX = 8;
 
 function toNumber(value) {
   const number = Number(value);
@@ -47,6 +43,14 @@ function toOneDecimal(value) {
     return "--";
   }
   return number.toFixed(1);
+}
+
+function toAxisLabel(value) {
+  const number = toNumber(value);
+  if (!Number.isFinite(number)) {
+    return "--";
+  }
+  return String(Math.round(number));
 }
 
 function resolveBmiEvaluation(value) {
@@ -68,11 +72,11 @@ function resolveBmiEvaluation(value) {
 
 function formatDateLabel(dateText, rangeType) {
   const text = String(dateText || "");
-  if (!text || text.length < 10) {
+  if (!text || text.length < 7) {
     return "--";
   }
-  if (rangeType === "ALL" || rangeType === "YEAR") {
-    return `${text.slice(5, 7)}月`;
+  if (rangeType === "YEAR" || rangeType === "ALL") {
+    return text.slice(0, 7);
   }
   return text.slice(5);
 }
@@ -161,15 +165,29 @@ function mergeTrendPoints(basePoints, incomingPoints) {
     });
 }
 
+function findSelectedTrendPoint(points, preferredSelectedDate) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null;
+  }
+
+  if (preferredSelectedDate) {
+    const selectedPoint = points.find((item) => item.date === preferredSelectedDate);
+    if (selectedPoint) {
+      return selectedPoint;
+    }
+  }
+
+  return points[points.length - 1];
+}
+
 function buildChartModel(points, rangeType, preferredSelectedDate) {
   if (!Array.isArray(points) || points.length === 0) {
     return {
       chartPoints: [],
       chartSegments: [],
-      chartWidthRpx: MIN_CHART_WIDTH_RPX,
       axisMinLabel: "--",
+      axisMidLabel: "--",
       axisMaxLabel: "--",
-      latestPointViewId: "",
       selectedPointDate: "",
     };
   }
@@ -181,14 +199,14 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
     minValue -= 1;
     maxValue += 1;
   }
-  const padding = Math.max((maxValue - minValue) * 0.15, 0.5);
-  const axisMin = Math.max(0, minValue - padding);
-  const axisMax = maxValue + padding;
+  const roundedMin = Math.max(0, Math.floor(minValue));
+  const roundedMax = Math.ceil(maxValue);
+  const axisRange = Math.max(2, Math.ceil((roundedMax - roundedMin) / 2) * 2);
+  const axisMin = roundedMin;
+  const axisMax = axisMin + axisRange;
+  const axisMid = axisMin + (axisRange / 2);
   const range = axisMax - axisMin;
-  const chartWidthRpx = Math.max(
-    MIN_CHART_WIDTH_RPX,
-    CHART_HORIZONTAL_PADDING_RPX * 2 + ((points.length - 1) * CHART_POINT_GAP_RPX)
-  );
+  const chartDrawWidthRpx = Math.max(CHART_CONTENT_WIDTH_RPX - (CHART_HORIZONTAL_PADDING_RPX * 2), 0);
 
   const latestPoint = points[points.length - 1];
   const hasPreferredSelection = Boolean(
@@ -198,13 +216,15 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
 
   const labelStep = points.length <= 6 ? 1 : Math.ceil(points.length / 6);
   const chartPoints = points.map((item, index) => {
-    const x = CHART_HORIZONTAL_PADDING_RPX + (index * CHART_POINT_GAP_RPX);
+    const x = points.length === 1
+      ? CHART_CONTENT_WIDTH_RPX / 2
+      : CHART_HORIZONTAL_PADDING_RPX + ((chartDrawWidthRpx * index) / (points.length - 1));
     const ratio = range <= 0 ? 0.5 : (item.value - axisMin) / range;
     const y = CHART_TOP_PADDING_RPX + ((1 - ratio) * CHART_DRAW_HEIGHT_RPX);
-    const isLatest = index === points.length - 1;
     const isSelected = item.date === selectedPointDate;
-    const shouldShowDate = index === 0 || isLatest || index % labelStep === 0;
-    const valueBelow = y <= (POINT_WRAP_HALF_HEIGHT_RPX + VALUE_LABEL_TOP_OFFSET_RPX + VALUE_LABEL_SAFE_GAP_RPX);
+    const shouldShowDate = (rangeType === "YEAR" || rangeType === "ALL")
+      ? (index === 0 || index === points.length - 1)
+      : (index === 0 || index === points.length - 1 || index % labelStep === 0);
     return {
       index,
       x,
@@ -212,9 +232,7 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
       date: item.date,
       dateLabel: formatDateLabel(item.date, rangeType),
       displayValue: toOneDecimal(item.value),
-      isLatest,
       isSelected,
-      valueBelow,
       showDateLabel: shouldShowDate,
       pointStyle: `left:${x}rpx;top:${y}rpx;`,
       dateStyle: `left:${x}rpx;top:${CHART_DATE_ROW_TOP_RPX}rpx;`,
@@ -237,10 +255,9 @@ function buildChartModel(points, rangeType, preferredSelectedDate) {
   return {
     chartPoints,
     chartSegments,
-    chartWidthRpx,
-    axisMinLabel: toOneDecimal(axisMin),
-    axisMaxLabel: toOneDecimal(axisMax),
-    latestPointViewId: `trend-point-${chartPoints[chartPoints.length - 1].index}`,
+    axisMinLabel: toAxisLabel(axisMin),
+    axisMidLabel: toAxisLabel(axisMid),
+    axisMaxLabel: toAxisLabel(axisMax),
     selectedPointDate,
   };
 }
@@ -280,34 +297,26 @@ function buildMetricCards(snapshotMap, selectedMetricKey) {
   });
 }
 
-function buildLatestText(snapshotMap, metricKey) {
+function buildEmptyMetricText(metricKey) {
   const metric = METRIC_MAP[metricKey] || METRIC_MAP[DEFAULT_METRIC_KEY];
-  const snapshot = snapshotMap[metricKey] || {};
-  if (snapshot.rawValue != null) {
-    const unit = metric.unit ? ` ${metric.unit}` : "";
-    return `${metric.label} ${toOneDecimal(snapshot.rawValue)}${unit}`;
-  }
   return `${metric.label} 待记录`;
 }
 
-function buildRangeText(points, rangeType) {
-  if (!Array.isArray(points) || points.length === 0) {
-    return "";
+function buildCurrentMetricHeader(metricKey, chartPoints, preferredSelectedDate) {
+  const metric = METRIC_MAP[metricKey] || METRIC_MAP[DEFAULT_METRIC_KEY];
+  const selectedPoint = findSelectedTrendPoint(chartPoints, preferredSelectedDate);
+  if (!selectedPoint) {
+    return {
+      currentLatestText: buildEmptyMetricText(metricKey),
+      currentLatestMetaText: "",
+    };
   }
-  if (rangeType !== "YEAR" && rangeType !== "ALL") {
-    return "";
-  }
-  const startDate = points[0] && points[0].date ? points[0].date : "";
-  const endDate = points[points.length - 1] && points[points.length - 1].date ? points[points.length - 1].date : "";
-  if (!startDate || !endDate) {
-    return "";
-  }
-  return startDate === endDate ? `范围 ${startDate}` : `范围 ${startDate} - ${endDate}`;
-}
 
-function buildLatestMetaText(snapshotMap, metricKey, rangeType, trendPoints) {
-  const rangeText = buildRangeText(trendPoints, rangeType);
-  return rangeText;
+  const unit = metric.unit ? ` ${metric.unit}` : "";
+  return {
+    currentLatestText: `${metric.label} ${selectedPoint.displayValue}${unit}`,
+    currentLatestMetaText: selectedPoint.date || "",
+  };
 }
 
 function buildMetricHistoryUrl(metricKey) {
@@ -329,10 +338,9 @@ Page({
     trendPointsRaw: [],
     chartPoints: [],
     chartSegments: [],
-    chartWidthRpx: MIN_CHART_WIDTH_RPX,
     axisMinLabel: "--",
+    axisMidLabel: "--",
     axisMaxLabel: "--",
-    latestPointViewId: "",
     selectedPointDate: "",
     hasMore: false,
     nextCursorMeasuredAt: "",
@@ -359,9 +367,18 @@ Page({
   },
 
   loadPageData(stopPullDown = false) {
+    const headerState = buildCurrentMetricHeader(this.data.selectedMetric, [], "");
     this.setData({
       trendLoading: true,
       snapshotLoading: true,
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
+      trendPointsRaw: [],
+      chartPoints: [],
+      chartSegments: [],
+      axisMinLabel: "--",
+      axisMidLabel: "--",
+      axisMaxLabel: "--",
       selectedPointDate: "",
       hasMore: false,
       nextCursorMeasuredAt: "",
@@ -398,25 +415,59 @@ Page({
     };
     if (this.data.selectedRange === "ALL") {
       requestData.pageSize = ALL_PAGE_SIZE;
-      if (append) {
-        requestData.cursorMeasuredAt = this.data.nextCursorMeasuredAt;
-        requestData.cursorId = this.data.nextCursorId;
-      }
+      return this.fetchAllTrendPages(requestData, append ? {
+        cursorMeasuredAt: this.data.nextCursorMeasuredAt,
+        cursorId: this.data.nextCursorId,
+      } : null);
     }
     return getBodyMetricTrend(requestData);
   },
 
+  fetchAllTrendPages(baseRequestData, cursor) {
+    const requestData = {
+      ...baseRequestData,
+    };
+    if (cursor && cursor.cursorMeasuredAt && cursor.cursorId != null) {
+      requestData.cursorMeasuredAt = cursor.cursorMeasuredAt;
+      requestData.cursorId = cursor.cursorId;
+    }
+
+    return getBodyMetricTrend(requestData).then((response) => {
+      const points = Array.isArray(response && response.points) ? response.points : [];
+      if (!response || !response.hasMore || !response.nextCursorMeasuredAt || response.nextCursorId == null) {
+        return {
+          ...response,
+          points,
+          hasMore: false,
+          nextCursorMeasuredAt: "",
+          nextCursorId: null,
+        };
+      }
+
+      return this.fetchAllTrendPages(baseRequestData, {
+        cursorMeasuredAt: response.nextCursorMeasuredAt,
+        cursorId: response.nextCursorId,
+      }).then((nextResponse) => ({
+        ...nextResponse,
+        points: points.concat(Array.isArray(nextResponse && nextResponse.points) ? nextResponse.points : []),
+        hasMore: false,
+        nextCursorMeasuredAt: "",
+        nextCursorId: null,
+      }));
+    });
+  },
+
   applySnapshotData(snapshotMap) {
+    const headerState = buildCurrentMetricHeader(
+      this.data.selectedMetric,
+      this.data.chartPoints,
+      this.data.selectedPointDate
+    );
     this.setData({
       snapshotMap,
       metricCards: buildMetricCards(snapshotMap, this.data.selectedMetric),
-      currentLatestText: buildLatestText(snapshotMap, this.data.selectedMetric),
-      currentLatestMetaText: buildLatestMetaText(
-        snapshotMap,
-        this.data.selectedMetric,
-        this.data.selectedRange,
-        this.data.trendPointsRaw
-      ),
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
       currentMetricCanCreate: Boolean((METRIC_MAP[this.data.selectedMetric] || {}).canCreate),
     });
   },
@@ -426,42 +477,40 @@ Page({
     const mergedPoints = append
       ? mergeTrendPoints(this.data.trendPointsRaw, incomingPoints)
       : incomingPoints;
-    const pointsForChart = (this.data.selectedRange === "ALL" || this.data.selectedRange === "YEAR")
-      ? aggregateTrendPointsByMonth(mergedPoints)
-      : mergedPoints;
+    const pointsForChart = mergedPoints;
     const chartModel = buildChartModel(pointsForChart, this.data.selectedRange, this.data.selectedPointDate);
+    const headerState = buildCurrentMetricHeader(
+      this.data.selectedMetric,
+      chartModel.chartPoints,
+      chartModel.selectedPointDate
+    );
 
     this.setData({
       trendPointsRaw: mergedPoints,
       chartPoints: chartModel.chartPoints,
       chartSegments: chartModel.chartSegments,
-      chartWidthRpx: chartModel.chartWidthRpx,
       axisMinLabel: chartModel.axisMinLabel,
+      axisMidLabel: chartModel.axisMidLabel,
       axisMaxLabel: chartModel.axisMaxLabel,
-      latestPointViewId: chartModel.latestPointViewId,
       selectedPointDate: chartModel.selectedPointDate,
-      hasMore: this.data.selectedRange === "ALL" ? Boolean(response && response.hasMore) : false,
-      nextCursorMeasuredAt: response && response.nextCursorMeasuredAt ? response.nextCursorMeasuredAt : "",
-      nextCursorId: response && response.nextCursorId != null ? response.nextCursorId : null,
-      currentLatestMetaText: buildLatestMetaText(
-        this.data.snapshotMap,
-        this.data.selectedMetric,
-        this.data.selectedRange,
-        mergedPoints
-      ),
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
+      hasMore: false,
+      nextCursorMeasuredAt: "",
+      nextCursorId: null,
     });
   },
 
   refreshMetricHeader() {
+    const headerState = buildCurrentMetricHeader(
+      this.data.selectedMetric,
+      this.data.chartPoints,
+      this.data.selectedPointDate
+    );
     this.setData({
       metricCards: buildMetricCards(this.data.snapshotMap, this.data.selectedMetric),
-      currentLatestText: buildLatestText(this.data.snapshotMap, this.data.selectedMetric),
-      currentLatestMetaText: buildLatestMetaText(
-        this.data.snapshotMap,
-        this.data.selectedMetric,
-        this.data.selectedRange,
-        this.data.trendPointsRaw
-      ),
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
       currentMetricCanCreate: Boolean((METRIC_MAP[this.data.selectedMetric] || {}).canCreate),
     });
   },
@@ -470,8 +519,18 @@ Page({
     if (!metricKey || metricKey === this.data.selectedMetric) {
       return;
     }
+    const headerState = buildCurrentMetricHeader(metricKey, [], "");
     this.setData({
       selectedMetric: metricKey,
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
+      trendPointsRaw: [],
+      chartPoints: [],
+      chartSegments: [],
+      axisMinLabel: "--",
+      axisMidLabel: "--",
+      axisMaxLabel: "--",
+      selectedPointDate: "",
       hasMore: false,
       nextCursorMeasuredAt: "",
       nextCursorId: null,
@@ -485,9 +544,18 @@ Page({
     if (!key || key === this.data.selectedRange || this.data.trendLoading) {
       return;
     }
+    const headerState = buildCurrentMetricHeader(this.data.selectedMetric, [], "");
     this.setData({
       selectedRange: key,
       trendLoading: true,
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
+      trendPointsRaw: [],
+      chartPoints: [],
+      chartSegments: [],
+      axisMinLabel: "--",
+      axisMidLabel: "--",
+      axisMaxLabel: "--",
       selectedPointDate: "",
       hasMore: false,
       nextCursorMeasuredAt: "",
@@ -512,9 +580,18 @@ Page({
       return;
     }
 
+    const headerState = buildCurrentMetricHeader(key, [], "");
     this.setData({
       selectedMetric: key,
       trendLoading: true,
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
+      trendPointsRaw: [],
+      chartPoints: [],
+      chartSegments: [],
+      axisMinLabel: "--",
+      axisMidLabel: "--",
+      axisMaxLabel: "--",
       selectedPointDate: "",
       hasMore: false,
       nextCursorMeasuredAt: "",
@@ -647,24 +724,6 @@ Page({
       });
   },
 
-  handleLoadMore() {
-    if (this.data.selectedRange !== "ALL" || !this.data.hasMore || this.data.trendLoading) {
-      return;
-    }
-
-    this.setData({ trendLoading: true });
-    this.fetchTrend({ append: true })
-      .then((response) => {
-        this.applyTrendData(response, true);
-      })
-      .catch((error) => {
-        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
-      })
-      .finally(() => {
-        this.setData({ trendLoading: false });
-      });
-  },
-
   handleSelectChartPoint(event) {
     const { date } = event.currentTarget.dataset;
     if (!date || date === this.data.selectedPointDate) {
@@ -674,9 +733,12 @@ Page({
       ...item,
       isSelected: item.date === date,
     }));
+    const headerState = buildCurrentMetricHeader(this.data.selectedMetric, nextChartPoints, date);
     this.setData({
       selectedPointDate: date,
       chartPoints: nextChartPoints,
+      currentLatestText: headerState.currentLatestText,
+      currentLatestMetaText: headerState.currentLatestMetaText,
     });
   },
 
