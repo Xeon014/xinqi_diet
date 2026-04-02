@@ -16,6 +16,16 @@
 - `pages/custom-food`：自定义食物管理
 - `pages/custom-exercise`：自定义运动管理
 
+## 对 AI agent 有帮助的源码入口
+
+- 全局启动与登录：`app.js`
+- 页面注册与顶层导航：`app.json`
+- 运行时环境切换：`utils/constants.js`
+- 请求封装与接口入口：`services/`
+- 首页记录链路：`pages/home`、`pages/food-search`、`pages/exercise-search`
+- 趋势与体征链路：`pages/progress`、`pages/metric-history`、`services/body-metric.js`
+- 我的页与健康档案：`pages/profile`、`pages/health-profile`
+
 ## 饮食记录链路（当前实现）
 
 - 首页右下角加号：进入 `food-search`（携带推荐餐次与日期）。
@@ -47,6 +57,13 @@
 ## 趋势与体征链路（当前实现）
 
 - Tab“趋势”：进入 `pages/progress`，展示体重、BMI 和围度趋势。
+- 趋势图固定在单屏宽度内展示，不允许左右滑动。
+- 趋势图顶部主数值与日期跟随当前选中点变化，不固定显示最新体重。
+- 趋势点仅保留很小的弱化锚点，不再显示点上方数值。
+- `MONTH / YEAR / ALL` 当前都直接展示日级点，不做图表聚合。
+- `ALL` 进入后会自动拉取全量分页结果，不再展示“加载更早数据”按钮。
+- `YEAR / ALL` 横轴只显示首尾两个 `YYYY-MM` 标签。
+- 纵轴保留三条水平线，并显示整数刻度。
 - 趋势页卡片右上角 `+`：直接记录当前指标（BMI 仅支持查看，不支持手工新增）。
 - 趋势页卡片右上角 `···`：进入 `pages/metric-history` 查看单项指标历史明细。
 - 健康档案页底部入口：可直接跳转趋势页查看近期变化。

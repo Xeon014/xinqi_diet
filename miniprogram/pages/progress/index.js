@@ -81,27 +81,6 @@ function formatDateLabel(dateText, rangeType) {
   return text.slice(5);
 }
 
-function aggregateTrendPointsByMonth(points) {
-  if (!Array.isArray(points) || points.length === 0) {
-    return [];
-  }
-
-  const latestByMonth = {};
-  const monthOrder = [];
-  points.forEach((item) => {
-    if (!item || !item.date) {
-      return;
-    }
-    const monthKey = item.date.slice(0, 7);
-    if (!latestByMonth[monthKey]) {
-      monthOrder.push(monthKey);
-    }
-    latestByMonth[monthKey] = item;
-  });
-
-  return monthOrder.map((monthKey) => latestByMonth[monthKey]);
-}
-
 function normalizeSnapshot(items) {
   const map = {};
   METRIC_OPTIONS.forEach((metric) => {
@@ -139,24 +118,6 @@ function normalizeTrendPoints(points) {
       value: item && item.value != null ? Number(item.value) : NaN,
     }))
     .filter((item) => item.date && Number.isFinite(item.value))
-    .sort((a, b) => {
-      if (a.date === b.date) {
-        return 0;
-      }
-      return a.date > b.date ? 1 : -1;
-    });
-}
-
-function mergeTrendPoints(basePoints, incomingPoints) {
-  const map = {};
-  (basePoints || []).forEach((item) => {
-    map[item.date] = item;
-  });
-  (incomingPoints || []).forEach((item) => {
-    map[item.date] = item;
-  });
-  return Object.keys(map)
-    .map((date) => map[date])
     .sort((a, b) => {
       if (a.date === b.date) {
         return 0;
@@ -334,17 +295,12 @@ Page({
     currentLatestMetaText: "",
     currentMetricCanCreate: true,
     trendLoading: false,
-    snapshotLoading: false,
-    trendPointsRaw: [],
     chartPoints: [],
     chartSegments: [],
     axisMinLabel: "--",
     axisMidLabel: "--",
     axisMaxLabel: "--",
     selectedPointDate: "",
-    hasMore: false,
-    nextCursorMeasuredAt: "",
-    nextCursorId: null,
     snapshotMap: {},
     metricCards: buildMetricCards({}, DEFAULT_METRIC_KEY),
     metricEditorVisible: false,
@@ -370,29 +326,24 @@ Page({
     const headerState = buildCurrentMetricHeader(this.data.selectedMetric, [], "");
     this.setData({
       trendLoading: true,
-      snapshotLoading: true,
       currentLatestText: headerState.currentLatestText,
       currentLatestMetaText: headerState.currentLatestMetaText,
-      trendPointsRaw: [],
       chartPoints: [],
       chartSegments: [],
       axisMinLabel: "--",
       axisMidLabel: "--",
       axisMaxLabel: "--",
       selectedPointDate: "",
-      hasMore: false,
-      nextCursorMeasuredAt: "",
-      nextCursorId: null,
     });
 
     Promise.all([
       getBodyMetricSnapshot(),
-      this.fetchTrend({ append: false }),
+      this.fetchTrend(),
     ])
       .then(([snapshot, trend]) => {
         const snapshotMap = normalizeSnapshot(snapshot.items || []);
         this.applySnapshotData(snapshotMap);
-        this.applyTrendData(trend, false);
+        this.applyTrendData(trend);
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -400,7 +351,6 @@ Page({
       .finally(() => {
         this.setData({
           trendLoading: false,
-          snapshotLoading: false,
         });
         if (stopPullDown) {
           wx.stopPullDownRefresh();
@@ -408,17 +358,14 @@ Page({
       });
   },
 
-  fetchTrend({ append }) {
+  fetchTrend() {
     const requestData = {
       metricKey: this.data.selectedMetric,
       rangeType: this.data.selectedRange,
     };
     if (this.data.selectedRange === "ALL") {
       requestData.pageSize = ALL_PAGE_SIZE;
-      return this.fetchAllTrendPages(requestData, append ? {
-        cursorMeasuredAt: this.data.nextCursorMeasuredAt,
-        cursorId: this.data.nextCursorId,
-      } : null);
+      return this.fetchAllTrendPages(requestData);
     }
     return getBodyMetricTrend(requestData);
   },
@@ -472,12 +419,8 @@ Page({
     });
   },
 
-  applyTrendData(response, append) {
-    const incomingPoints = normalizeTrendPoints(response && response.points);
-    const mergedPoints = append
-      ? mergeTrendPoints(this.data.trendPointsRaw, incomingPoints)
-      : incomingPoints;
-    const pointsForChart = mergedPoints;
+  applyTrendData(response) {
+    const pointsForChart = normalizeTrendPoints(response && response.points);
     const chartModel = buildChartModel(pointsForChart, this.data.selectedRange, this.data.selectedPointDate);
     const headerState = buildCurrentMetricHeader(
       this.data.selectedMetric,
@@ -486,7 +429,6 @@ Page({
     );
 
     this.setData({
-      trendPointsRaw: mergedPoints,
       chartPoints: chartModel.chartPoints,
       chartSegments: chartModel.chartSegments,
       axisMinLabel: chartModel.axisMinLabel,
@@ -495,9 +437,6 @@ Page({
       selectedPointDate: chartModel.selectedPointDate,
       currentLatestText: headerState.currentLatestText,
       currentLatestMetaText: headerState.currentLatestMetaText,
-      hasMore: false,
-      nextCursorMeasuredAt: "",
-      nextCursorId: null,
     });
   },
 
@@ -524,16 +463,12 @@ Page({
       selectedMetric: metricKey,
       currentLatestText: headerState.currentLatestText,
       currentLatestMetaText: headerState.currentLatestMetaText,
-      trendPointsRaw: [],
       chartPoints: [],
       chartSegments: [],
       axisMinLabel: "--",
       axisMidLabel: "--",
       axisMaxLabel: "--",
       selectedPointDate: "",
-      hasMore: false,
-      nextCursorMeasuredAt: "",
-      nextCursorId: null,
     }, () => {
       this.refreshMetricHeader();
     });
@@ -550,21 +485,17 @@ Page({
       trendLoading: true,
       currentLatestText: headerState.currentLatestText,
       currentLatestMetaText: headerState.currentLatestMetaText,
-      trendPointsRaw: [],
       chartPoints: [],
       chartSegments: [],
       axisMinLabel: "--",
       axisMidLabel: "--",
       axisMaxLabel: "--",
       selectedPointDate: "",
-      hasMore: false,
-      nextCursorMeasuredAt: "",
-      nextCursorId: null,
     });
 
-    this.fetchTrend({ append: false })
+    this.fetchTrend()
       .then((response) => {
-        this.applyTrendData(response, false);
+        this.applyTrendData(response);
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -586,21 +517,17 @@ Page({
       trendLoading: true,
       currentLatestText: headerState.currentLatestText,
       currentLatestMetaText: headerState.currentLatestMetaText,
-      trendPointsRaw: [],
       chartPoints: [],
       chartSegments: [],
       axisMinLabel: "--",
       axisMidLabel: "--",
       axisMaxLabel: "--",
       selectedPointDate: "",
-      hasMore: false,
-      nextCursorMeasuredAt: "",
-      nextCursorId: null,
     }, () => {
       this.refreshMetricHeader();
-      this.fetchTrend({ append: false })
+      this.fetchTrend()
         .then((response) => {
-          this.applyTrendData(response, false);
+          this.applyTrendData(response);
         })
         .catch((error) => {
           wx.showToast({ title: pickErrorMessage(error), icon: "none" });
