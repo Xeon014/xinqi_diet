@@ -136,6 +136,14 @@
           <view class="stream-action-track">
             <view class="stream-action-shell">
               <view
+                class="stream-repeat-btn"
+                data-record-type="{{record.recordType}}"
+                data-record-id="{{record.recordId}}"
+                data-meal-type="{{record.mealType}}"
+                data-record-date="{{record.recordDate}}"
+                catchtap="handleRepeatHomeRecord"
+              >再记一次</view>
+              <view
                 class="danger-icon-btn stream-delete-btn"
                 data-record-type="{{record.recordType}}"
                 data-record-id="{{record.recordId}}"

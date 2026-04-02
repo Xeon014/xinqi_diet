@@ -17,6 +17,7 @@ const {
   SWIPE_OPEN_THRESHOLD,
   applyRecentFoodSwipeState,
   buildSystemFilters,
+  clampSwipeOffset,
   createClosedEditorState,
   createComboEditorState,
   createFoodEditorState,
@@ -39,11 +40,37 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
 const FOOD_SEARCH_COPY = APP_COPY.foodSearch;
+const RECENT_FOOD_REPEAT_ACTION_WIDTH = DELETE_ACTION_WIDTH * 2;
+const RECENT_FOOD_REPEAT_OPEN_THRESHOLD = DELETE_ACTION_WIDTH;
 
 function syncNavigationTitle(pageMode) {
   wx.setNavigationBarTitle({
     title: pageMode === "edit" ? "编辑饮食" : "添加食物",
   });
+}
+
+function resolveRecentFoodQuantity(food) {
+  const quantity = toNumber(food && food.lastUsedQuantityInGram);
+  return quantity > 0 ? String(quantity) : String(DEFAULT_QUANTITY);
+}
+
+function buildRecentFoodMeta(food) {
+  const quantity = toNumber(food && food.lastUsedQuantityInGram);
+  const mealTypeLabel = food && food.lastUsedMealType ? getMealTypeLabel(food.lastUsedMealType) : "";
+  const quantityLabel = quantity > 0
+    ? `${Math.round(quantity)}${food && food.quantityUnitLabel ? food.quantityUnitLabel : "g"}`
+    : "";
+
+  if (quantityLabel && mealTypeLabel) {
+    return `上次 ${quantityLabel} · ${mealTypeLabel}`;
+  }
+  if (quantityLabel) {
+    return `上次 ${quantityLabel}`;
+  }
+  if (mealTypeLabel) {
+    return `上次 ${mealTypeLabel}`;
+  }
+  return food && food.categoryLabel ? food.categoryLabel : "";
 }
 
 Page({
@@ -534,15 +561,22 @@ Page({
       return;
     }
     const nextOpenedId = this.data.swipedRecentFoodId === id ? id : null;
+    const actionWidth = this.getRecentFoodActionWidth();
     this.recentFoodSwipeStartX = touch.clientX;
     this.recentFoodSwipeStartY = touch.clientY;
-    this.recentFoodSwipeBaseOffsetX = this.data.swipedRecentFoodId === id ? DELETE_ACTION_WIDTH : 0;
+    this.recentFoodSwipeBaseOffsetX = this.data.swipedRecentFoodId === id ? actionWidth : 0;
     this.recentFoodSwipeMode = "";
     this.setData({
       swipingRecentFoodId: id,
       recentFoodSwipeOffsetX: this.recentFoodSwipeBaseOffsetX,
       swipedRecentFoodId: nextOpenedId,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, nextOpenedId, id, this.recentFoodSwipeBaseOffsetX),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        nextOpenedId,
+        id,
+        this.recentFoodSwipeBaseOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -566,10 +600,17 @@ Page({
     if (this.recentFoodSwipeMode !== "horizontal") {
       return;
     }
-    const nextOffsetX = clampSwipeOffset(this.recentFoodSwipeBaseOffsetX + deltaX);
+    const actionWidth = this.getRecentFoodActionWidth();
+    const nextOffsetX = clampSwipeOffset(this.recentFoodSwipeBaseOffsetX + deltaX, actionWidth);
     this.setData({
       recentFoodSwipeOffsetX: nextOffsetX,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, id, nextOffsetX),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        this.data.swipedRecentFoodId,
+        id,
+        nextOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -583,11 +624,20 @@ Page({
       this.setData({
         swipingRecentFoodId: null,
         recentFoodSwipeOffsetX: 0,
-        displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, null, 0),
+        displayedFoods: applyRecentFoodSwipeState(
+          this.data.displayedFoods,
+          this.data.swipedRecentFoodId,
+          null,
+          0,
+          this.getRecentFoodActionWidth()
+        ),
       });
       return;
     }
-    this.finishRecentFoodSwipe(id, this.data.recentFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+    this.finishRecentFoodSwipe(
+      id,
+      this.data.recentFoodSwipeOffsetX >= (this.data.enableDirectEdit ? RECENT_FOOD_REPEAT_OPEN_THRESHOLD : SWIPE_OPEN_THRESHOLD)
+    );
   },
 
   handleRecentFoodContentTap(event) {
@@ -613,6 +663,63 @@ Page({
     wx.showToast({ title: "已移除", icon: "success" });
   },
 
+  handleRepeatRecentFood(event) {
+    if (!this.data.enableDirectEdit) {
+      return;
+    }
+
+    const index = Number(event.currentTarget.dataset.index);
+    const food = this.data.displayedFoods[index];
+    if (!food) {
+      return;
+    }
+
+    const quantityInGram = toNumber(food.lastUsedQuantityInGram) > 0
+      ? toNumber(food.lastUsedQuantityInGram)
+      : DEFAULT_QUANTITY;
+    const mealType = food.lastUsedMealType || this.data.mealType;
+
+    this.closeRecentFoodSwipeActions();
+    createRecord({
+      foodId: food.id,
+      mealType,
+      quantityInGram,
+      recordDate: this.data.recordDate,
+    })
+      .then(() => {
+        if (this.userId) {
+          saveRecentFood(this.userId, {
+            id: food.id,
+            name: food.name,
+            caloriesPer100g: food.caloriesPer100g,
+            calorieUnit: food.calorieUnit,
+            displayCaloriesPer100: food.displayCaloriesPer100,
+            proteinPer100g: food.proteinPer100g,
+            carbsPer100g: food.carbsPer100g,
+            fatPer100g: food.fatPer100g,
+            quantityUnit: food.quantityUnit,
+            category: food.category || "",
+            imageUrl: food.imageUrl || "",
+            lastUsedQuantityInGram: quantityInGram,
+            lastUsedMealType: mealType,
+            lastUsedAt: Date.now(),
+          });
+        }
+
+        this.loadRecentFoods();
+        this.syncHomeAfterSave(this.data.recordDate);
+        wx.showToast({ title: "已新增一条", icon: "success" });
+        if (this.data.source === "home") {
+          setTimeout(() => {
+            this.goHome();
+          }, 320);
+        }
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      });
+  },
+
   resetRecentFoodSwipeGesture() {
     this.recentFoodSwipeStartX = null;
     this.recentFoodSwipeStartY = null;
@@ -626,7 +733,13 @@ Page({
       swipedRecentFoodId: shouldOpen ? id : null,
       swipingRecentFoodId: null,
       recentFoodSwipeOffsetX: 0,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, shouldOpen ? id : null, null, 0),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        shouldOpen ? id : null,
+        null,
+        0,
+        this.getRecentFoodActionWidth()
+      ),
     });
   },
 
@@ -639,7 +752,7 @@ Page({
       swipedRecentFoodId: null,
       swipingRecentFoodId: null,
       recentFoodSwipeOffsetX: 0,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, null, null, 0),
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, null, null, 0, this.getRecentFoodActionWidth()),
     });
   },
 
@@ -696,7 +809,7 @@ Page({
 
   openFoodEditor(food) {
     const normalizedFood = normalizeFood(food);
-    this.applyEditorFoodData(normalizedFood, String(DEFAULT_QUANTITY), {
+    this.applyEditorFoodData(normalizedFood, resolveRecentFoodQuantity(food), {
       mode: "create",
       recordId: null,
       canDelete: false,
@@ -902,6 +1015,9 @@ Page({
         quantityUnit: item.quantityUnit,
         category: item.category || "",
         imageUrl: item.imageUrl || "",
+        lastUsedQuantityInGram: toNumber(item.quantityInGram),
+        lastUsedMealType: this.data.editorMealType,
+        lastUsedAt: Date.now(),
       });
     });
   },
@@ -961,6 +1077,7 @@ Page({
             proteinPer100g: this.data.editorProteinPer100g,
             carbsPer100g: this.data.editorCarbsPer100g,
             fatPer100g: this.data.editorFatPer100g,
+            quantityInGram: this.data.editorQuantityInGram,
             quantityUnit: this.data.editorQuantityUnit,
             category: this.data.editorCategoryLabel,
             imageUrl: this.data.editorFoodImageUrl,
@@ -1059,6 +1176,10 @@ Page({
       .sort((a, b) => Number(b.usedAt || 0) - Number(a.usedAt || 0));
   },
 
+  getRecentFoodActionWidth() {
+    return this.data.enableDirectEdit ? RECENT_FOOD_REPEAT_ACTION_WIDTH : DELETE_ACTION_WIDTH;
+  },
+
   buildCustomFoods() {
     return this.data.customFoods.filter((food) => isCustomFood(food));
   },
@@ -1127,7 +1248,10 @@ Page({
       displayedFoods = this.data.builtinFoods;
       currentCategoryLabel = "搜索结果";
     } else if (currentCategoryKey === FILTER_KEYS.RECENT) {
-      displayedFoods = this.buildRecentFoods();
+      displayedFoods = this.buildRecentFoods().map((food) => ({
+        ...food,
+        recentMetaText: buildRecentFoodMeta(food),
+      }));
     } else if (currentCategoryKey === FILTER_KEYS.RECENT_SEARCH) {
       showRecentSearchList = true;
     } else if (currentCategoryKey === FILTER_KEYS.CUSTOM) {
@@ -1168,11 +1292,13 @@ Page({
       ? this.data.recentFoodSwipeOffsetX
       : 0;
     if (enableRecentFoodSwipe) {
+      const actionWidth = this.getRecentFoodActionWidth();
       displayedFoods = applyRecentFoodSwipeState(
         displayedFoods,
         nextSwipedRecentFoodId,
         nextSwipingRecentFoodId,
-        nextRecentFoodSwipeOffsetX
+        nextRecentFoodSwipeOffsetX,
+        actionWidth
       );
     }
 

@@ -399,14 +399,29 @@
 .stream-action-shell {
   align-items: center;
   display: flex;
+  gap: 14rpx;
   height: 100%;
   justify-content: center;
-  width: 84px;
+  width: 168px;
 }
 
 .stream-delete-btn {
   height: 60rpx;
   width: 60rpx;
+}
+
+.stream-repeat-btn {
+  align-items: center;
+  background: rgba(107, 144, 132, 0.14);
+  border-radius: 999rpx;
+  color: #5d8378;
+  display: inline-flex;
+  font-size: 22rpx;
+  font-weight: 700;
+  height: 60rpx;
+  justify-content: center;
+  min-width: 128rpx;
+  padding: 0 24rpx;
 }
 
 .stream-swipe-content {

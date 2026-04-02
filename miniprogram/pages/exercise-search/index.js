@@ -19,6 +19,7 @@ const {
   decorateExercise,
   filterExercisesByCategory,
   getExerciseCategoryLabel,
+  getIntensityLabel,
   isBuiltinExercise,
   isCustomExercise,
 } = require("../../utils/exercise");
@@ -45,6 +46,8 @@ const PREVIEW_WEIGHT_KG = 60;
 const DELETE_ACTION_WIDTH = 84;
 const SWIPE_OPEN_THRESHOLD = 42;
 const SWIPE_ACTIVATE_DISTANCE = 8;
+const RECENT_EXERCISE_REPEAT_ACTION_WIDTH = DELETE_ACTION_WIDTH * 2;
+const RECENT_EXERCISE_REPEAT_OPEN_THRESHOLD = DELETE_ACTION_WIDTH;
 const INTENSITY_FACTOR_MAP = {
   LOW: 0.8,
   MEDIUM: 1,
@@ -74,6 +77,32 @@ function estimateCalories(metValue, durationMinutes, intensityLevel, weightKgSna
   const duration = Math.max(toNumber(durationMinutes), 0);
   const weight = toNumber(weightKgSnapshot) > 0 ? toNumber(weightKgSnapshot) : PREVIEW_WEIGHT_KG;
   return (toNumber(metValue) * weight * duration / 60) * resolveIntensityFactor(intensityLevel);
+}
+
+function resolveRecentExerciseDuration(exercise) {
+  const duration = toNumber(exercise && exercise.lastUsedDurationMinutes);
+  return duration > 0 ? String(duration) : String(DEFAULT_DURATION_MINUTES);
+}
+
+function resolveRecentExerciseIntensity(exercise) {
+  return exercise && exercise.lastUsedIntensityLevel ? exercise.lastUsedIntensityLevel : "MEDIUM";
+}
+
+function buildRecentExerciseMeta(exercise) {
+  const duration = toNumber(exercise && exercise.lastUsedDurationMinutes);
+  const intensityLabel = exercise && exercise.lastUsedIntensityLevel ? getIntensityLabel(exercise.lastUsedIntensityLevel) : "";
+  const durationLabel = duration > 0 ? `${Math.round(duration)}min` : "";
+
+  if (durationLabel && intensityLabel) {
+    return `上次 ${durationLabel} · ${intensityLabel}`;
+  }
+  if (durationLabel) {
+    return `上次 ${durationLabel}`;
+  }
+  if (intensityLabel) {
+    return `上次 ${intensityLabel}`;
+  }
+  return exercise && exercise.categoryLabel ? exercise.categoryLabel : "";
 }
 
 function normalizeExercise(exercise) {
@@ -121,23 +150,23 @@ function getKeywordFromConfirmEvent(event, fallbackKeyword) {
   return fallbackKeyword;
 }
 
-function clampSwipeOffset(offsetX) {
+function clampSwipeOffset(offsetX, maxWidth = DELETE_ACTION_WIDTH) {
   if (!Number.isFinite(offsetX) || offsetX < 0) {
     return 0;
   }
-  if (offsetX > DELETE_ACTION_WIDTH) {
-    return DELETE_ACTION_WIDTH;
+  if (offsetX > maxWidth) {
+    return maxWidth;
   }
   return offsetX;
 }
 
-function applyRecentExerciseSwipeState(items, swipedExerciseId, swipingExerciseId, swipeOffsetX) {
+function applyRecentExerciseSwipeState(items, swipedExerciseId, swipingExerciseId, swipeOffsetX, actionWidth = DELETE_ACTION_WIDTH) {
   return (items || []).map((item) => {
     const isSwiping = Number(item.id) === swipingExerciseId;
     const isOpened = Number(item.id) === swipedExerciseId;
     const offsetX = isSwiping
-      ? clampSwipeOffset(swipeOffsetX)
-      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+      ? clampSwipeOffset(swipeOffsetX, actionWidth)
+      : (isOpened ? actionWidth : 0);
     return Object.assign({}, item, {
       swipeOffsetX: offsetX,
       swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,
@@ -351,15 +380,22 @@ Page({
       return;
     }
     const nextOpenedId = this.data.swipedRecentExerciseId === id ? id : null;
+    const actionWidth = this.getRecentExerciseActionWidth();
     this.recentExerciseSwipeStartX = touch.clientX;
     this.recentExerciseSwipeStartY = touch.clientY;
-    this.recentExerciseSwipeBaseOffsetX = this.data.swipedRecentExerciseId === id ? DELETE_ACTION_WIDTH : 0;
+    this.recentExerciseSwipeBaseOffsetX = this.data.swipedRecentExerciseId === id ? actionWidth : 0;
     this.recentExerciseSwipeMode = "";
     this.setData({
       swipingRecentExerciseId: id,
       recentExerciseSwipeOffsetX: this.recentExerciseSwipeBaseOffsetX,
       swipedRecentExerciseId: nextOpenedId,
-      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, nextOpenedId, id, this.recentExerciseSwipeBaseOffsetX),
+      displayedExercises: applyRecentExerciseSwipeState(
+        this.data.displayedExercises,
+        nextOpenedId,
+        id,
+        this.recentExerciseSwipeBaseOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -383,10 +419,17 @@ Page({
     if (this.recentExerciseSwipeMode !== "horizontal") {
       return;
     }
-    const nextOffsetX = clampSwipeOffset(this.recentExerciseSwipeBaseOffsetX + deltaX);
+    const actionWidth = this.getRecentExerciseActionWidth();
+    const nextOffsetX = clampSwipeOffset(this.recentExerciseSwipeBaseOffsetX + deltaX, actionWidth);
     this.setData({
       recentExerciseSwipeOffsetX: nextOffsetX,
-      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, this.data.swipedRecentExerciseId, id, nextOffsetX),
+      displayedExercises: applyRecentExerciseSwipeState(
+        this.data.displayedExercises,
+        this.data.swipedRecentExerciseId,
+        id,
+        nextOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -400,11 +443,20 @@ Page({
       this.setData({
         swipingRecentExerciseId: null,
         recentExerciseSwipeOffsetX: 0,
-        displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, this.data.swipedRecentExerciseId, null, 0),
+        displayedExercises: applyRecentExerciseSwipeState(
+          this.data.displayedExercises,
+          this.data.swipedRecentExerciseId,
+          null,
+          0,
+          this.getRecentExerciseActionWidth()
+        ),
       });
       return;
     }
-    this.finishRecentExerciseSwipe(id, this.data.recentExerciseSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+    this.finishRecentExerciseSwipe(
+      id,
+      this.data.recentExerciseSwipeOffsetX >= (this.data.enableDirectEdit ? RECENT_EXERCISE_REPEAT_OPEN_THRESHOLD : SWIPE_OPEN_THRESHOLD)
+    );
   },
 
   handleRecentExerciseContentTap(event) {
@@ -430,6 +482,57 @@ Page({
     wx.showToast({ title: "已移除", icon: "success" });
   },
 
+  handleRepeatRecentExercise(event) {
+    if (!this.data.enableDirectEdit) {
+      return;
+    }
+
+    const index = Number(event.currentTarget.dataset.index);
+    const exercise = this.data.displayedExercises[index];
+    if (!exercise) {
+      return;
+    }
+
+    const durationMinutes = toNumber(exercise.lastUsedDurationMinutes) > 0
+      ? toNumber(exercise.lastUsedDurationMinutes)
+      : DEFAULT_DURATION_MINUTES;
+    const intensityLevel = exercise.lastUsedIntensityLevel || "MEDIUM";
+
+    this.closeRecentExerciseSwipeActions();
+    createExerciseRecord({
+      exerciseId: exercise.id,
+      durationMinutes,
+      intensityLevel,
+      recordDate: this.data.recordDate,
+    })
+      .then(() => {
+        if (this.userId) {
+          saveRecentExercise(this.userId, {
+            id: exercise.id,
+            name: exercise.name,
+            metValue: exercise.metValue,
+            category: exercise.category,
+            aliases: exercise.aliases,
+            lastUsedDurationMinutes: durationMinutes,
+            lastUsedIntensityLevel: intensityLevel,
+            lastUsedAt: Date.now(),
+          });
+        }
+
+        this.loadExercises();
+        this.syncHomeAfterSave(this.data.recordDate);
+        wx.showToast({ title: "已新增一条", icon: "success" });
+        if (this.data.source === "home") {
+          setTimeout(() => {
+            this.goHome();
+          }, 320);
+        }
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+      });
+  },
+
   resetRecentExerciseSwipeGesture() {
     this.recentExerciseSwipeStartX = null;
     this.recentExerciseSwipeStartY = null;
@@ -443,7 +546,13 @@ Page({
       swipedRecentExerciseId: shouldOpen ? id : null,
       swipingRecentExerciseId: null,
       recentExerciseSwipeOffsetX: 0,
-      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, shouldOpen ? id : null, null, 0),
+      displayedExercises: applyRecentExerciseSwipeState(
+        this.data.displayedExercises,
+        shouldOpen ? id : null,
+        null,
+        0,
+        this.getRecentExerciseActionWidth()
+      ),
     });
   },
 
@@ -456,7 +565,13 @@ Page({
       swipedRecentExerciseId: null,
       swipingRecentExerciseId: null,
       recentExerciseSwipeOffsetX: 0,
-      displayedExercises: applyRecentExerciseSwipeState(this.data.displayedExercises, null, null, 0),
+      displayedExercises: applyRecentExerciseSwipeState(
+        this.data.displayedExercises,
+        null,
+        null,
+        0,
+        this.getRecentExerciseActionWidth()
+      ),
     });
   },
 
@@ -475,7 +590,10 @@ Page({
       displayedExercises = this.buildAllExercises(keyword);
       currentCategoryLabel = "搜索结果";
     } else if (selectedCategoryKey === FILTER_KEYS.RECENT) {
-      displayedExercises = this.buildRecentExercises(keyword);
+      displayedExercises = this.buildRecentExercises(keyword).map((item) => ({
+        ...item,
+        recentMetaText: buildRecentExerciseMeta(item),
+      }));
     } else if (selectedCategoryKey === FILTER_KEYS.RECENT_SEARCH) {
       showRecentSearchList = true;
     } else if (selectedCategoryKey === FILTER_KEYS.CUSTOM) {
@@ -499,11 +617,13 @@ Page({
       ? this.data.recentExerciseSwipeOffsetX
       : 0;
     if (enableRecentExerciseSwipe) {
+      const actionWidth = this.getRecentExerciseActionWidth();
       displayedExercises = applyRecentExerciseSwipeState(
         displayedExercises,
         nextSwipedRecentExerciseId,
         nextSwipingRecentExerciseId,
-        nextRecentExerciseSwipeOffsetX
+        nextRecentExerciseSwipeOffsetX,
+        actionWidth
       );
     }
 
@@ -534,6 +654,10 @@ Page({
       .slice()
       .sort((a, b) => Number(b.usedAt || 0) - Number(a.usedAt || 0))
       .filter((item) => includesKeyword(item, keyword));
+  },
+
+  getRecentExerciseActionWidth() {
+    return this.data.enableDirectEdit ? RECENT_EXERCISE_REPEAT_ACTION_WIDTH : DELETE_ACTION_WIDTH;
   },
 
   buildCustomExercises(keyword) {
@@ -604,7 +728,11 @@ Page({
   },
 
   openExerciseEditor(exercise) {
-    this.applyEditorExerciseData(normalizeExercise(exercise), {
+    this.applyEditorExerciseData({
+      ...normalizeExercise(exercise),
+      durationMinutes: resolveRecentExerciseDuration(exercise),
+      intensityLevel: resolveRecentExerciseIntensity(exercise),
+    }, {
       mode: "create",
       recordId: null,
       canDelete: false,
@@ -774,14 +902,21 @@ Page({
             metValue: this.data.editorMetValue,
             category: this.data.editorCategory,
             aliases: this.data.editorAliases,
+            lastUsedDurationMinutes: durationMinutes,
+            lastUsedIntensityLevel: this.data.editorIntensityLevel,
+            lastUsedAt: Date.now(),
           });
         }
 
         this.syncHomeAfterSave(this.data.editorRecordDate);
         wx.showToast({ title: "已保存", icon: "success" });
-        setTimeout(() => {
-          this.goHome();
-        }, 320);
+        if (this.data.source === "home") {
+          setTimeout(() => {
+            this.goHome();
+          }, 320);
+        } else {
+          this.loadExercises();
+        }
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });

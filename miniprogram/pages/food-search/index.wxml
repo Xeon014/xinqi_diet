@@ -70,7 +70,13 @@
             bindtouchcancel="handleRecentFoodTouchEnd"
           >
             <view class="food-swipe-action-track">
-              <view class="food-swipe-action-shell">
+              <view class="food-swipe-action-shell {{enableDirectEdit ? 'double' : ''}}">
+                <view
+                  wx:if="{{enableDirectEdit}}"
+                  class="food-swipe-repeat-btn"
+                  data-index="{{index}}"
+                  catchtap="handleRepeatRecentFood"
+                >再记一次</view>
                 <view class="danger-icon-btn food-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentFood">
                   <view class="trash-icon">
                     <view class="trash-icon-handle"></view>
@@ -105,7 +111,7 @@
                     <view class="food-name">{{item.name}}</view>
                     <view class="food-calories">{{item.displayCaloriesPer100}} {{item.calorieUnitLabel}} / 100{{item.quantityUnitLabel}}</view>
                   </view>
-                  <view wx:if="{{item.categoryLabel}}" class="food-category">{{item.categoryLabel}}</view>
+                  <view wx:if="{{item.recentMetaText || item.categoryLabel}}" class="food-category">{{item.recentMetaText || item.categoryLabel}}</view>
                 </view>
               </view>
             </view>

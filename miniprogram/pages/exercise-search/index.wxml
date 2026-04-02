@@ -69,7 +69,13 @@
             bindtouchcancel="handleRecentExerciseTouchEnd"
           >
             <view class="exercise-swipe-action-track">
-              <view class="exercise-swipe-action-shell">
+              <view class="exercise-swipe-action-shell {{enableDirectEdit ? 'double' : ''}}">
+                <view
+                  wx:if="{{enableDirectEdit}}"
+                  class="exercise-swipe-repeat-btn"
+                  data-index="{{index}}"
+                  catchtap="handleRepeatRecentExercise"
+                >再记一次</view>
                 <view class="danger-icon-btn exercise-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentExercise">
                   <view class="trash-icon">
                     <view class="trash-icon-handle"></view>
@@ -94,7 +100,7 @@
                   <view class="exercise-name">{{item.name}}</view>
                   <view class="exercise-met">MET {{item.metValue}}</view>
                 </view>
-                <view class="exercise-meta">{{item.categoryLabel}}</view>
+                <view class="exercise-meta">{{item.recentMetaText || item.categoryLabel}}</view>
               </view>
             </view>
           </view>
