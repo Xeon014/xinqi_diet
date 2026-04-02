@@ -55,7 +55,10 @@
       <view wx:if="{{showExerciseSection}}" class="panel section-panel">
         <view class="section-title-row">
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
-          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">新建</view>
+          <view wx:if="{{showCustomCreateAction || showHistoryEntry}}" class="section-actions">
+            <view wx:if="{{showHistoryEntry}}" class="section-add-btn" bindtap="handleOpenHistory">历史记录</view>
+            <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomExercise">新建</view>
+          </view>
         </view>
         <view wx:if="{{displayedExercises.length && enableRecentExerciseSwipe}}" class="exercise-list compact-list" bindtap="handleRecentExerciseListBackgroundTap">
           <view
@@ -69,13 +72,7 @@
             bindtouchcancel="handleRecentExerciseTouchEnd"
           >
             <view class="exercise-swipe-action-track">
-              <view class="exercise-swipe-action-shell {{enableDirectEdit ? 'double' : ''}}">
-                <view
-                  wx:if="{{enableDirectEdit}}"
-                  class="exercise-swipe-repeat-btn"
-                  data-index="{{index}}"
-                  catchtap="handleRepeatRecentExercise"
-                >再记一次</view>
+              <view class="exercise-swipe-action-shell">
                 <view class="danger-icon-btn exercise-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentExercise">
                   <view class="trash-icon">
                     <view class="trash-icon-handle"></view>

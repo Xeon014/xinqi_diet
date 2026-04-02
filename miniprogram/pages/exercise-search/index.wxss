@@ -88,6 +88,12 @@
   justify-content: space-between;
 }
 
+.section-actions {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+}
+
 .section-title-tag {
   background: rgba(107, 144, 132, 0.08);
   border: 1rpx solid rgba(107, 144, 132, 0.12);
@@ -171,10 +177,6 @@
   width: 84px;
 }
 
-.exercise-swipe-action-shell.double {
-  width: 168px;
-}
-
 .exercise-swipe-content {
   background:
     linear-gradient(180deg, rgba(253, 252, 248, 0.98) 0%, rgba(248, 245, 238, 0.95) 100%),
@@ -187,20 +189,6 @@
 .exercise-swipe-delete-btn {
   height: 64rpx;
   width: 64rpx;
-}
-
-.exercise-swipe-repeat-btn {
-  align-items: center;
-  background: rgba(107, 144, 132, 0.14);
-  border-radius: 999rpx;
-  color: #5d8378;
-  display: inline-flex;
-  font-size: 22rpx;
-  font-weight: 700;
-  height: 64rpx;
-  justify-content: center;
-  min-width: 128rpx;
-  padding: 0 24rpx;
 }
 
 .exercise-item {

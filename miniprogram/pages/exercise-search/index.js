@@ -1,7 +1,7 @@
 const {
   createExerciseRecord,
   deleteExerciseRecord,
-  getExerciseRecords,
+  getExerciseRecordDetail,
   updateExerciseRecord,
 } = require("../../services/exercise-record");
 const { searchExercises } = require("../../services/exercise");
@@ -46,8 +46,6 @@ const PREVIEW_WEIGHT_KG = 60;
 const DELETE_ACTION_WIDTH = 84;
 const SWIPE_OPEN_THRESHOLD = 42;
 const SWIPE_ACTIVATE_DISTANCE = 8;
-const RECENT_EXERCISE_REPEAT_ACTION_WIDTH = DELETE_ACTION_WIDTH * 2;
-const RECENT_EXERCISE_REPEAT_OPEN_THRESHOLD = DELETE_ACTION_WIDTH;
 const INTENSITY_FACTOR_MAP = {
   LOW: 0.8,
   MEDIUM: 1,
@@ -186,6 +184,7 @@ Page({
     showRecentSearchList: false,
     showExerciseSection: false,
     showCustomCreateAction: false,
+    showHistoryEntry: false,
     systemFilters: SYSTEM_FILTERS,
     builtinCategories: BUILTIN_CATEGORIES,
     selectedCategoryKey: FILTER_KEYS.RECENT,
@@ -228,10 +227,10 @@ Page({
     this.recentExerciseSwipeMode = "";
     const recordDate = options.recordDate || getToday();
     const source = options.source || "";
-    const pageMode = options.mode === "edit" ? "edit" : "create";
+    const pageMode = options.mode === "edit" ? "edit" : (options.mode === "copy" ? "copy" : "create");
     const parsedRecordId = Number(options.recordId);
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
-    const enableDirectEdit = Boolean(source) || pageMode === "edit";
+    const enableDirectEdit = Boolean(source) || pageMode === "edit" || pageMode === "copy";
 
     syncNavigationTitle(pageMode);
 
@@ -245,13 +244,17 @@ Page({
       this.loadRecentSearches();
       this.loadExercises();
 
-      if (pageMode === "edit") {
+      if (pageMode === "edit" || pageMode === "copy") {
         if (!pageRecordId) {
           wx.showToast({ title: "记录不存在", icon: "none" });
           this.goHome();
           return;
         }
-        this.openEditorByRecordId(pageRecordId);
+        if (pageMode === "edit") {
+          this.openEditorByRecordId(pageRecordId);
+          return;
+        }
+        this.openCopyEditorByRecordId(pageRecordId);
       }
     });
   },
@@ -455,7 +458,7 @@ Page({
     }
     this.finishRecentExerciseSwipe(
       id,
-      this.data.recentExerciseSwipeOffsetX >= (this.data.enableDirectEdit ? RECENT_EXERCISE_REPEAT_OPEN_THRESHOLD : SWIPE_OPEN_THRESHOLD)
+      this.data.recentExerciseSwipeOffsetX >= SWIPE_OPEN_THRESHOLD
     );
   },
 
@@ -480,57 +483,6 @@ Page({
     this.closeRecentExerciseSwipeActions();
     this.loadExercises();
     wx.showToast({ title: "已移除", icon: "success" });
-  },
-
-  handleRepeatRecentExercise(event) {
-    if (!this.data.enableDirectEdit) {
-      return;
-    }
-
-    const index = Number(event.currentTarget.dataset.index);
-    const exercise = this.data.displayedExercises[index];
-    if (!exercise) {
-      return;
-    }
-
-    const durationMinutes = toNumber(exercise.lastUsedDurationMinutes) > 0
-      ? toNumber(exercise.lastUsedDurationMinutes)
-      : DEFAULT_DURATION_MINUTES;
-    const intensityLevel = exercise.lastUsedIntensityLevel || "MEDIUM";
-
-    this.closeRecentExerciseSwipeActions();
-    createExerciseRecord({
-      exerciseId: exercise.id,
-      durationMinutes,
-      intensityLevel,
-      recordDate: this.data.recordDate,
-    })
-      .then(() => {
-        if (this.userId) {
-          saveRecentExercise(this.userId, {
-            id: exercise.id,
-            name: exercise.name,
-            metValue: exercise.metValue,
-            category: exercise.category,
-            aliases: exercise.aliases,
-            lastUsedDurationMinutes: durationMinutes,
-            lastUsedIntensityLevel: intensityLevel,
-            lastUsedAt: Date.now(),
-          });
-        }
-
-        this.loadExercises();
-        this.syncHomeAfterSave(this.data.recordDate);
-        wx.showToast({ title: "已新增一条", icon: "success" });
-        if (this.data.source === "home") {
-          setTimeout(() => {
-            this.goHome();
-          }, 320);
-        }
-      })
-      .catch((error) => {
-        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
-      });
   },
 
   resetRecentExerciseSwipeGesture() {
@@ -580,6 +532,7 @@ Page({
     const isSearching = Boolean(keyword);
     const selectedCategoryKey = this.data.selectedCategoryKey;
     const enableRecentExerciseSwipe = !isSearching && selectedCategoryKey === FILTER_KEYS.RECENT;
+    const showHistoryEntry = this.data.enableDirectEdit && selectedCategoryKey === FILTER_KEYS.RECENT;
 
     let displayedExercises = [];
     let showRecentSearchList = false;
@@ -635,7 +588,8 @@ Page({
       swipingRecentExerciseId: nextSwipingRecentExerciseId,
       recentExerciseSwipeOffsetX: nextRecentExerciseSwipeOffsetX,
       showRecentSearchList,
-      showExerciseSection: displayedExercises.length > 0 || showCustomCreateAction,
+      showExerciseSection: displayedExercises.length > 0 || showCustomCreateAction || showHistoryEntry,
+      showHistoryEntry,
       showCustomCreateAction,
       currentCategoryLabel,
       emptyTitle: emptyState.emptyTitle,
@@ -657,7 +611,7 @@ Page({
   },
 
   getRecentExerciseActionWidth() {
-    return this.data.enableDirectEdit ? RECENT_EXERCISE_REPEAT_ACTION_WIDTH : DELETE_ACTION_WIDTH;
+    return DELETE_ACTION_WIDTH;
   },
 
   buildCustomExercises(keyword) {
@@ -739,6 +693,15 @@ Page({
     });
   },
 
+  openExerciseEditorFromRecord(record, options = {}) {
+    if (!record || !record.exerciseId) {
+      wx.showToast({ title: "记录不存在或已删除", icon: "none" });
+      return;
+    }
+
+    this.applyEditorExerciseData(normalizeRecord(record), options);
+  },
+
   openEditorByRecordId(recordId) {
     this.setData({
       editorVisible: true,
@@ -748,21 +711,13 @@ Page({
       editorLoading: true,
     });
 
-    getExerciseRecords({ date: this.data.recordDate })
-      .then((result) => {
-        const records = Array.isArray(result.records) ? result.records : [];
-        const targetRecord = records.find((item) => Number(item.id) === Number(recordId));
-        if (!targetRecord) {
-          wx.showToast({ title: "记录不存在或已删除", icon: "none" });
-          this.goHome();
-          return;
-        }
-
-        this.applyEditorExerciseData(normalizeRecord(targetRecord), {
+    getExerciseRecordDetail(recordId)
+      .then((record) => {
+        this.openExerciseEditorFromRecord(record, {
           mode: "edit",
-          recordId: Number(targetRecord.id),
+          recordId: Number(record.id),
           canDelete: true,
-          recordDate: targetRecord.recordDate,
+          recordDate: record.recordDate,
         });
       })
       .catch((error) => {
@@ -772,6 +727,53 @@ Page({
       .finally(() => {
         this.setData({ editorLoading: false });
       });
+  },
+
+  openCopyEditorByRecordId(recordId) {
+    this.setData({
+      editorVisible: true,
+      editorMode: "create",
+      editorCanDelete: false,
+      editorRecordId: null,
+      editorLoading: true,
+    });
+
+    getExerciseRecordDetail(recordId)
+      .then((record) => {
+        this.openExerciseEditorFromRecord(record, {
+          mode: "create",
+          recordId: null,
+          canDelete: false,
+          recordDate: this.data.recordDate,
+        });
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+        this.goHome();
+      })
+      .finally(() => {
+        this.setData({ editorLoading: false });
+      });
+  },
+
+  handleOpenHistory() {
+    if (!this.data.enableDirectEdit) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/exercise-history/index?targetDate=${encodeURIComponent(this.data.recordDate)}`,
+      success: (res) => {
+        res.eventChannel.on("exerciseHistorySelected", (record) => {
+          this.openExerciseEditorFromRecord(record, {
+            mode: "create",
+            recordId: null,
+            canDelete: false,
+            recordDate: this.data.recordDate,
+          });
+        });
+      },
+    });
   },
 
   applyEditorExerciseData(exercise, options = {}) {

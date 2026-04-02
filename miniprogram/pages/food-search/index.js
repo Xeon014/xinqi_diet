@@ -1,6 +1,12 @@
 const { searchFoods } = require("../../services/food");
 const { getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
-const { createRecord, createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
+const {
+  createRecord,
+  createRecordBatch,
+  deleteRecord,
+  getRecordDetail,
+  updateRecord,
+} = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
 const { APP_COPY, MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
@@ -40,8 +46,6 @@ const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
 const FOOD_SEARCH_COPY = APP_COPY.foodSearch;
-const RECENT_FOOD_REPEAT_ACTION_WIDTH = DELETE_ACTION_WIDTH * 2;
-const RECENT_FOOD_REPEAT_OPEN_THRESHOLD = DELETE_ACTION_WIDTH;
 
 function syncNavigationTitle(pageMode) {
   wx.setNavigationBarTitle({
@@ -81,6 +85,7 @@ Page({
     showFoodSection: false,
     showComboSection: false,
     showCustomCreateAction: false,
+    showHistoryEntry: false,
     canUseComboFilter: false,
     systemFilters: buildSystemFilters(false),
     builtinCategories: BUILTIN_CATEGORIES,
@@ -160,11 +165,11 @@ Page({
     const recordDate = options.recordDate || getToday();
     const mealType = options.mealType || "BREAKFAST";
     const source = options.source || "";
-    const pageMode = options.mode === "edit" ? "edit" : "create";
+    const pageMode = options.mode === "edit" ? "edit" : (options.mode === "copy" ? "copy" : "create");
     const parsedRecordId = Number(options.recordId);
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
-    const enableDirectEdit = Boolean(source) || pageMode === "edit";
-    const canUseComboFilter = enableDirectEdit && pageMode === "create";
+    const enableDirectEdit = Boolean(source) || pageMode === "edit" || pageMode === "copy";
+    const canUseComboFilter = enableDirectEdit && pageMode !== "edit";
 
     syncNavigationTitle(pageMode);
 
@@ -188,13 +193,17 @@ Page({
           this.loadCombos();
         }
 
-        if (pageMode === "edit") {
+        if (pageMode === "edit" || pageMode === "copy") {
           if (!pageRecordId) {
             wx.showToast({ title: "记录不存在", icon: "none" });
             this.goHome();
             return;
           }
-          this.openEditorByRecordId(pageRecordId);
+          if (pageMode === "edit") {
+            this.openEditorByRecordId(pageRecordId);
+            return;
+          }
+          this.openCopyEditorByRecordId(pageRecordId);
           return;
         }
 
@@ -636,7 +645,7 @@ Page({
     }
     this.finishRecentFoodSwipe(
       id,
-      this.data.recentFoodSwipeOffsetX >= (this.data.enableDirectEdit ? RECENT_FOOD_REPEAT_OPEN_THRESHOLD : SWIPE_OPEN_THRESHOLD)
+      this.data.recentFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD
     );
   },
 
@@ -661,63 +670,6 @@ Page({
     this.closeRecentFoodSwipeActions();
     this.loadRecentFoods();
     wx.showToast({ title: "已移除", icon: "success" });
-  },
-
-  handleRepeatRecentFood(event) {
-    if (!this.data.enableDirectEdit) {
-      return;
-    }
-
-    const index = Number(event.currentTarget.dataset.index);
-    const food = this.data.displayedFoods[index];
-    if (!food) {
-      return;
-    }
-
-    const quantityInGram = toNumber(food.lastUsedQuantityInGram) > 0
-      ? toNumber(food.lastUsedQuantityInGram)
-      : DEFAULT_QUANTITY;
-    const mealType = food.lastUsedMealType || this.data.mealType;
-
-    this.closeRecentFoodSwipeActions();
-    createRecord({
-      foodId: food.id,
-      mealType,
-      quantityInGram,
-      recordDate: this.data.recordDate,
-    })
-      .then(() => {
-        if (this.userId) {
-          saveRecentFood(this.userId, {
-            id: food.id,
-            name: food.name,
-            caloriesPer100g: food.caloriesPer100g,
-            calorieUnit: food.calorieUnit,
-            displayCaloriesPer100: food.displayCaloriesPer100,
-            proteinPer100g: food.proteinPer100g,
-            carbsPer100g: food.carbsPer100g,
-            fatPer100g: food.fatPer100g,
-            quantityUnit: food.quantityUnit,
-            category: food.category || "",
-            imageUrl: food.imageUrl || "",
-            lastUsedQuantityInGram: quantityInGram,
-            lastUsedMealType: mealType,
-            lastUsedAt: Date.now(),
-          });
-        }
-
-        this.loadRecentFoods();
-        this.syncHomeAfterSave(this.data.recordDate);
-        wx.showToast({ title: "已新增一条", icon: "success" });
-        if (this.data.source === "home") {
-          setTimeout(() => {
-            this.goHome();
-          }, 320);
-        }
-      })
-      .catch((error) => {
-        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
-      });
   },
 
   resetRecentFoodSwipeGesture() {
@@ -824,6 +776,7 @@ Page({
       recordDate: this.data.recordDate,
     }));
   },
+
   openEditorByRecordId(recordId) {
     this.setData({
       editorVisible: true,
@@ -833,42 +786,15 @@ Page({
       editorLoading: true,
     });
 
-    getRecords({
-      date: this.data.recordDate,
-      mealType: this.data.mealType,
-    })
-      .then((result) => {
-        const records = Array.isArray(result.records) ? result.records : [];
-        const targetRecord = records.find((item) => Number(item.id) === Number(recordId));
-        if (!targetRecord) {
-          wx.showToast({ title: "记录不存在或已删除", icon: "none" });
-          this.goHome();
-          return;
-        }
-
-        this.applyEditorFoodData(
-          {
-            id: targetRecord.foodId,
-            name: targetRecord.foodName,
-            category: "",
-            categoryLabel: "",
-            caloriesPer100g: targetRecord.caloriesPer100g,
-            calorieUnit: targetRecord.calorieUnit,
-            proteinPer100g: targetRecord.proteinPer100g,
-            carbsPer100g: targetRecord.carbsPer100g,
-            fatPer100g: targetRecord.fatPer100g,
-            quantityUnit: targetRecord.quantityUnit,
-            imageUrl: "",
-          },
-          String(toNumber(targetRecord.quantityInGram) || DEFAULT_QUANTITY),
-          {
-            mode: "edit",
-            recordId: Number(targetRecord.id),
-            canDelete: true,
-            mealType: targetRecord.mealType,
-            recordDate: targetRecord.recordDate,
-          }
-        );
+    getRecordDetail(recordId)
+      .then((record) => {
+        this.openFoodEditorFromRecord(record, {
+          mode: "edit",
+          recordId: Number(record.id),
+          canDelete: true,
+          mealType: record.mealType,
+          recordDate: record.recordDate,
+        });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -877,6 +803,80 @@ Page({
       .finally(() => {
         this.setData({ editorLoading: false });
       });
+  },
+
+  openCopyEditorByRecordId(recordId) {
+    this.setData({
+      editorVisible: true,
+      editorMode: "create",
+      editorCanDelete: false,
+      editorRecordId: null,
+      editorLoading: true,
+    });
+
+    getRecordDetail(recordId)
+      .then((record) => {
+        this.openFoodEditorFromRecord(record, {
+          mode: "create",
+          recordId: null,
+          canDelete: false,
+          mealType: this.data.mealType,
+          recordDate: this.data.recordDate,
+        });
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+        this.goHome();
+      })
+      .finally(() => {
+        this.setData({ editorLoading: false });
+      });
+  },
+
+  openFoodEditorFromRecord(record, options = {}) {
+    if (!record || !record.foodId) {
+      wx.showToast({ title: "记录不存在或已删除", icon: "none" });
+      return;
+    }
+
+    this.applyEditorFoodData(
+      {
+        id: record.foodId,
+        name: record.foodName,
+        category: "",
+        categoryLabel: "",
+        caloriesPer100g: record.caloriesPer100g,
+        calorieUnit: record.calorieUnit,
+        proteinPer100g: record.proteinPer100g,
+        carbsPer100g: record.carbsPer100g,
+        fatPer100g: record.fatPer100g,
+        quantityUnit: record.quantityUnit,
+        imageUrl: "",
+      },
+      String(toNumber(record.quantityInGram) || DEFAULT_QUANTITY),
+      options
+    );
+  },
+
+  handleOpenHistory() {
+    if (!this.data.enableDirectEdit) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/food-history/index?targetDate=${encodeURIComponent(this.data.recordDate)}&targetMealType=${encodeURIComponent(this.data.mealType)}`,
+      success: (res) => {
+        res.eventChannel.on("foodHistorySelected", (record) => {
+          this.openFoodEditorFromRecord(record, {
+            mode: "create",
+            recordId: null,
+            canDelete: false,
+            mealType: this.data.mealType,
+            recordDate: this.data.recordDate,
+          });
+        });
+      },
+    });
   },
 
   applyEditorFoodData(food, quantityInGram, options = {}) {
@@ -1177,7 +1177,7 @@ Page({
   },
 
   getRecentFoodActionWidth() {
-    return this.data.enableDirectEdit ? RECENT_FOOD_REPEAT_ACTION_WIDTH : DELETE_ACTION_WIDTH;
+    return DELETE_ACTION_WIDTH;
   },
 
   buildCustomFoods() {
@@ -1236,6 +1236,7 @@ Page({
     const currentCategoryKey = this.data.selectedCategoryKey;
     const usesRemoteFoods = this.shouldUseRemoteFoodSource();
     const enableRecentFoodSwipe = !isSearching && currentCategoryKey === FILTER_KEYS.RECENT;
+    const showHistoryEntry = this.data.enableDirectEdit && currentCategoryKey === FILTER_KEYS.RECENT;
 
     let displayedFoods = [];
     let displayedCombos = [];
@@ -1311,9 +1312,10 @@ Page({
       swipingRecentFoodId: nextSwipingRecentFoodId,
       recentFoodSwipeOffsetX: nextRecentFoodSwipeOffsetX,
       showRecentSearchList,
-      showFoodSection: displayedFoods.length > 0 || showCustomCreateAction || Boolean(builtinStatusText),
+      showFoodSection: displayedFoods.length > 0 || showCustomCreateAction || showHistoryEntry || Boolean(builtinStatusText),
       showComboSection: displayedCombos.length > 0,
       showCustomCreateAction,
+      showHistoryEntry,
       currentCategoryLabel,
       emptyTitle: emptyState.emptyTitle,
       emptyDescription: emptyState.emptyDescription,

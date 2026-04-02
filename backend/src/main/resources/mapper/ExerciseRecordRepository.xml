@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.diet.infra.record.exercise.ExerciseRecordMapper">
+
+    <select id="findByUserWithCursor" resultType="com.diet.domain.exercise.ExerciseRecord">
+        SELECT
+            id,
+            user_id,
+            exercise_id,
+            duration_minutes,
+            intensity_level,
+            intensity_factor,
+            weight_kg_snapshot,
+            total_calories,
+            record_date,
+            created_at
+        FROM exercise_record
+        WHERE user_id = #{userId}
+        <if test="cursorRecordDate != null and cursorCreatedAt != null and cursorId != null">
+            AND (
+                record_date <![CDATA[<]]> #{cursorRecordDate}
+                OR (record_date = #{cursorRecordDate} AND created_at <![CDATA[<]]> #{cursorCreatedAt})
+                OR (record_date = #{cursorRecordDate} AND created_at = #{cursorCreatedAt} AND id <![CDATA[<]]> #{cursorId})
+            )
+        </if>
+        ORDER BY record_date DESC, created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

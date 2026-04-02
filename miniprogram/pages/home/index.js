@@ -1,8 +1,8 @@
 const { getDailySummary } = require("../../services/user");
 const { getDailyHealthDiary } = require("../../services/health-diary");
 const { createBodyMetricRecord, getDailyBodyMetricSnapshot } = require("../../services/body-metric");
-const { createRecord, deleteRecord, getRecords } = require("../../services/record");
-const { createExerciseRecord, deleteExerciseRecord, getExerciseRecords } = require("../../services/exercise-record");
+const { deleteRecord, getRecords } = require("../../services/record");
+const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
 const {
   APP_COPY,
@@ -12,8 +12,6 @@ const {
 } = require("../../utils/constants");
 const { addDays, combineDateAndTime, getCurrentMinute, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
-const { saveRecentFood } = require("../../utils/recent-foods");
-const { saveRecentExercise } = require("../../utils/recent-exercises");
 const { pickErrorMessage } = require("../../utils/request");
 
 const ACTION_BUTTON_WIDTH = 84;
@@ -743,101 +741,33 @@ Page({
   },
 
   handleRepeatHomeRecord(event) {
-    const { recordType, recordId, mealType, recordDate } = event.currentTarget.dataset;
+    const { recordType, recordId, mealType } = event.currentTarget.dataset;
     if (!recordType || recordId == null) {
       return;
     }
 
     this.closeSwipeActions();
     if (recordType === "DIET") {
-      this.repeatDietRecord(recordId, mealType, recordDate || this.data.recordDate);
+      wx.navigateTo({
+        url: buildFoodSearchUrl({
+          mode: "copy",
+          recordId,
+          mealType,
+          recordDate: this.data.recordDate,
+          source: "home",
+        }),
+      });
       return;
     }
-    this.repeatExerciseRecord(recordId, recordDate || this.data.recordDate);
-  },
 
-  repeatDietRecord(recordId, mealType, sourceRecordDate) {
-    getRecords({
-      date: sourceRecordDate,
-      mealType,
-    })
-      .then((result) => {
-        const records = Array.isArray(result.records) ? result.records : [];
-        const targetRecord = records.find((item) => Number(item.id) === Number(recordId));
-        if (!targetRecord) {
-          wx.showToast({ title: "记录不存在或已删除", icon: "none" });
-          return;
-        }
-
-        return createRecord({
-          foodId: targetRecord.foodId,
-          mealType: targetRecord.mealType,
-          quantityInGram: toNumber(targetRecord.quantityInGram),
-          recordDate: this.data.recordDate,
-        }).then(() => {
-          if (this.userId) {
-            saveRecentFood(this.userId, {
-              id: targetRecord.foodId,
-              name: targetRecord.foodName,
-              caloriesPer100g: targetRecord.caloriesPer100g,
-              calorieUnit: targetRecord.calorieUnit,
-              proteinPer100g: targetRecord.proteinPer100g,
-              carbsPer100g: targetRecord.carbsPer100g,
-              fatPer100g: targetRecord.fatPer100g,
-              quantityUnit: targetRecord.quantityUnit,
-              category: "",
-              imageUrl: "",
-              lastUsedQuantityInGram: toNumber(targetRecord.quantityInGram),
-              lastUsedMealType: targetRecord.mealType,
-              lastUsedAt: Date.now(),
-            });
-          }
-
-          wx.showToast({ title: "已新增一条", icon: "success" });
-          this.loadSummary();
-        });
-      })
-      .catch((error) => {
-        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
-      });
-  },
-
-  repeatExerciseRecord(recordId, sourceRecordDate) {
-    getExerciseRecords({ date: sourceRecordDate })
-      .then((result) => {
-        const records = Array.isArray(result.records) ? result.records : [];
-        const targetRecord = records.find((item) => Number(item.id) === Number(recordId));
-        if (!targetRecord) {
-          wx.showToast({ title: "记录不存在或已删除", icon: "none" });
-          return;
-        }
-
-        return createExerciseRecord({
-          exerciseId: targetRecord.exerciseId,
-          durationMinutes: targetRecord.durationMinutes,
-          intensityLevel: targetRecord.intensityLevel,
-          recordDate: this.data.recordDate,
-        }).then(() => {
-          if (this.userId) {
-            saveRecentExercise(this.userId, {
-              id: targetRecord.exerciseId,
-              name: targetRecord.exerciseName,
-              metValue: targetRecord.metValue,
-              category: targetRecord.category,
-              aliases: "",
-              lastUsedDurationMinutes: targetRecord.durationMinutes,
-              lastUsedIntensityLevel: targetRecord.intensityLevel,
-              lastUsedAt: Date.now(),
-            });
-          }
-
-          wx.showToast({ title: "已新增一条", icon: "success" });
-          this.loadSummary();
-        });
-      })
-      .catch((error) => {
-        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
-      });
+    wx.navigateTo({
+      url: buildExerciseSearchUrl({
+        recordDate: this.data.recordDate,
+        source: "home",
+        mode: "copy",
+        recordId,
+      }),
+    });
   },
 
   handleDeleteHomeRecord(event) {

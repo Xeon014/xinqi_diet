@@ -5,6 +5,7 @@ import com.diet.types.common.ApiResponse;
 import com.diet.domain.record.MealType;
 import com.diet.api.record.CreateMealRecordBatchRequest;
 import com.diet.api.record.CreateMealRecordRequest;
+import com.diet.api.record.MealRecordHistoryResponse;
 import com.diet.api.record.MealRecordListResponse;
 import com.diet.api.record.MealRecordResponse;
 import com.diet.api.record.UpdateMealRecordRequest;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -112,5 +114,41 @@ public class MealRecordController {
         Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         List<MealRecordResponse> records = mealRecordQueryService.findByUserAndDate(resolvedUserId, date, mealType);
         return ApiResponse.success(new MealRecordListResponse(resolvedUserId, date, records, records.size()));
+    }
+
+    @Operation(summary = "查询单条饮食记录", description = "按记录 ID 查询当前用户的一条饮食记录详情")
+    @GetMapping("/{id}")
+    public ApiResponse<MealRecordResponse> findById(
+            @Parameter(description = "饮食记录 ID") @PathVariable Long id,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(mealRecordQueryService.getById(userId, id));
+    }
+
+    @Operation(summary = "查询饮食历史记录", description = "按用户查询饮食历史记录，支持按餐次筛选和游标分页")
+    @GetMapping("/history")
+    public ApiResponse<MealRecordHistoryResponse> findHistory(
+            @Parameter(description = "餐次类型，可选值 BREAKFAST/MORNING_SNACK/LUNCH/AFTERNOON_SNACK/DINNER/LATE_NIGHT_SNACK/OTHER")
+            @RequestParam(required = false) MealType mealType,
+            @Parameter(description = "游标记录日期，格式 yyyy-MM-dd")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate cursorRecordDate,
+            @Parameter(description = "游标创建时间，格式 yyyy-MM-dd'T'HH:mm:ss")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursorCreatedAt,
+            @Parameter(description = "游标记录 ID")
+            @RequestParam(required = false) Long cursorId,
+            @Parameter(description = "分页大小，默认 30，最大 60")
+            @RequestParam(required = false) Integer pageSize,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(mealRecordQueryService.getHistory(
+                userId,
+                mealType,
+                cursorRecordDate,
+                cursorCreatedAt,
+                cursorId,
+                pageSize
+        ));
     }
 }

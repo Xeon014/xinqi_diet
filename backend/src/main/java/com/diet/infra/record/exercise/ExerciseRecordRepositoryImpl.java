@@ -5,6 +5,7 @@ import com.diet.domain.exercise.ExerciseRecord;
 import com.diet.domain.exercise.ExerciseRecordRepository;
 import com.diet.infra.record.exercise.ExerciseRecordMapper;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -63,5 +64,22 @@ public class ExerciseRecordRepositoryImpl implements ExerciseRecordRepository {
                 .between(ExerciseRecord::getRecordDate, startDate, endDate)
                 .orderByAsc(ExerciseRecord::getRecordDate)
                 .orderByAsc(ExerciseRecord::getCreatedAt));
+    }
+
+    @Override
+    public List<ExerciseRecord> findByUserWithCursor(
+            Long userId,
+            LocalDate cursorRecordDate,
+            LocalDateTime cursorCreatedAt,
+            Long cursorId,
+            int limit
+    ) {
+        return exerciseRecordMapper.findByUserWithCursor(
+                userId,
+                cursorRecordDate,
+                cursorCreatedAt,
+                cursorId,
+                limit
+        );
     }
 }

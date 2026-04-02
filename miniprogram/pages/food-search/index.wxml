@@ -55,7 +55,10 @@
       <view wx:if="{{showFoodSection}}" class="panel section-panel">
         <view class="section-title-row">
           <view class="section-title-tag">{{currentCategoryLabel}}</view>
-          <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">新建</view>
+          <view wx:if="{{showCustomCreateAction || showHistoryEntry}}" class="section-actions">
+            <view wx:if="{{showHistoryEntry}}" class="section-add-btn" bindtap="handleOpenHistory">历史记录</view>
+            <view wx:if="{{showCustomCreateAction}}" class="section-add-btn" bindtap="handleOpenCustomFood">新建</view>
+          </view>
         </view>
 
         <view wx:if="{{displayedFoods.length && enableRecentFoodSwipe}}" class="food-list compact-list" bindtap="handleRecentFoodListBackgroundTap">
@@ -70,13 +73,7 @@
             bindtouchcancel="handleRecentFoodTouchEnd"
           >
             <view class="food-swipe-action-track">
-              <view class="food-swipe-action-shell {{enableDirectEdit ? 'double' : ''}}">
-                <view
-                  wx:if="{{enableDirectEdit}}"
-                  class="food-swipe-repeat-btn"
-                  data-index="{{index}}"
-                  catchtap="handleRepeatRecentFood"
-                >再记一次</view>
+              <view class="food-swipe-action-shell">
                 <view class="danger-icon-btn food-swipe-delete-btn" data-id="{{item.id}}" catchtap="handleDeleteRecentFood">
                   <view class="trash-icon">
                     <view class="trash-icon-handle"></view>
