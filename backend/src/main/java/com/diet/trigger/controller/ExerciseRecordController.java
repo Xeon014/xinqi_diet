@@ -3,6 +3,7 @@ package com.diet.trigger.controller;
 import com.diet.trigger.support.AuthContextService;
 import com.diet.types.common.ApiResponse;
 import com.diet.api.exercise.CreateExerciseRecordRequest;
+import com.diet.api.exercise.ExerciseRecordHistoryResponse;
 import com.diet.api.exercise.ExerciseRecordListResponse;
 import com.diet.api.exercise.ExerciseRecordResponse;
 import com.diet.api.exercise.UpdateExerciseRecordRequest;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -91,5 +93,38 @@ public class ExerciseRecordController {
         Long resolvedUserId = authContextService.requireCurrentUserId(httpServletRequest);
         List<ExerciseRecordResponse> records = exerciseRecordQueryService.findByUserAndDate(resolvedUserId, date);
         return ApiResponse.success(new ExerciseRecordListResponse(resolvedUserId, date, records, records.size()));
+    }
+
+    @Operation(summary = "查询单条运动记录", description = "按记录 ID 查询当前用户的一条运动记录详情")
+    @GetMapping("/{id}")
+    public ApiResponse<ExerciseRecordResponse> findById(
+            @Parameter(description = "运动记录 ID") @PathVariable Long id,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(exerciseRecordQueryService.getById(userId, id));
+    }
+
+    @Operation(summary = "查询运动历史记录", description = "按用户查询运动历史记录，支持游标分页")
+    @GetMapping("/history")
+    public ApiResponse<ExerciseRecordHistoryResponse> findHistory(
+            @Parameter(description = "游标记录日期，格式 yyyy-MM-dd")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate cursorRecordDate,
+            @Parameter(description = "游标创建时间，格式 yyyy-MM-dd'T'HH:mm:ss")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursorCreatedAt,
+            @Parameter(description = "游标记录 ID")
+            @RequestParam(required = false) Long cursorId,
+            @Parameter(description = "分页大小，默认 30，最大 60")
+            @RequestParam(required = false) Integer pageSize,
+            HttpServletRequest httpServletRequest
+    ) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(exerciseRecordQueryService.getHistory(
+                userId,
+                cursorRecordDate,
+                cursorCreatedAt,
+                cursorId,
+                pageSize
+        ));
     }
 }

@@ -1,6 +1,7 @@
 package com.diet.domain.record;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +22,13 @@ public interface MealRecordRepository {
     List<MealRecord> findByUserAndDateAndMealType(Long userId, LocalDate date, MealType mealType);
 
     List<MealRecord> findByUserAndDateRange(Long userId, LocalDate startDate, LocalDate endDate);
+
+    List<MealRecord> findByUserWithCursor(
+            Long userId,
+            MealType mealType,
+            LocalDate cursorRecordDate,
+            LocalDateTime cursorCreatedAt,
+            Long cursorId,
+            int limit
+    );
 }

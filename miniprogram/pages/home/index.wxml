@@ -82,17 +82,22 @@
       wx:for-item="group"
       class="record-group panel {{group.type === 'EXERCISE' ? 'record-group-exercise' : 'record-group-diet'}}"
     >
-      <view class="group-head">
+      <view
+        class="group-head {{group.collapsed ? 'collapsed' : ''}}"
+        data-meal-type="{{group.type === 'DIET' ? group.mealType : ''}}"
+        bindtap="handleToggleMealGroup"
+      >
         <view class="group-main">
           <view class="group-accent"></view>
           <view class="group-title">{{group.label}}</view>
+          <view wx:if="{{group.type === 'DIET' && group.collapsed}}" class="group-inline-calories">{{group.totalCaloriesLabel}}</view>
         </view>
         <view class="group-side">
           <view wx:if="{{group.type === 'DIET'}}" class="group-actions">
             <view
               class="group-action-btn group-action-nutrition"
               data-meal-type="{{group.mealType}}"
-              bindtap="handleOpenMealNutrition"
+              catchtap="handleOpenMealNutrition"
             >
               <view class="nutrition-icon">
                 <view class="nutrition-bar nutrition-bar-1"></view>
@@ -103,7 +108,7 @@
             <view
               class="group-action-btn group-action-add"
               data-meal-type="{{group.mealType}}"
-              bindtap="handleQuickAddMeal"
+              catchtap="handleQuickAddMeal"
             >
               +
             </view>
@@ -111,7 +116,7 @@
           <view wx:else class="group-actions">
             <view
               class="group-action-btn group-action-exercise"
-              bindtap="handleQuickAddExercise"
+              catchtap="handleQuickAddExercise"
             >
               <view class="group-exercise-icon">
                 <view class="group-exercise-stroke"></view>
@@ -121,7 +126,7 @@
         </view>
       </view>
 
-      <view wx:if="{{group.records.length}}" class="group-list" catchtap="noop">
+      <view wx:if="{{group.records.length && !group.collapsed}}" class="group-list" catchtap="noop">
         <view
           wx:for="{{group.records}}"
           wx:key="recordKey"
@@ -135,6 +140,14 @@
         >
           <view class="stream-action-track">
             <view class="stream-action-shell">
+              <view
+                class="stream-repeat-btn"
+                data-record-type="{{record.recordType}}"
+                data-record-id="{{record.recordId}}"
+                data-meal-type="{{record.mealType}}"
+                data-record-date="{{record.recordDate}}"
+                catchtap="handleRepeatHomeRecord"
+              >再记一次</view>
               <view
                 class="danger-icon-btn stream-delete-btn"
                 data-record-type="{{record.recordType}}"
@@ -173,7 +186,12 @@
       </view>
     </view>
   </view>
-  <empty-state wx:else show-icon="{{false}}" title="暂无记录" description="点击右下角加号开始记录" />
+  <empty-state
+    wx:else
+    show-icon="{{false}}"
+    title="{{homeCopy.emptyTitle}}"
+    description="{{homeCopy.emptyDescription}}"
+  />
 
   <view class="section-head diary-section-head">
     <view class="section-title">健康日记</view>
@@ -194,7 +212,7 @@
       </view>
 
     </view>
-    <view wx:else class="diary-empty">点击记录今天状态</view>
+    <view wx:else class="diary-empty">{{homeCopy.diaryEmpty}}</view>
   </view>
 
   <view class="quick-add-fab" bindtap="handleQuickEntry">
@@ -203,32 +221,32 @@
 
   <view wx:if="{{quickMenuVisible}}" class="sheet-overlay" bindtap="handleCloseQuickMenu"></view>
   <view wx:if="{{quickMenuVisible}}" class="quick-menu-panel panel" catchtouchmove="noop">
-    <view class="quick-menu-title">快速记录</view>
+    <view class="quick-menu-title">{{homeCopy.quickMenuTitle}}</view>
     <view class="quick-menu-list">
       <view class="quick-menu-item" data-action="weight" bindtap="handleQuickMenuAction">
         <view class="quick-menu-icon quick-menu-icon-weight">
           <view class="icon-weight-dot"></view>
         </view>
-        <view class="quick-menu-label">记体重</view>
+        <view class="quick-menu-label">{{homeCopy.quickMenuLabels.weight}}</view>
       </view>
       <view class="quick-menu-item" data-action="diet" bindtap="handleQuickMenuAction">
         <view class="quick-menu-icon quick-menu-icon-diet">
           <view class="icon-diet-bowl"></view>
         </view>
-        <view class="quick-menu-label">记饮食</view>
+        <view class="quick-menu-label">{{homeCopy.quickMenuLabels.diet}}</view>
       </view>
       <view class="quick-menu-item" data-action="exercise" bindtap="handleQuickMenuAction">
         <view class="quick-menu-icon quick-menu-icon-exercise">
           <view class="icon-exercise-stroke"></view>
         </view>
-        <view class="quick-menu-label">记运动</view>
+        <view class="quick-menu-label">{{homeCopy.quickMenuLabels.exercise}}</view>
       </view>
       <view class="quick-menu-item" data-action="diary" bindtap="handleQuickMenuAction">
         <view class="quick-menu-icon quick-menu-icon-diary">
           <view class="icon-diary-line icon-diary-line-1"></view>
           <view class="icon-diary-line icon-diary-line-2"></view>
         </view>
-        <view class="quick-menu-label">写日记</view>
+        <view class="quick-menu-label">{{homeCopy.quickMenuLabels.diary}}</view>
       </view>
     </view>
   </view>

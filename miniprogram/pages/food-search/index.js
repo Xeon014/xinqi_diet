@@ -1,8 +1,14 @@
 const { searchFoods } = require("../../services/food");
 const { getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
-const { createRecord, createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
+const {
+  createRecord,
+  createRecordBatch,
+  deleteRecord,
+  getRecordDetail,
+  updateRecord,
+} = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
-const { MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS } = require("../../utils/constants");
+const { APP_COPY, MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
 const { decorateFood, isCustomFood } = require("../../utils/food");
 const {
@@ -17,6 +23,7 @@ const {
   SWIPE_OPEN_THRESHOLD,
   applyRecentFoodSwipeState,
   buildSystemFilters,
+  clampSwipeOffset,
   createClosedEditorState,
   createComboEditorState,
   createFoodEditorState,
@@ -38,11 +45,36 @@ const {
 const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
+const FOOD_SEARCH_COPY = APP_COPY.foodSearch;
 
 function syncNavigationTitle(pageMode) {
   wx.setNavigationBarTitle({
     title: pageMode === "edit" ? "编辑饮食" : "添加食物",
   });
+}
+
+function resolveRecentFoodQuantity(food) {
+  const quantity = toNumber(food && food.lastUsedQuantityInGram);
+  return quantity > 0 ? String(quantity) : String(DEFAULT_QUANTITY);
+}
+
+function buildRecentFoodMeta(food) {
+  const quantity = toNumber(food && food.lastUsedQuantityInGram);
+  const mealTypeLabel = food && food.lastUsedMealType ? getMealTypeLabel(food.lastUsedMealType) : "";
+  const quantityLabel = quantity > 0
+    ? `${Math.round(quantity)}${food && food.quantityUnitLabel ? food.quantityUnitLabel : "g"}`
+    : "";
+
+  if (quantityLabel && mealTypeLabel) {
+    return `上次 ${quantityLabel} · ${mealTypeLabel}`;
+  }
+  if (quantityLabel) {
+    return `上次 ${quantityLabel}`;
+  }
+  if (mealTypeLabel) {
+    return `上次 ${mealTypeLabel}`;
+  }
+  return food && food.categoryLabel ? food.categoryLabel : "";
 }
 
 Page({
@@ -53,6 +85,7 @@ Page({
     showFoodSection: false,
     showComboSection: false,
     showCustomCreateAction: false,
+    showHistoryEntry: false,
     canUseComboFilter: false,
     systemFilters: buildSystemFilters(false),
     builtinCategories: BUILTIN_CATEGORIES,
@@ -69,8 +102,8 @@ Page({
     swipedRecentFoodId: null,
     swipingRecentFoodId: null,
     recentFoodSwipeOffsetX: 0,
-    emptyTitle: "最近记录为空",
-    emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
+    emptyTitle: FOOD_SEARCH_COPY.recentEmptyTitle,
+    emptyDescription: FOOD_SEARCH_COPY.recentEmptyDescription,
     recordDate: getToday(),
     mealType: "BREAKFAST",
     mealTypeLabel: MEAL_TYPE_LABELS.BREAKFAST,
@@ -132,11 +165,11 @@ Page({
     const recordDate = options.recordDate || getToday();
     const mealType = options.mealType || "BREAKFAST";
     const source = options.source || "";
-    const pageMode = options.mode === "edit" ? "edit" : "create";
+    const pageMode = options.mode === "edit" ? "edit" : (options.mode === "copy" ? "copy" : "create");
     const parsedRecordId = Number(options.recordId);
     const pageRecordId = Number.isFinite(parsedRecordId) && parsedRecordId > 0 ? parsedRecordId : null;
-    const enableDirectEdit = Boolean(source) || pageMode === "edit";
-    const canUseComboFilter = enableDirectEdit && pageMode === "create";
+    const enableDirectEdit = Boolean(source) || pageMode === "edit" || pageMode === "copy";
+    const canUseComboFilter = enableDirectEdit && pageMode !== "edit";
 
     syncNavigationTitle(pageMode);
 
@@ -160,13 +193,17 @@ Page({
           this.loadCombos();
         }
 
-        if (pageMode === "edit") {
+        if (pageMode === "edit" || pageMode === "copy") {
           if (!pageRecordId) {
             wx.showToast({ title: "记录不存在", icon: "none" });
             this.goHome();
             return;
           }
-          this.openEditorByRecordId(pageRecordId);
+          if (pageMode === "edit") {
+            this.openEditorByRecordId(pageRecordId);
+            return;
+          }
+          this.openCopyEditorByRecordId(pageRecordId);
           return;
         }
 
@@ -533,15 +570,22 @@ Page({
       return;
     }
     const nextOpenedId = this.data.swipedRecentFoodId === id ? id : null;
+    const actionWidth = this.getRecentFoodActionWidth();
     this.recentFoodSwipeStartX = touch.clientX;
     this.recentFoodSwipeStartY = touch.clientY;
-    this.recentFoodSwipeBaseOffsetX = this.data.swipedRecentFoodId === id ? DELETE_ACTION_WIDTH : 0;
+    this.recentFoodSwipeBaseOffsetX = this.data.swipedRecentFoodId === id ? actionWidth : 0;
     this.recentFoodSwipeMode = "";
     this.setData({
       swipingRecentFoodId: id,
       recentFoodSwipeOffsetX: this.recentFoodSwipeBaseOffsetX,
       swipedRecentFoodId: nextOpenedId,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, nextOpenedId, id, this.recentFoodSwipeBaseOffsetX),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        nextOpenedId,
+        id,
+        this.recentFoodSwipeBaseOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -565,10 +609,17 @@ Page({
     if (this.recentFoodSwipeMode !== "horizontal") {
       return;
     }
-    const nextOffsetX = clampSwipeOffset(this.recentFoodSwipeBaseOffsetX + deltaX);
+    const actionWidth = this.getRecentFoodActionWidth();
+    const nextOffsetX = clampSwipeOffset(this.recentFoodSwipeBaseOffsetX + deltaX, actionWidth);
     this.setData({
       recentFoodSwipeOffsetX: nextOffsetX,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, id, nextOffsetX),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        this.data.swipedRecentFoodId,
+        id,
+        nextOffsetX,
+        actionWidth
+      ),
     });
   },
 
@@ -582,11 +633,20 @@ Page({
       this.setData({
         swipingRecentFoodId: null,
         recentFoodSwipeOffsetX: 0,
-        displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, this.data.swipedRecentFoodId, null, 0),
+        displayedFoods: applyRecentFoodSwipeState(
+          this.data.displayedFoods,
+          this.data.swipedRecentFoodId,
+          null,
+          0,
+          this.getRecentFoodActionWidth()
+        ),
       });
       return;
     }
-    this.finishRecentFoodSwipe(id, this.data.recentFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD);
+    this.finishRecentFoodSwipe(
+      id,
+      this.data.recentFoodSwipeOffsetX >= SWIPE_OPEN_THRESHOLD
+    );
   },
 
   handleRecentFoodContentTap(event) {
@@ -625,7 +685,13 @@ Page({
       swipedRecentFoodId: shouldOpen ? id : null,
       swipingRecentFoodId: null,
       recentFoodSwipeOffsetX: 0,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, shouldOpen ? id : null, null, 0),
+      displayedFoods: applyRecentFoodSwipeState(
+        this.data.displayedFoods,
+        shouldOpen ? id : null,
+        null,
+        0,
+        this.getRecentFoodActionWidth()
+      ),
     });
   },
 
@@ -638,7 +704,7 @@ Page({
       swipedRecentFoodId: null,
       swipingRecentFoodId: null,
       recentFoodSwipeOffsetX: 0,
-      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, null, null, 0),
+      displayedFoods: applyRecentFoodSwipeState(this.data.displayedFoods, null, null, 0, this.getRecentFoodActionWidth()),
     });
   },
 
@@ -695,7 +761,7 @@ Page({
 
   openFoodEditor(food) {
     const normalizedFood = normalizeFood(food);
-    this.applyEditorFoodData(normalizedFood, String(DEFAULT_QUANTITY), {
+    this.applyEditorFoodData(normalizedFood, resolveRecentFoodQuantity(food), {
       mode: "create",
       recordId: null,
       canDelete: false,
@@ -710,6 +776,7 @@ Page({
       recordDate: this.data.recordDate,
     }));
   },
+
   openEditorByRecordId(recordId) {
     this.setData({
       editorVisible: true,
@@ -719,42 +786,15 @@ Page({
       editorLoading: true,
     });
 
-    getRecords({
-      date: this.data.recordDate,
-      mealType: this.data.mealType,
-    })
-      .then((result) => {
-        const records = Array.isArray(result.records) ? result.records : [];
-        const targetRecord = records.find((item) => Number(item.id) === Number(recordId));
-        if (!targetRecord) {
-          wx.showToast({ title: "记录不存在或已删除", icon: "none" });
-          this.goHome();
-          return;
-        }
-
-        this.applyEditorFoodData(
-          {
-            id: targetRecord.foodId,
-            name: targetRecord.foodName,
-            category: "",
-            categoryLabel: "",
-            caloriesPer100g: targetRecord.caloriesPer100g,
-            calorieUnit: targetRecord.calorieUnit,
-            proteinPer100g: targetRecord.proteinPer100g,
-            carbsPer100g: targetRecord.carbsPer100g,
-            fatPer100g: targetRecord.fatPer100g,
-            quantityUnit: targetRecord.quantityUnit,
-            imageUrl: "",
-          },
-          String(toNumber(targetRecord.quantityInGram) || DEFAULT_QUANTITY),
-          {
-            mode: "edit",
-            recordId: Number(targetRecord.id),
-            canDelete: true,
-            mealType: targetRecord.mealType,
-            recordDate: targetRecord.recordDate,
-          }
-        );
+    getRecordDetail(recordId)
+      .then((record) => {
+        this.openFoodEditorFromRecord(record, {
+          mode: "edit",
+          recordId: Number(record.id),
+          canDelete: true,
+          mealType: record.mealType,
+          recordDate: record.recordDate,
+        });
       })
       .catch((error) => {
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
@@ -763,6 +803,80 @@ Page({
       .finally(() => {
         this.setData({ editorLoading: false });
       });
+  },
+
+  openCopyEditorByRecordId(recordId) {
+    this.setData({
+      editorVisible: true,
+      editorMode: "create",
+      editorCanDelete: false,
+      editorRecordId: null,
+      editorLoading: true,
+    });
+
+    getRecordDetail(recordId)
+      .then((record) => {
+        this.openFoodEditorFromRecord(record, {
+          mode: "create",
+          recordId: null,
+          canDelete: false,
+          mealType: this.data.mealType,
+          recordDate: this.data.recordDate,
+        });
+      })
+      .catch((error) => {
+        wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+        this.goHome();
+      })
+      .finally(() => {
+        this.setData({ editorLoading: false });
+      });
+  },
+
+  openFoodEditorFromRecord(record, options = {}) {
+    if (!record || !record.foodId) {
+      wx.showToast({ title: "记录不存在或已删除", icon: "none" });
+      return;
+    }
+
+    this.applyEditorFoodData(
+      {
+        id: record.foodId,
+        name: record.foodName,
+        category: "",
+        categoryLabel: "",
+        caloriesPer100g: record.caloriesPer100g,
+        calorieUnit: record.calorieUnit,
+        proteinPer100g: record.proteinPer100g,
+        carbsPer100g: record.carbsPer100g,
+        fatPer100g: record.fatPer100g,
+        quantityUnit: record.quantityUnit,
+        imageUrl: "",
+      },
+      String(toNumber(record.quantityInGram) || DEFAULT_QUANTITY),
+      options
+    );
+  },
+
+  handleOpenHistory() {
+    if (!this.data.enableDirectEdit) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/food-history/index?targetDate=${encodeURIComponent(this.data.recordDate)}&targetMealType=${encodeURIComponent(this.data.mealType)}`,
+      success: (res) => {
+        res.eventChannel.on("foodHistorySelected", (record) => {
+          this.openFoodEditorFromRecord(record, {
+            mode: "create",
+            recordId: null,
+            canDelete: false,
+            mealType: this.data.mealType,
+            recordDate: this.data.recordDate,
+          });
+        });
+      },
+    });
   },
 
   applyEditorFoodData(food, quantityInGram, options = {}) {
@@ -901,6 +1015,9 @@ Page({
         quantityUnit: item.quantityUnit,
         category: item.category || "",
         imageUrl: item.imageUrl || "",
+        lastUsedQuantityInGram: toNumber(item.quantityInGram),
+        lastUsedMealType: this.data.editorMealType,
+        lastUsedAt: Date.now(),
       });
     });
   },
@@ -960,6 +1077,7 @@ Page({
             proteinPer100g: this.data.editorProteinPer100g,
             carbsPer100g: this.data.editorCarbsPer100g,
             fatPer100g: this.data.editorFatPer100g,
+            quantityInGram: this.data.editorQuantityInGram,
             quantityUnit: this.data.editorQuantityUnit,
             category: this.data.editorCategoryLabel,
             imageUrl: this.data.editorFoodImageUrl,
@@ -1058,6 +1176,10 @@ Page({
       .sort((a, b) => Number(b.usedAt || 0) - Number(a.usedAt || 0));
   },
 
+  getRecentFoodActionWidth() {
+    return DELETE_ACTION_WIDTH;
+  },
+
   buildCustomFoods() {
     return this.data.customFoods.filter((food) => isCustomFood(food));
   },
@@ -1069,42 +1191,42 @@ Page({
   resolveEmptyState({ categoryKey, isSearching }) {
     if (isSearching) {
       return {
-        emptyTitle: "没有找到食物",
-        emptyDescription: "换个关键词试试。",
+        emptyTitle: FOOD_SEARCH_COPY.searchEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.searchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT) {
       return {
-        emptyTitle: "最近记录为空",
-        emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
+        emptyTitle: FOOD_SEARCH_COPY.recentEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.recentEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT_SEARCH) {
       return {
-        emptyTitle: "暂无最近搜索",
-        emptyDescription: "先搜索一次食物，这里会保留关键词。",
+        emptyTitle: FOOD_SEARCH_COPY.recentSearchEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.recentSearchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.CUSTOM) {
       return {
-        emptyTitle: "暂无自定义食物",
-        emptyDescription: "可以在右上角添加自定义食物。",
+        emptyTitle: FOOD_SEARCH_COPY.customEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.customEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.COMBO) {
       return {
-        emptyTitle: "暂无自定义套餐",
-        emptyDescription: "先去自定义套餐里创建一个套餐。",
+        emptyTitle: FOOD_SEARCH_COPY.comboEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.comboEmptyDescription,
       };
     }
 
     return {
-      emptyTitle: "当前分类暂无食物",
-      emptyDescription: "试试切换分类，或稍后再搜索。",
+      emptyTitle: FOOD_SEARCH_COPY.categoryEmptyTitle,
+      emptyDescription: FOOD_SEARCH_COPY.categoryEmptyDescription,
     };
   },
 
@@ -1114,6 +1236,7 @@ Page({
     const currentCategoryKey = this.data.selectedCategoryKey;
     const usesRemoteFoods = this.shouldUseRemoteFoodSource();
     const enableRecentFoodSwipe = !isSearching && currentCategoryKey === FILTER_KEYS.RECENT;
+    const showHistoryEntry = this.data.enableDirectEdit && currentCategoryKey === FILTER_KEYS.RECENT;
 
     let displayedFoods = [];
     let displayedCombos = [];
@@ -1126,7 +1249,10 @@ Page({
       displayedFoods = this.data.builtinFoods;
       currentCategoryLabel = "搜索结果";
     } else if (currentCategoryKey === FILTER_KEYS.RECENT) {
-      displayedFoods = this.buildRecentFoods();
+      displayedFoods = this.buildRecentFoods().map((food) => ({
+        ...food,
+        recentMetaText: buildRecentFoodMeta(food),
+      }));
     } else if (currentCategoryKey === FILTER_KEYS.RECENT_SEARCH) {
       showRecentSearchList = true;
     } else if (currentCategoryKey === FILTER_KEYS.CUSTOM) {
@@ -1167,11 +1293,13 @@ Page({
       ? this.data.recentFoodSwipeOffsetX
       : 0;
     if (enableRecentFoodSwipe) {
+      const actionWidth = this.getRecentFoodActionWidth();
       displayedFoods = applyRecentFoodSwipeState(
         displayedFoods,
         nextSwipedRecentFoodId,
         nextSwipingRecentFoodId,
-        nextRecentFoodSwipeOffsetX
+        nextRecentFoodSwipeOffsetX,
+        actionWidth
       );
     }
 
@@ -1184,9 +1312,10 @@ Page({
       swipingRecentFoodId: nextSwipingRecentFoodId,
       recentFoodSwipeOffsetX: nextRecentFoodSwipeOffsetX,
       showRecentSearchList,
-      showFoodSection: displayedFoods.length > 0 || showCustomCreateAction || Boolean(builtinStatusText),
+      showFoodSection: displayedFoods.length > 0 || showCustomCreateAction || showHistoryEntry || Boolean(builtinStatusText),
       showComboSection: displayedCombos.length > 0,
       showCustomCreateAction,
+      showHistoryEntry,
       currentCategoryLabel,
       emptyTitle: emptyState.emptyTitle,
       emptyDescription: emptyState.emptyDescription,

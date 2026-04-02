@@ -17,6 +17,40 @@ function getExerciseRecords({ date }) {
   });
 }
 
+function getExerciseRecordDetail(recordId) {
+  return request({
+    url: `/api/exercise-records/${recordId}`,
+    showLoading: false,
+  });
+}
+
+function getExerciseRecordHistory({
+  cursorRecordDate,
+  cursorCreatedAt,
+  cursorId,
+  pageSize,
+}) {
+  const params = [];
+  if (cursorRecordDate) {
+    params.push(`cursorRecordDate=${encodeURIComponent(cursorRecordDate)}`);
+  }
+  if (cursorCreatedAt) {
+    params.push(`cursorCreatedAt=${encodeURIComponent(cursorCreatedAt)}`);
+  }
+  if (cursorId != null) {
+    params.push(`cursorId=${encodeURIComponent(cursorId)}`);
+  }
+  if (pageSize != null) {
+    params.push(`pageSize=${encodeURIComponent(pageSize)}`);
+  }
+
+  const query = params.length ? `?${params.join("&")}` : "";
+  return request({
+    url: `/api/exercise-records/history${query}`,
+    showLoading: false,
+  });
+}
+
 function updateExerciseRecord(recordId, payload, requestOptions = {}) {
   return request({
     url: `/api/exercise-records/${recordId}`,
@@ -40,5 +74,7 @@ module.exports = {
   createExerciseRecord,
   deleteExerciseRecord,
   getExerciseRecords,
+  getExerciseRecordDetail,
+  getExerciseRecordHistory,
   updateExerciseRecord,
 };

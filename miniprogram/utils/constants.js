@@ -96,6 +96,57 @@ const RECOMMENDED_MEAL_WINDOWS = [
   { startMinute: 1260, endMinute: 1439, mealType: "LATE_NIGHT_SNACK" },
   { startMinute: 0, endMinute: 299, mealType: "LATE_NIGHT_SNACK" },
 ];
+const APP_COPY = {
+  emptyState: {
+    defaultTitle: "暂无内容",
+    defaultDescription: "这里还没有内容",
+  },
+  home: {
+    emptyTitle: "今天还没有记录",
+    emptyDescription: "右下角可添加饮食、运动和体重",
+    diaryEmpty: "写下今天的状态",
+    quickMenuTitle: "添加记录",
+    quickMenuLabels: {
+      weight: "体重",
+      diet: "饮食",
+      exercise: "运动",
+      diary: "日记",
+    },
+  },
+  foodSearch: {
+    searchEmptyTitle: "没有找到食物",
+    searchEmptyDescription: "可以换个关键词试试",
+    recentEmptyTitle: "还没有饮食记录",
+    recentEmptyDescription: "记录过的食物会显示在这里",
+    recentSearchEmptyTitle: "还没有搜索记录",
+    recentSearchEmptyDescription: "搜索过的关键词会保留在这里",
+    customEmptyTitle: "还没有自定义食物",
+    customEmptyDescription: "可在右上角添加",
+    comboEmptyTitle: "还没有自定义套餐",
+    comboEmptyDescription: "可在套餐里新建",
+    categoryEmptyTitle: "这一类还没有食物",
+    categoryEmptyDescription: "可以换个关键词或分类看看",
+  },
+  exerciseSearch: {
+    searchEmptyTitle: "没有找到运动",
+    searchEmptyDescription: "可以换个关键词试试",
+    recentEmptyTitle: "还没有运动记录",
+    recentEmptyDescription: "记录过的运动会显示在这里",
+    recentSearchEmptyTitle: "还没有搜索记录",
+    recentSearchEmptyDescription: "搜索过的关键词会保留在这里",
+    customEmptyTitle: "还没有自定义运动",
+    customEmptyDescription: "可在右上角添加",
+    categoryEmptyTitle: "这一类还没有运动",
+    categoryEmptyDescription: "可以换个分类看看",
+  },
+  profile: {
+    emptyTitle: "还没有资料",
+    emptyDescription: "资料准备好后会显示在这里",
+  },
+  metricHistory: {
+    emptyButton: "添加记录",
+  },
+};
 
 function getRecommendedMealType(date = new Date()) {
   const totalMinutes = date.getHours() * 60 + date.getMinutes();
@@ -107,6 +158,7 @@ function getRecommendedMealType(date = new Date()) {
 
 module.exports = {
   AUTH_TOKEN_KEY,
+  APP_COPY,
   BASE_URL,
   BASE_URL_MAP,
   CALORIE_UNIT_LABELS,

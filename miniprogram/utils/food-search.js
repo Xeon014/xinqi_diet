@@ -160,23 +160,23 @@ function normalizeComboEditorItem(item) {
   };
 }
 
-function clampSwipeOffset(offsetX) {
+function clampSwipeOffset(offsetX, maxWidth = DELETE_ACTION_WIDTH) {
   if (!Number.isFinite(offsetX) || offsetX < 0) {
     return 0;
   }
-  if (offsetX > DELETE_ACTION_WIDTH) {
-    return DELETE_ACTION_WIDTH;
+  if (offsetX > maxWidth) {
+    return maxWidth;
   }
   return offsetX;
 }
 
-function applyRecentFoodSwipeState(items, swipedFoodId, swipingFoodId, swipeOffsetX) {
+function applyRecentFoodSwipeState(items, swipedFoodId, swipingFoodId, swipeOffsetX, actionWidth = DELETE_ACTION_WIDTH) {
   return (items || []).map((item) => {
     const isSwiping = Number(item.id) === swipingFoodId;
     const isOpened = Number(item.id) === swipedFoodId;
     const offsetX = isSwiping
-      ? clampSwipeOffset(swipeOffsetX)
-      : (isOpened ? DELETE_ACTION_WIDTH : 0);
+      ? clampSwipeOffset(swipeOffsetX, actionWidth)
+      : (isOpened ? actionWidth : 0);
     return Object.assign({}, item, {
       swipeOffsetX: offsetX,
       swipeContentStyle: `transform: translateX(-${offsetX}px);transition:${isSwiping ? "none" : "transform 180ms ease"};`,

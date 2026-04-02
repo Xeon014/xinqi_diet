@@ -6,6 +6,7 @@ const {
   getCurrentMinute,
   getToday,
 } = require("../../utils/date");
+const { APP_COPY } = require("../../utils/constants");
 const { pickErrorMessage } = require("../../utils/request");
 
 const ALL_PAGE_SIZE = 120;
@@ -116,6 +117,7 @@ Page({
     editorDate: getToday(),
     editorTime: getCurrentMinute(),
     editorShowTime: true,
+    metricHistoryCopy: APP_COPY.metricHistory,
   },
 
   onLoad(options) {

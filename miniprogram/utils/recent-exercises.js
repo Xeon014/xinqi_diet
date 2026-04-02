@@ -11,6 +11,9 @@ function pickExerciseSnapshot(exercise) {
     metValue: exercise.metValue,
     category: exercise.category,
     aliases: exercise.aliases,
+    lastUsedDurationMinutes: exercise.lastUsedDurationMinutes,
+    lastUsedIntensityLevel: exercise.lastUsedIntensityLevel,
+    lastUsedAt: exercise.lastUsedAt || Date.now(),
     usedAt: Date.now(),
   };
 }

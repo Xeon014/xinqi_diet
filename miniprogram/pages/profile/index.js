@@ -1,4 +1,5 @@
 const { getCurrentUser } = require("../../services/user");
+const { APP_COPY } = require("../../utils/constants");
 const { pickErrorMessage } = require("../../utils/request");
 
 const TOOL_ENTRIES = [
@@ -50,6 +51,7 @@ Page({
     heroSubtitle: "",
     bmiLabel: "0.0",
     bmrLabel: "0 kcal/天",
+    profileCopy: APP_COPY.profile,
     toolEntries: TOOL_ENTRIES,
   },
 

@@ -17,6 +17,9 @@ function pickFoodSnapshot(food) {
     quantityUnit: food.quantityUnit,
     category: food.category,
     imageUrl: food.imageUrl,
+    lastUsedQuantityInGram: food.lastUsedQuantityInGram,
+    lastUsedMealType: food.lastUsedMealType,
+    lastUsedAt: food.lastUsedAt || Date.now(),
     usedAt: Date.now(),
   };
 }

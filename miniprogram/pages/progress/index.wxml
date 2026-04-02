@@ -27,9 +27,10 @@
 
     <block wx:elif="{{chartPoints.length}}">
       <view class="axis-label axis-label-top">{{axisMaxLabel}}</view>
+      <view class="axis-label axis-label-middle">{{axisMidLabel}}</view>
       <view class="axis-label axis-label-bottom">{{axisMinLabel}}</view>
-      <scroll-view scroll-x class="chart-scroll" scroll-into-view="{{latestPointViewId}}">
-        <view class="chart-inner" style="width: {{chartWidthRpx}}rpx;">
+      <view class="chart-scroll">
+        <view class="chart-inner">
           <view class="grid-line grid-line-top"></view>
           <view class="grid-line grid-line-middle"></view>
           <view class="grid-line grid-line-bottom"></view>
@@ -48,12 +49,10 @@
             wx:for-item="point"
             class="trend-point-wrap"
             style="{{point.pointStyle}}"
-            id="trend-point-{{point.index}}"
             data-date="{{point.date}}"
             bindtap="handleSelectChartPoint"
           >
-            <view class="trend-point {{point.isLatest ? 'latest' : ''}} {{point.isSelected ? 'selected' : ''}}"></view>
-            <view wx:if="{{point.isSelected}}" class="latest-value {{point.valueBelow ? 'below' : ''}}">{{point.displayValue}}</view>
+            <view class="trend-point {{point.isSelected ? 'selected' : ''}}"></view>
           </view>
 
           <view
@@ -66,16 +65,11 @@
             {{point.dateLabel}}
           </view>
         </view>
-      </scroll-view>
+      </view>
     </block>
 
     <view wx:else class="chart-empty">暂无记录</view>
 
-    <view wx:if="{{selectedRange === 'ALL' && chartPoints.length && hasMore}}" class="load-more-row">
-      <view class="load-more-btn {{trendLoading ? 'disabled' : ''}}" bindtap="handleLoadMore">
-        {{trendLoading ? '加载中...' : '加载更早数据'}}
-      </view>
-    </view>
   </view>
 
   <view class="panel metric-panel">

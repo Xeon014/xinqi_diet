@@ -6,6 +6,7 @@ import com.diet.domain.record.MealRecordRepository;
 import com.diet.domain.record.MealType;
 import com.diet.infra.record.meal.MealRecordMapper;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -73,5 +74,24 @@ public class MealRecordRepositoryImpl implements MealRecordRepository {
                 .between(MealRecord::getRecordDate, startDate, endDate)
                 .orderByAsc(MealRecord::getRecordDate)
                 .orderByAsc(MealRecord::getCreatedAt));
+    }
+
+    @Override
+    public List<MealRecord> findByUserWithCursor(
+            Long userId,
+            MealType mealType,
+            LocalDate cursorRecordDate,
+            LocalDateTime cursorCreatedAt,
+            Long cursorId,
+            int limit
+    ) {
+        return mealRecordMapper.findByUserWithCursor(
+                userId,
+                mealType,
+                cursorRecordDate,
+                cursorCreatedAt,
+                cursorId,
+                limit
+        );
     }
 }

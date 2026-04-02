@@ -4,13 +4,19 @@ const { createBodyMetricRecord, getDailyBodyMetricSnapshot } = require("../../se
 const { deleteRecord, getRecords } = require("../../services/record");
 const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
-const { MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS, getRecommendedMealType: getRecommendedMealTypeByTime } = require("../../utils/constants");
+const {
+  APP_COPY,
+  MEAL_TYPE_LABELS,
+  QUANTITY_UNIT_LABELS,
+  getRecommendedMealType: getRecommendedMealTypeByTime,
+} = require("../../utils/constants");
 const { addDays, combineDateAndTime, getCurrentMinute, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
 
-const DELETE_ACTION_WIDTH = 84;
-const SWIPE_OPEN_THRESHOLD = 42;
+const ACTION_BUTTON_WIDTH = 84;
+const DELETE_ACTION_WIDTH = ACTION_BUTTON_WIDTH * 2;
+const SWIPE_OPEN_THRESHOLD = ACTION_BUTTON_WIDTH;
 const SWIPE_ACTIVATE_DISTANCE = 8;
 
 const DIET_GROUPS = [
@@ -161,10 +167,12 @@ function buildRecordGroups(records) {
     ...DIET_GROUPS.map((group) => ({
       ...group,
       records: groupedRecords[group.key] || [],
+      totalCalories: toInteger((groupedRecords[group.key] || []).reduce((sum, record) => sum + toNumber(record.totalCalories), 0)),
     })),
     {
       ...EXERCISE_GROUP,
       records: groupedRecords.EXERCISE,
+      totalCalories: toInteger((groupedRecords.EXERCISE || []).reduce((sum, record) => sum + toNumber(record.totalCalories), 0)),
     },
   ].filter((group) => group.records.length > 0);
 }
@@ -280,6 +288,7 @@ Page({
     displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
     recordGroups: [],
+    collapsedMealGroups: {},
     swipedRecordKey: null,
     swipingRecordKey: null,
     swipeOffsetX: 0,
@@ -317,6 +326,7 @@ Page({
     weightEditorTime: getCurrentMinute(),
     weightValue: "",
     quickMenuVisible: false,
+    homeCopy: APP_COPY.home,
     dailyWeight: {
       hasRecord: false,
       title: "",
@@ -324,10 +334,12 @@ Page({
   },
 
   onLoad() {
+    this.userId = getCurrentUserId();
     this.refreshDateMeta();
   },
 
   onShow() {
+    this.userId = getCurrentUserId();
     const app = getApp();
     const pendingHomeRecordDate = app.globalData.pendingHomeRecordDate || "";
     app.globalData.pendingHomeRecordDate = "";
@@ -450,7 +462,12 @@ Page({
     ])
       .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
-        const recordGroups = applySwipeStateToGroups(buildRecordGroups(normalized.records), null, null, 0);
+        const recordGroups = applySwipeStateToGroups(
+          this.decorateRecordGroups(buildRecordGroups(normalized.records)),
+          null,
+          null,
+          0
+        );
         const recommendedMealPrompt = buildRecommendedMealPrompt(
           this.data.recordDate,
           this.data.recommendedMealType,
@@ -611,6 +628,33 @@ Page({
       });
   },
 
+  decorateRecordGroups(groups) {
+    const collapsedMealGroups = this.data.collapsedMealGroups || {};
+    return (groups || []).map((group) => ({
+      ...group,
+      collapsed: group.type === "DIET" ? Boolean(collapsedMealGroups[group.key]) : false,
+      totalCaloriesLabel: `${toInteger(group.totalCalories)} kcal`,
+    }));
+  },
+
+  handleToggleMealGroup(event) {
+    const { mealType } = event.currentTarget.dataset;
+    if (!mealType) {
+      return;
+    }
+
+    const collapsedMealGroups = {
+      ...(this.data.collapsedMealGroups || {}),
+      [mealType]: !Boolean((this.data.collapsedMealGroups || {})[mealType]),
+    };
+
+    this.closeSwipeActions();
+    this.setData({
+      collapsedMealGroups,
+      recordGroups: this.decorateRecordGroups(this.data.recordGroups),
+    });
+  },
+
   handleCloseMealNutrition() {
     this.setData({
       mealNutritionVisible: false,
@@ -729,6 +773,36 @@ Page({
       return;
     }
     this.handleOpenRecord(event);
+  },
+
+  handleRepeatHomeRecord(event) {
+    const { recordType, recordId, mealType } = event.currentTarget.dataset;
+    if (!recordType || recordId == null) {
+      return;
+    }
+
+    this.closeSwipeActions();
+    if (recordType === "DIET") {
+      wx.navigateTo({
+        url: buildFoodSearchUrl({
+          mode: "copy",
+          recordId,
+          mealType,
+          recordDate: this.data.recordDate,
+          source: "home",
+        }),
+      });
+      return;
+    }
+
+    wx.navigateTo({
+      url: buildExerciseSearchUrl({
+        recordDate: this.data.recordDate,
+        source: "home",
+        mode: "copy",
+        recordId,
+      }),
+    });
   },
 
   handleDeleteHomeRecord(event) {

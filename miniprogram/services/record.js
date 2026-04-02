@@ -33,6 +33,44 @@ function getRecords({ date, mealType }) {
   });
 }
 
+function getRecordDetail(recordId) {
+  return request({
+    url: `/api/records/${recordId}`,
+    showLoading: false,
+  });
+}
+
+function getRecordHistory({
+  mealType,
+  cursorRecordDate,
+  cursorCreatedAt,
+  cursorId,
+  pageSize,
+}) {
+  const params = [];
+  if (mealType) {
+    params.push(`mealType=${encodeURIComponent(mealType)}`);
+  }
+  if (cursorRecordDate) {
+    params.push(`cursorRecordDate=${encodeURIComponent(cursorRecordDate)}`);
+  }
+  if (cursorCreatedAt) {
+    params.push(`cursorCreatedAt=${encodeURIComponent(cursorCreatedAt)}`);
+  }
+  if (cursorId != null) {
+    params.push(`cursorId=${encodeURIComponent(cursorId)}`);
+  }
+  if (pageSize != null) {
+    params.push(`pageSize=${encodeURIComponent(pageSize)}`);
+  }
+
+  const query = params.length ? `?${params.join("&")}` : "";
+  return request({
+    url: `/api/records/history${query}`,
+    showLoading: false,
+  });
+}
+
 function updateRecord(recordId, payload, requestOptions = {}) {
   return request({
     url: `/api/records/${recordId}`,
@@ -56,6 +94,8 @@ module.exports = {
   createRecord,
   createRecordBatch,
   getRecords,
+  getRecordDetail,
+  getRecordHistory,
   updateRecord,
   deleteRecord,
 };
