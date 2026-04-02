@@ -46,6 +46,8 @@
   - `pages/home` 是高频入口
   - 饮食记录：`home -> food-search -> 底部弹窗编辑 -> 返回首页`
   - 运动记录：`home -> exercise-search -> 底部弹窗编辑 -> 返回首页`
+  - 首页左滑“再记一次”：进入 `food-search/exercise-search` 的复制预填模式，不直接写库
+  - `food-search`、`exercise-search` 的“历史记录”入口分别进入 `food-history`、`exercise-history`
 - 趋势与体征链路
   - `pages/health-profile` 可跳转 `pages/progress`
   - `pages/progress` 内完成趋势浏览、快捷记录、查看单项历史
