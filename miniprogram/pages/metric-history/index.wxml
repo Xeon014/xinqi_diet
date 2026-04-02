@@ -54,8 +54,8 @@
   </view>
 
   <view wx:else class="panel history-empty" bindtap="handleBackgroundTap">
-    <view class="history-empty-text">暂无记录</view>
-    <view wx:if="{{canCreate}}" class="history-empty-btn" bindtap="handleOpenEditor">去记录</view>
+    <view class="history-empty-text">还没有{{metricLabel}}记录</view>
+    <view wx:if="{{canCreate}}" class="history-empty-btn" bindtap="handleOpenEditor">{{metricHistoryCopy.emptyButton}}</view>
   </view>
 
   <metric-editor-sheet

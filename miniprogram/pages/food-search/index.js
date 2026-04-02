@@ -2,7 +2,7 @@ const { searchFoods } = require("../../services/food");
 const { getMealComboDetail, getMealComboList } = require("../../services/meal-combo");
 const { createRecord, createRecordBatch, deleteRecord, getRecords, updateRecord } = require("../../services/record");
 const { getCurrentUserId } = require("../../utils/auth");
-const { MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS } = require("../../utils/constants");
+const { APP_COPY, MEAL_TYPE_LABELS, MEAL_TYPE_OPTIONS } = require("../../utils/constants");
 const { getToday } = require("../../utils/date");
 const { decorateFood, isCustomFood } = require("../../utils/food");
 const {
@@ -38,6 +38,7 @@ const {
 const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
+const FOOD_SEARCH_COPY = APP_COPY.foodSearch;
 
 function syncNavigationTitle(pageMode) {
   wx.setNavigationBarTitle({
@@ -69,8 +70,8 @@ Page({
     swipedRecentFoodId: null,
     swipingRecentFoodId: null,
     recentFoodSwipeOffsetX: 0,
-    emptyTitle: "最近记录为空",
-    emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
+    emptyTitle: FOOD_SEARCH_COPY.recentEmptyTitle,
+    emptyDescription: FOOD_SEARCH_COPY.recentEmptyDescription,
     recordDate: getToday(),
     mealType: "BREAKFAST",
     mealTypeLabel: MEAL_TYPE_LABELS.BREAKFAST,
@@ -1069,42 +1070,42 @@ Page({
   resolveEmptyState({ categoryKey, isSearching }) {
     if (isSearching) {
       return {
-        emptyTitle: "没有找到食物",
-        emptyDescription: "换个关键词试试。",
+        emptyTitle: FOOD_SEARCH_COPY.searchEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.searchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT) {
       return {
-        emptyTitle: "最近记录为空",
-        emptyDescription: "先记录一次饮食，最近记录的食物会出现在这里。",
+        emptyTitle: FOOD_SEARCH_COPY.recentEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.recentEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT_SEARCH) {
       return {
-        emptyTitle: "暂无最近搜索",
-        emptyDescription: "先搜索一次食物，这里会保留关键词。",
+        emptyTitle: FOOD_SEARCH_COPY.recentSearchEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.recentSearchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.CUSTOM) {
       return {
-        emptyTitle: "暂无自定义食物",
-        emptyDescription: "可以在右上角添加自定义食物。",
+        emptyTitle: FOOD_SEARCH_COPY.customEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.customEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.COMBO) {
       return {
-        emptyTitle: "暂无自定义套餐",
-        emptyDescription: "先去自定义套餐里创建一个套餐。",
+        emptyTitle: FOOD_SEARCH_COPY.comboEmptyTitle,
+        emptyDescription: FOOD_SEARCH_COPY.comboEmptyDescription,
       };
     }
 
     return {
-      emptyTitle: "当前分类暂无食物",
-      emptyDescription: "试试切换分类，或稍后再搜索。",
+      emptyTitle: FOOD_SEARCH_COPY.categoryEmptyTitle,
+      emptyDescription: FOOD_SEARCH_COPY.categoryEmptyDescription,
     };
   },
 

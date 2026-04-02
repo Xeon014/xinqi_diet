@@ -50,5 +50,5 @@
 </view>
 
 <view wx:else class="page-shell profile-page">
-  <empty-state title="暂无用户资料" description="请先完成资料初始化。" />
+  <empty-state title="{{profileCopy.emptyTitle}}" description="{{profileCopy.emptyDescription}}" />
 </view>

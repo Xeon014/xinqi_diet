@@ -22,9 +22,11 @@ const {
   isBuiltinExercise,
   isCustomExercise,
 } = require("../../utils/exercise");
+const { APP_COPY } = require("../../utils/constants");
 const { pickErrorMessage } = require("../../utils/request");
 
 const app = getApp();
+const EXERCISE_SEARCH_COPY = APP_COPY.exerciseSearch;
 const FILTER_KEYS = {
   RECENT: "RECENT",
   RECENT_SEARCH: "RECENT_SEARCH",
@@ -167,8 +169,8 @@ Page({
     swipedRecentExerciseId: null,
     swipingRecentExerciseId: null,
     recentExerciseSwipeOffsetX: 0,
-    emptyTitle: "最近运动为空",
-    emptyDescription: "完成一次运动记录后会出现在这里。",
+    emptyTitle: EXERCISE_SEARCH_COPY.recentEmptyTitle,
+    emptyDescription: EXERCISE_SEARCH_COPY.recentEmptyDescription,
     intensityOptions: INTENSITY_OPTIONS,
     editorVisible: false,
     editorMode: "create",
@@ -553,35 +555,35 @@ Page({
   resolveEmptyState({ categoryKey, isSearching }) {
     if (isSearching) {
       return {
-        emptyTitle: "暂无运动项目",
-        emptyDescription: "换个关键词试试",
+        emptyTitle: EXERCISE_SEARCH_COPY.searchEmptyTitle,
+        emptyDescription: EXERCISE_SEARCH_COPY.searchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT) {
       return {
-        emptyTitle: "最近运动为空",
-        emptyDescription: "完成一次运动记录后会出现在这里。",
+        emptyTitle: EXERCISE_SEARCH_COPY.recentEmptyTitle,
+        emptyDescription: EXERCISE_SEARCH_COPY.recentEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.RECENT_SEARCH) {
       return {
-        emptyTitle: "暂无最近搜索",
-        emptyDescription: "先搜索一次运动，这里会保留关键词。",
+        emptyTitle: EXERCISE_SEARCH_COPY.recentSearchEmptyTitle,
+        emptyDescription: EXERCISE_SEARCH_COPY.recentSearchEmptyDescription,
       };
     }
 
     if (categoryKey === FILTER_KEYS.CUSTOM) {
       return {
-        emptyTitle: "暂无自定义运动",
-        emptyDescription: "可在右上角添加自定义运动。",
+        emptyTitle: EXERCISE_SEARCH_COPY.customEmptyTitle,
+        emptyDescription: EXERCISE_SEARCH_COPY.customEmptyDescription,
       };
     }
 
     return {
-      emptyTitle: "当前分类暂无运动",
-      emptyDescription: "试试切换分类，或添加自定义运动。",
+      emptyTitle: EXERCISE_SEARCH_COPY.categoryEmptyTitle,
+      emptyDescription: EXERCISE_SEARCH_COPY.categoryEmptyDescription,
     };
   },
 

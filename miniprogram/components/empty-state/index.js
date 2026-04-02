@@ -1,3 +1,5 @@
+const { APP_COPY } = require("../../utils/constants");
+
 Component({
   properties: {
     showIcon: {
@@ -6,11 +8,11 @@ Component({
     },
     title: {
       type: String,
-      value: "暂无内容",
+      value: APP_COPY.emptyState.defaultTitle,
     },
     description: {
       type: String,
-      value: "先去添加一条记录吧",
+      value: APP_COPY.emptyState.defaultDescription,
     },
   },
 });

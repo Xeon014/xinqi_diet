@@ -4,7 +4,12 @@ const { createBodyMetricRecord, getDailyBodyMetricSnapshot } = require("../../se
 const { deleteRecord, getRecords } = require("../../services/record");
 const { deleteExerciseRecord } = require("../../services/exercise-record");
 const { getCurrentUserId } = require("../../utils/auth");
-const { MEAL_TYPE_LABELS, QUANTITY_UNIT_LABELS, getRecommendedMealType: getRecommendedMealTypeByTime } = require("../../utils/constants");
+const {
+  APP_COPY,
+  MEAL_TYPE_LABELS,
+  QUANTITY_UNIT_LABELS,
+  getRecommendedMealType: getRecommendedMealTypeByTime,
+} = require("../../utils/constants");
 const { addDays, combineDateAndTime, getCurrentMinute, getToday } = require("../../utils/date");
 const { getIntensityLabel } = require("../../utils/exercise");
 const { pickErrorMessage } = require("../../utils/request");
@@ -317,6 +322,7 @@ Page({
     weightEditorTime: getCurrentMinute(),
     weightValue: "",
     quickMenuVisible: false,
+    homeCopy: APP_COPY.home,
     dailyWeight: {
       hasRecord: false,
       title: "",
