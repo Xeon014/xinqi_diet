@@ -24,6 +24,7 @@
 - 页面注册与顶层导航：`app.json`
 - 运行时环境切换：`utils/constants.js`
 - 请求封装与接口入口：`services/`
+- 食物相关接口与营养成分表识别：`services/food.js`
 - 首页记录链路：`pages/home`、`pages/food-search`、`pages/exercise-search`
 - 趋势与体征链路：`pages/progress`、`pages/metric-history`、`services/body-metric.js`
 - 我的页与健康档案：`pages/profile`、`pages/health-profile`

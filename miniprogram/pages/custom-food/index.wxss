@@ -61,8 +61,117 @@
   color: #bb866c;
 }
 
+.action-btn.disabled,
+.mini-action.disabled {
+  opacity: 0.6;
+}
+
 .field-group {
   margin-top: 24rpx;
+}
+
+.field-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.recognition-tip {
+  color: #7d7c74;
+  font-size: 22rpx;
+  margin-top: 10rpx;
+}
+
+.recognition-card {
+  align-items: flex-start;
+  background: linear-gradient(180deg, rgba(249, 247, 240, 0.98) 0%, rgba(244, 239, 229, 0.98) 100%);
+  border: 1rpx solid rgba(107, 144, 132, 0.12);
+  border-radius: 24rpx;
+  display: flex;
+  gap: 18rpx;
+  margin-top: 16rpx;
+  padding: 18rpx;
+}
+
+.recognition-image {
+  border-radius: 18rpx;
+  flex: 0 0 132rpx;
+  height: 132rpx;
+  width: 132rpx;
+}
+
+.recognition-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.recognition-head {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+  justify-content: space-between;
+}
+
+.recognition-title {
+  color: #37423d;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.recognition-badge {
+  background: rgba(107, 144, 132, 0.14);
+  border-radius: 999rpx;
+  color: #5d8378;
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 8rpx 16rpx;
+  white-space: nowrap;
+}
+
+.recognition-badge.medium {
+  background: rgba(190, 153, 91, 0.14);
+  color: #a5751d;
+}
+
+.recognition-badge.low {
+  background: rgba(187, 134, 108, 0.16);
+  color: #bb866c;
+}
+
+.recognition-summary,
+.recognition-warning,
+.recognition-raw-line,
+.recognition-raw-more {
+  color: #6a6f69;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.recognition-summary,
+.recognition-warning,
+.recognition-raw {
+  margin-top: 10rpx;
+}
+
+.recognition-warning {
+  color: #9b704f;
+}
+
+.recognition-raw {
+  border-top: 1rpx solid rgba(107, 144, 132, 0.08);
+  padding-top: 10rpx;
+}
+
+.recognition-raw-title {
+  color: #6d7f78;
+  font-size: 22rpx;
+  font-weight: 700;
+  margin-bottom: 6rpx;
+}
+
+.recognition-raw-more {
+  color: #7d7c74;
 }
 
 .sheet-overlay {

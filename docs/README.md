@@ -11,6 +11,7 @@
 - 小程序说明：`miniprogram/README.md`、`miniprogram/docs/页面入口与跳转地图.md`
 - 协作与维护：`docs/开发接手指南.md`、`docs/变更日志.md`、`docs/小程序接口对接说明.md`
 - 功能设计：`docs/体重数据导入功能设计.md`
+- 功能设计：`docs/营养成分表拍照识别设计与实现说明.md`
 
 ## 2. 推荐阅读顺序
 

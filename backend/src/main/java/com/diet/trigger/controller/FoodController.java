@@ -5,8 +5,11 @@ import com.diet.types.common.ApiResponse;
 import com.diet.api.food.CreateFoodRequest;
 import com.diet.api.food.FoodListResponse;
 import com.diet.api.food.FoodResponse;
+import com.diet.api.food.NutritionLabelRecognitionResponse;
+import com.diet.api.food.RecognizeNutritionLabelRequest;
 import com.diet.api.food.UpdateFoodRequest;
 import com.diet.app.food.FoodService;
+import com.diet.app.food.NutritionLabelRecognitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,10 +34,17 @@ public class FoodController {
 
     private final FoodService foodService;
 
+    private final NutritionLabelRecognitionService nutritionLabelRecognitionService;
+
     private final AuthContextService authContextService;
 
-    public FoodController(FoodService foodService, AuthContextService authContextService) {
+    public FoodController(
+            FoodService foodService,
+            NutritionLabelRecognitionService nutritionLabelRecognitionService,
+            AuthContextService authContextService
+    ) {
         this.foodService = foodService;
+        this.nutritionLabelRecognitionService = nutritionLabelRecognitionService;
         this.authContextService = authContextService;
     }
 
@@ -86,5 +96,15 @@ public class FoodController {
                 ? authContextService.resolveUserId(httpServletRequest, null)
                 : authContextService.getCurrentUserId(httpServletRequest);
         return ApiResponse.success(foodService.findAll(userId, keyword, category, page, size, normalizedScope));
+    }
+
+    @Operation(summary = "识别营养成分表", description = "上传营养成分表图片 URL 或 Base64，返回可用于创建自定义食物的识别草稿")
+    @PostMapping("/nutrition-label/recognize")
+    public ApiResponse<NutritionLabelRecognitionResponse> recognizeNutritionLabel(
+            @Valid @RequestBody RecognizeNutritionLabelRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        authContextService.requireCurrentUserId(httpServletRequest);
+        return ApiResponse.success(nutritionLabelRecognitionService.recognize(request));
     }
 }

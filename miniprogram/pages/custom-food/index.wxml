@@ -70,7 +70,31 @@
     </view>
 
     <view class="field-group">
-      <view class="field-label">食物名称</view>
+      <view class="field-head">
+        <view class="field-label">食物名称</view>
+        <view class="mini-action {{recognizing ? 'disabled' : ''}}" bindtap="handleRecognizeNutritionLabel">
+          {{recognizing ? '识别中' : '拍照识别'}}
+        </view>
+      </view>
+      <view class="recognition-tip">拍照或选图后自动回填，可继续手动修改</view>
+      <view wx:if="{{recognitionImagePath}}" class="recognition-card">
+        <image class="recognition-image" src="{{recognitionImagePath}}" mode="aspectFill" />
+        <view class="recognition-body">
+          <view class="recognition-head">
+            <view class="recognition-title">识别结果</view>
+            <view wx:if="{{recognitionConfidenceLabel}}" class="recognition-badge {{recognitionConfidenceClass}}">
+              {{recognitionConfidenceLabel}}
+            </view>
+          </view>
+          <view wx:if="{{recognitionSummary}}" class="recognition-summary">{{recognitionSummary}}</view>
+          <view wx:for="{{recognitionWarnings}}" wx:key="*this" class="recognition-warning">{{item}}</view>
+          <view wx:if="{{recognitionRawTextLines.length}}" class="recognition-raw">
+            <view class="recognition-raw-title">识别原文</view>
+            <view wx:for="{{recognitionRawTextLines}}" wx:key="index" class="recognition-raw-line">{{item}}</view>
+            <view wx:if="{{recognitionRawTextOverflow}}" class="recognition-raw-more">仅显示前 6 行</view>
+          </view>
+        </view>
+      </view>
       <input class="field-input" value="{{editForm.name}}" data-field="name" bindinput="handleInput" />
     </view>
 

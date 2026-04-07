@@ -40,6 +40,7 @@
 
 默认激活 `dev` 环境，且 `dev` 中已开启微信登录 mock：`wechat.mock-enabled=true`。
 如需演示数据，必须显式追加 `demo-seed` profile，不再通过普通启动自动注入。
+营养成分表识别依赖腾讯云 OCR，开发环境默认开启 `tencent.ocr.mock-enabled=true`；如需联调真实 OCR，请配置 `TENCENT_OCR_SECRET_ID`、`TENCENT_OCR_SECRET_KEY`，并关闭 mock。
 
 ## 快速启动
 

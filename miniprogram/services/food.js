@@ -35,6 +35,17 @@ function createFood(payload, requestOptions = {}) {
   });
 }
 
+function recognizeNutritionLabel(payload, requestOptions = {}) {
+  return request({
+    url: "/api/foods/nutrition-label/recognize",
+    method: "POST",
+    data: payload,
+    loadingTitle: "识别中",
+    loadingMode: "modal",
+    ...requestOptions,
+  });
+}
+
 function updateFood(foodId, payload, requestOptions = {}) {
   return request({
     url: `/api/foods/${foodId}`,
@@ -59,6 +70,7 @@ function deleteFood(foodId, requestOptions = {}) {
 module.exports = {
   createFood,
   deleteFood,
+  recognizeNutritionLabel,
   searchFoods,
   updateFood,
 };

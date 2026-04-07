@@ -14,6 +14,13 @@ wechat:
   app-secret: ${WECHAT_APP_SECRET:}
   mock-enabled: ${WECHAT_MOCK_ENABLED:true}
 
+tencent:
+  ocr:
+    secret-id: ${TENCENT_OCR_SECRET_ID:}
+    secret-key: ${TENCENT_OCR_SECRET_KEY:}
+    region: ${TENCENT_OCR_REGION:ap-guangzhou}
+    mock-enabled: ${TENCENT_OCR_MOCK_ENABLED:true}
+
 auth:
   token-secret: ${AUTH_TOKEN_SECRET:diet-dev-secret-change-me}
   token-expire-days: ${AUTH_TOKEN_EXPIRE_DAYS:30}

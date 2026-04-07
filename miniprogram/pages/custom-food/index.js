@@ -1,11 +1,27 @@
-const { createFood, deleteFood, searchFoods, updateFood } = require("../../services/food");
+const { createFood, deleteFood, recognizeNutritionLabel, searchFoods, updateFood } = require("../../services/food");
 const { CALORIE_UNIT_LABELS, QUANTITY_UNIT_LABELS } = require("../../utils/constants");
-const { FOOD_CREATION_CATEGORIES, decorateFood } = require("../../utils/food");
+const { FOOD_CREATION_CATEGORIES, decorateFood, normalizeFoodCategoryKey } = require("../../utils/food");
 const { pickErrorMessage } = require("../../utils/request");
 
 const DELETE_ACTION_WIDTH = 84;
 const SWIPE_OPEN_THRESHOLD = 42;
 const SWIPE_ACTIVATE_DISTANCE = 8;
+const OCR_PREVIEW_LINE_LIMIT = 6;
+
+const CONFIDENCE_LABELS = {
+  HIGH: "高置信",
+  MEDIUM: "中置信",
+  LOW: "低置信",
+};
+
+const MISSING_FIELD_LABELS = {
+  foodName: "名称",
+  nutritionBase: "基准",
+  calories: "热量",
+  protein: "蛋白质",
+  carbs: "碳水",
+  fat: "脂肪",
+};
 
 function buildEmptyForm() {
   return {
@@ -20,6 +36,19 @@ function buildEmptyForm() {
   };
 }
 
+function buildEmptyRecognitionState() {
+  return {
+    recognizing: false,
+    recognitionImagePath: "",
+    recognitionSummary: "",
+    recognitionConfidenceLabel: "",
+    recognitionConfidenceClass: "",
+    recognitionWarnings: [],
+    recognitionRawTextLines: [],
+    recognitionRawTextOverflow: false,
+  };
+}
+
 function toNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
@@ -27,6 +56,20 @@ function toNumber(value) {
 
 function toInteger(value) {
   return Math.round(toNumber(value));
+}
+
+function formatInputNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+  const rounded = Math.round(number * 100) / 100;
+  return String(rounded)
+    .replace(/\.0+$/, "")
+    .replace(/(\.\d*?[1-9])0+$/, "$1");
 }
 
 function normalizeFood(food) {
@@ -68,6 +111,47 @@ function applySwipeState(items, swipedId, swipingId, swipeOffsetX) {
   });
 }
 
+function buildRecognitionSummary(result) {
+  const parts = [];
+  const foodName = String(result && result.foodName ? result.foodName : "").trim();
+  const baseText = String(result && result.recognizedBaseText ? result.recognizedBaseText : "").trim();
+  const quantityUnit = result && result.quantityUnit;
+
+  if (foodName) {
+    parts.push(`名称：${foodName}`);
+  }
+  if (baseText) {
+    parts.push(`基准：${baseText}`);
+  }
+  if (quantityUnit === "G") {
+    parts.push("已按每100g回填");
+  } else if (quantityUnit === "ML") {
+    parts.push("已按每100ml回填");
+  }
+
+  return parts.join(" · ");
+}
+
+function buildRecognitionWarnings(result) {
+  const warnings = [];
+  const missingFields = Array.isArray(result && result.missingFields) ? result.missingFields : [];
+  const missingLabels = missingFields
+    .map((field) => MISSING_FIELD_LABELS[field] || "")
+    .filter((item) => item);
+
+  if (missingLabels.length) {
+    warnings.push(`待补充：${missingLabels.join("、")}`);
+  }
+
+  if (result && result.confidenceLevel === "LOW") {
+    warnings.push("识别把握较低，请逐项核对");
+  } else if (result && result.confidenceLevel === "MEDIUM") {
+    warnings.push("建议核对后再保存");
+  }
+
+  return warnings;
+}
+
 Page({
   data: {
     categories: FOOD_CREATION_CATEGORIES,
@@ -92,6 +176,7 @@ Page({
     editMode: "create",
     selectedCategoryKey: "STAPLE",
     editForm: buildEmptyForm(),
+    ...buildEmptyRecognitionState(),
   },
 
   onLoad(options = {}) {
@@ -156,6 +241,7 @@ Page({
       editMode: "create",
       selectedCategoryKey: "STAPLE",
       editForm: buildEmptyForm(),
+      ...buildEmptyRecognitionState(),
     });
   },
 
@@ -181,6 +267,7 @@ Page({
         fatPer100g: String(toInteger(target.fatPer100g)),
         quantityUnit: target.quantityUnit || "G",
       },
+      ...buildEmptyRecognitionState(),
     });
   },
 
@@ -309,6 +396,140 @@ Page({
       editMode: "create",
       selectedCategoryKey: "STAPLE",
       editForm: buildEmptyForm(),
+      ...buildEmptyRecognitionState(),
+    });
+  },
+
+  handleRecognizeNutritionLabel() {
+    this.closeSwipeActions();
+    if (this.data.saving || this.data.recognizing) {
+      return;
+    }
+
+    wx.chooseImage({
+      count: 1,
+      sizeType: ["compressed"],
+      sourceType: ["album", "camera"],
+      success: (result) => {
+        const tempFilePaths = Array.isArray(result.tempFilePaths) ? result.tempFilePaths : [];
+        const filePath = tempFilePaths[0];
+        if (!filePath) {
+          return;
+        }
+
+        this.setData({
+          recognizing: true,
+          recognitionImagePath: "",
+          recognitionSummary: "",
+          recognitionConfidenceLabel: "",
+          recognitionConfidenceClass: "",
+          recognitionWarnings: [],
+          recognitionRawTextLines: [],
+          recognitionRawTextOverflow: false,
+        });
+
+        this.readImageAsBase64(filePath)
+          .then((imageBase64) => recognizeNutritionLabel({ imageBase64 }))
+          .then((response) => {
+            this.applyRecognitionResult(response, filePath);
+            wx.showToast({ title: "已回填", icon: "success" });
+          })
+          .catch((error) => {
+            this.setData({
+              ...buildEmptyRecognitionState(),
+            });
+            wx.showToast({ title: pickErrorMessage(error), icon: "none" });
+          })
+          .finally(() => {
+            this.setData({ recognizing: false });
+          });
+      },
+      fail: (error) => {
+        const message = String(error && error.errMsg ? error.errMsg : "");
+        if (message.includes("cancel")) {
+          return;
+        }
+        wx.showToast({ title: "选图失败，请重试", icon: "none" });
+      },
+    });
+  },
+
+  readImageAsBase64(filePath) {
+    return new Promise((resolve, reject) => {
+      if (!filePath) {
+        reject(new Error("图片不存在"));
+        return;
+      }
+      if (typeof wx.getFileSystemManager !== "function") {
+        reject(new Error("当前基础库不支持图片读取"));
+        return;
+      }
+      const fileSystemManager = wx.getFileSystemManager();
+      if (!fileSystemManager || typeof fileSystemManager.readFile !== "function") {
+        reject(new Error("当前基础库不支持图片读取"));
+        return;
+      }
+      fileSystemManager.readFile({
+        filePath,
+        encoding: "base64",
+        success: (result) => {
+          const imageBase64 = typeof result.data === "string" ? result.data.trim() : "";
+          if (!imageBase64) {
+            reject(new Error("读取图片失败，请重试"));
+            return;
+          }
+          resolve(imageBase64);
+        },
+        fail: () => {
+          reject(new Error("读取图片失败，请重试"));
+        },
+      });
+    });
+  },
+
+  applyRecognitionResult(result, filePath) {
+    const currentForm = this.data.editForm || buildEmptyForm();
+    const nextEditForm = {
+      ...currentForm,
+    };
+
+    if (String(result && result.foodName ? result.foodName : "").trim()) {
+      nextEditForm.name = String(result.foodName).trim();
+    }
+    if (result && result.normalizedCaloriesPer100 != null) {
+      nextEditForm.caloriesPer100g = formatInputNumber(result.normalizedCaloriesPer100);
+      nextEditForm.calorieUnit = "KCAL";
+    }
+    if (result && result.normalizedProteinPer100 != null) {
+      nextEditForm.proteinPer100g = formatInputNumber(result.normalizedProteinPer100);
+    }
+    if (result && result.normalizedCarbsPer100 != null) {
+      nextEditForm.carbsPer100g = formatInputNumber(result.normalizedCarbsPer100);
+    }
+    if (result && result.normalizedFatPer100 != null) {
+      nextEditForm.fatPer100g = formatInputNumber(result.normalizedFatPer100);
+    }
+    if (result && (result.quantityUnit === "G" || result.quantityUnit === "ML")) {
+      nextEditForm.quantityUnit = result.quantityUnit;
+    }
+
+    const rawTextLines = Array.isArray(result && result.rawTextLines)
+      ? result.rawTextLines.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim())
+      : [];
+    const inferredCategoryKey = String(result && result.foodName ? result.foodName : "").trim()
+      ? normalizeFoodCategoryKey(result.foodName)
+      : this.data.selectedCategoryKey;
+
+    this.setData({
+      editForm: nextEditForm,
+      selectedCategoryKey: inferredCategoryKey === "ALL" ? "OTHER" : inferredCategoryKey,
+      recognitionImagePath: filePath || "",
+      recognitionSummary: buildRecognitionSummary(result),
+      recognitionConfidenceLabel: CONFIDENCE_LABELS[result && result.confidenceLevel] || "",
+      recognitionConfidenceClass: String(result && result.confidenceLevel ? result.confidenceLevel : "").toLowerCase(),
+      recognitionWarnings: buildRecognitionWarnings(result),
+      recognitionRawTextLines: rawTextLines.slice(0, OCR_PREVIEW_LINE_LIMIT),
+      recognitionRawTextOverflow: rawTextLines.length > OCR_PREVIEW_LINE_LIMIT,
     });
   },
 
