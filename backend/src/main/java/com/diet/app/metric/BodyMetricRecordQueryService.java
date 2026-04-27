@@ -14,14 +14,17 @@ import com.diet.api.metric.BodyMetricSnapshotResponse;
 import com.diet.api.metric.BodyMetricTrendMetricKey;
 import com.diet.api.metric.BodyMetricTrendPointResponse;
 import com.diet.api.metric.BodyMetricTrendResponse;
+import com.diet.api.metric.MetricTrendGranularity;
 import com.diet.api.metric.MetricTrendRangeType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,8 @@ public class BodyMetricRecordQueryService {
     private static final int DEFAULT_ALL_PAGE_SIZE = 120;
 
     private static final int MAX_ALL_PAGE_SIZE = 240;
+
+    private static final int MAX_AGGREGATION_RECORDS = 5000;
 
     private static final List<BodyMetricTrendMetricKey> SNAPSHOT_METRIC_ORDER = List.of(
             BodyMetricTrendMetricKey.WEIGHT,
@@ -138,6 +143,18 @@ public class BodyMetricRecordQueryService {
             Long cursorId,
             Integer pageSize
     ) {
+        return getTrend(userId, metricKey, rangeType, cursorMeasuredAt, cursorId, pageSize, null);
+    }
+
+    public BodyMetricTrendResponse getTrend(
+            Long userId,
+            BodyMetricTrendMetricKey metricKey,
+            MetricTrendRangeType rangeType,
+            LocalDateTime cursorMeasuredAt,
+            Long cursorId,
+            Integer pageSize,
+            MetricTrendGranularity granularity
+    ) {
         UserProfile user = getUser(userId);
         if (metricKey == BodyMetricTrendMetricKey.BMI && !hasValidHeight(user.getHeight())) {
             return new BodyMetricTrendResponse(
@@ -147,13 +164,27 @@ public class BodyMetricRecordQueryService {
                     List.of(),
                     false,
                     null,
-                    null
+                null
             );
         }
         BodyMetricType sourceMetricType = resolveSourceMetricType(metricKey);
+        MetricTrendGranularity resolvedGranularity = resolveGranularity(rangeType, granularity);
         if (rangeType == MetricTrendRangeType.ALL) {
             if ((cursorMeasuredAt == null) != (cursorId == null)) {
                 throw new IllegalArgumentException("cursorMeasuredAt and cursorId must be provided together");
+            }
+            if (resolvedGranularity == MetricTrendGranularity.MONTH) {
+                List<BodyMetricRecord> records = fetchAllDailyLatestRecords(user.getId(), sourceMetricType);
+                List<BodyMetricRecord> sortedAscRecords = sortTrendRecordsAsc(records);
+                return new BodyMetricTrendResponse(
+                        metricKey,
+                        rangeType,
+                        metricKey.unitLabel(),
+                        aggregateMonthly(toTrendPoints(metricKey, user, sortedAscRecords)),
+                        false,
+                        null,
+                        null
+                );
             }
             int resolvedPageSize = resolvePageSize(pageSize);
             List<BodyMetricRecord> queryResult = bodyMetricRecordRepository.findDailyLatestByMetricTypeWithCursor(
@@ -176,11 +207,7 @@ public class BodyMetricRecordQueryService {
                 nextCursorId = oldestInPage.getId();
             }
 
-            List<BodyMetricRecord> sortedAscRecords = new ArrayList<>(pageRecords);
-            sortedAscRecords.sort(Comparator
-                    .comparing(BodyMetricRecord::getRecordDate)
-                    .thenComparing(BodyMetricRecord::getMeasuredAt)
-                    .thenComparing(BodyMetricRecord::getId));
+            List<BodyMetricRecord> sortedAscRecords = sortTrendRecordsAsc(pageRecords);
 
             return new BodyMetricTrendResponse(
                     metricKey,
@@ -203,15 +230,76 @@ public class BodyMetricRecordQueryService {
                 startDate,
                 endDate
         );
+        List<BodyMetricTrendPointResponse> points = toTrendPoints(metricKey, user, records);
+        if (resolvedGranularity == MetricTrendGranularity.MONTH) {
+            points = aggregateMonthly(points);
+        }
         return new BodyMetricTrendResponse(
                 metricKey,
                 rangeType,
                 metricKey.unitLabel(),
-                toTrendPoints(metricKey, user, records),
+                points,
                 false,
                 null,
                 null
         );
+    }
+
+    private List<BodyMetricRecord> fetchAllDailyLatestRecords(Long userId, BodyMetricType metricType) {
+        List<BodyMetricRecord> records = new ArrayList<>();
+        LocalDateTime cursorMeasuredAt = null;
+        Long cursorId = null;
+        boolean hasMore = true;
+        while (hasMore && records.size() < MAX_AGGREGATION_RECORDS) {
+            List<BodyMetricRecord> queryResult = bodyMetricRecordRepository.findDailyLatestByMetricTypeWithCursor(
+                    userId,
+                    metricType,
+                    cursorMeasuredAt,
+                    cursorId,
+                    MAX_ALL_PAGE_SIZE + 1
+            );
+            hasMore = queryResult.size() > MAX_ALL_PAGE_SIZE;
+            List<BodyMetricRecord> pageRecords = hasMore
+                    ? queryResult.subList(0, MAX_ALL_PAGE_SIZE)
+                    : queryResult;
+            records.addAll(pageRecords);
+            if (!hasMore || pageRecords.isEmpty()) {
+                break;
+            }
+            BodyMetricRecord oldestInPage = pageRecords.get(pageRecords.size() - 1);
+            cursorMeasuredAt = oldestInPage.getMeasuredAt();
+            cursorId = oldestInPage.getId();
+        }
+        return records;
+    }
+
+    private List<BodyMetricRecord> sortTrendRecordsAsc(List<BodyMetricRecord> records) {
+        List<BodyMetricRecord> sortedAscRecords = new ArrayList<>(records);
+        sortedAscRecords.sort(Comparator
+                .comparing(BodyMetricRecord::getRecordDate)
+                .thenComparing(BodyMetricRecord::getMeasuredAt)
+                .thenComparing(BodyMetricRecord::getId));
+        return sortedAscRecords;
+    }
+
+    private List<BodyMetricTrendPointResponse> aggregateMonthly(List<BodyMetricTrendPointResponse> points) {
+        Map<YearMonth, BodyMetricTrendPointResponse> latestPointByMonth = new LinkedHashMap<>();
+        for (BodyMetricTrendPointResponse point : points) {
+            latestPointByMonth.put(YearMonth.from(point.date()), point);
+        }
+        return List.copyOf(latestPointByMonth.values());
+    }
+
+    private MetricTrendGranularity resolveGranularity(MetricTrendRangeType rangeType, MetricTrendGranularity granularity) {
+        if (granularity == null || granularity == MetricTrendGranularity.DAY) {
+            return MetricTrendGranularity.DAY;
+        }
+        if (granularity == MetricTrendGranularity.MONTH) {
+            return MetricTrendGranularity.MONTH;
+        }
+        return rangeType == MetricTrendRangeType.MONTH
+                ? MetricTrendGranularity.DAY
+                : MetricTrendGranularity.MONTH;
     }
 
     private List<BodyMetricHistoryRecordResponse> toHistoryRecords(

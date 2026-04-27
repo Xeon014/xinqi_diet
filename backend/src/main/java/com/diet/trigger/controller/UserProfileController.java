@@ -1,7 +1,9 @@
 package com.diet.trigger.controller;
 
-import com.diet.trigger.support.AuthContextService;
-import com.diet.types.common.ApiResponse;
+import com.diet.app.user.DailySummaryQueryService;
+import com.diet.app.user.ProgressQueryService;
+import com.diet.app.user.UserGoalPlanApplicationService;
+import com.diet.app.user.UserProfileApplicationService;
 import com.diet.api.user.CreateUserRequest;
 import com.diet.api.user.DailySummaryResponse;
 import com.diet.api.user.GoalPlanPreviewResponse;
@@ -9,10 +11,9 @@ import com.diet.api.user.ProgressSummaryResponse;
 import com.diet.api.user.UpdateUserRequest;
 import com.diet.api.user.UserListResponse;
 import com.diet.api.user.UserResponse;
-import com.diet.app.user.DailySummaryQueryService;
-import com.diet.app.user.ProgressQueryService;
-import com.diet.app.user.UserGoalPlanApplicationService;
-import com.diet.app.user.UserProfileApplicationService;
+import com.diet.trigger.support.AuthContextService;
+import com.diet.types.common.ApiResponse;
+import com.diet.types.common.ConflictException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +22,6 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,17 +61,22 @@ public class UserProfileController {
         this.authContextService = authContextService;
     }
 
-    @Operation(summary = "创建用户", description = "创建新的用户资料")
+    @Deprecated
+    @Operation(summary = "创建用户", description = "用户资料由微信登录自动创建，本接口仅保留兼容并禁止直接创建")
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody CreateUserRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(userProfileApplicationService.create(request)));
+    public ResponseEntity<ApiResponse<UserResponse>> create(
+            @Valid @RequestBody CreateUserRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        authContextService.requireCurrentUserId(httpServletRequest);
+        throw new ConflictException("用户资料由微信登录自动创建，请使用更新资料接口");
     }
 
-    @Operation(summary = "查询用户列表", description = "查询系统中的所有用户资料")
+    @Operation(summary = "查询当前用户列表包装", description = "兼容旧接口，只返回当前登录用户资料，避免暴露全量用户列表")
     @GetMapping
-    public ApiResponse<UserListResponse> findAll() {
-        List<UserResponse> users = userProfileApplicationService.findAll();
+    public ApiResponse<UserListResponse> findAll(HttpServletRequest httpServletRequest) {
+        Long userId = authContextService.requireCurrentUserId(httpServletRequest);
+        List<UserResponse> users = List.of(userProfileApplicationService.findById(userId));
         return ApiResponse.success(new UserListResponse(users, users.size()));
     }
 

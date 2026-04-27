@@ -10,6 +10,8 @@
 - 后端说明：`backend/README.md`、`backend/docs/腾讯云托管部署清单.md`
 - 小程序说明：`miniprogram/README.md`、`miniprogram/docs/页面入口与跳转地图.md`
 - 协作与维护：`docs/开发接手指南.md`、`docs/变更日志.md`、`docs/小程序接口对接说明.md`
+- 产品路线图：`docs/产品体验优化路线图.md`
+- 运维手册：`backend/docs/运维实施手册.md`
 - 功能设计：`docs/体重数据导入功能设计.md`
 - 功能设计：`docs/营养成分表拍照识别设计与实现说明.md`
 
@@ -23,6 +25,8 @@
 4. `miniprogram/README.md`
 5. `docs/小程序接口对接说明.md`
 6. `docs/开发接手指南.md`
+7. `docs/产品体验优化路线图.md`
+8. `backend/docs/运维实施手册.md`
 
 如果你是人类开发者，建议顺序：
 
@@ -31,11 +35,13 @@
 3. `miniprogram/README.md`
 4. `docs/小程序接口对接说明.md`
 5. `docs/开发接手指南.md`
+6. `docs/产品体验优化路线图.md`
+7. `backend/docs/运维实施手册.md`
 
 ## 3. 文档归属
 
 - 根 `docs/`：仓库级说明、agent 总览、接手指南、变更日志、跨应用接口文档
-- `backend/docs/`：数据库、部署、数据维护等后端专属文档
+- `backend/docs/`：数据库、部署、运行手册、数据维护等后端专属文档
 - `miniprogram/docs/`：页面入口、功能清单、体验问题等小程序专属文档
 
 ## 4. 常用定位
@@ -47,6 +53,8 @@
 - 小程序页面跳转：`miniprogram/docs/页面入口与跳转地图.md`
 - 前后端接口契约：`docs/小程序接口对接说明.md`
 - 小程序体验债务：`miniprogram/docs/当前体验问题清单.md`
+- 产品体验路线：`docs/产品体验优化路线图.md`
+- 生产运维流程：`backend/docs/运维实施手册.md`
 
 ## 5. 文档维护规则
 

@@ -7,6 +7,7 @@ const REQUIRED_PAGE_EXTENSIONS = [".js", ".json", ".wxml", ".wxss"];
 const FORBIDDEN_REGISTERED_PAGES = new Set([
   "pages/food-item-editor/index",
 ]);
+const MODAL_BUTTON_TEXT_MAX_LENGTH = 4;
 
 function fail(message) {
   console.error(`校验失败: ${message}`);
@@ -56,6 +57,62 @@ function verifyKeyFiles() {
   );
 }
 
+function readTextFile(filePath) {
+  return fs.readFileSync(filePath, "utf8");
+}
+
+function verifyModalButtonTexts() {
+  const sourceRoots = ["pages", "components"].map((dir) => path.join(PROJECT_ROOT, dir));
+  const files = [];
+  sourceRoots.forEach((sourceRoot) => collectFiles(sourceRoot, ".js", files));
+
+  files.forEach((filePath) => {
+    const content = readTextFile(filePath);
+    const buttonTextPattern = /\b(confirmText|cancelText)\s*:\s*["']([^"']*)["']/g;
+    let match;
+    while ((match = buttonTextPattern.exec(content)) !== null) {
+      const text = match[2];
+      if (Array.from(text).length > MODAL_BUTTON_TEXT_MAX_LENGTH) {
+        fail(`${path.relative(PROJECT_ROOT, filePath)} 中 ${match[1]}="${text}" 超过 ${MODAL_BUTTON_TEXT_MAX_LENGTH} 个字`);
+      }
+    }
+  });
+}
+
+function collectFiles(dirPath, extension, result) {
+  if (!fs.existsSync(dirPath)) {
+    return result;
+  }
+  fs.readdirSync(dirPath, { withFileTypes: true }).forEach((entry) => {
+    const entryPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      collectFiles(entryPath, extension, result);
+      return;
+    }
+    if (entry.isFile() && entry.name.endsWith(extension)) {
+      result.push(entryPath);
+    }
+  });
+  return result;
+}
+
+function verifyProjectConfig() {
+  const projectConfigPath = path.join(PROJECT_ROOT, "project.config.json");
+  if (!ensureFileExists(projectConfigPath, "project.config.json")) {
+    return;
+  }
+  let projectConfig;
+  try {
+    projectConfig = JSON.parse(readTextFile(projectConfigPath));
+  } catch (error) {
+    fail(`project.config.json 解析失败: ${error.message}`);
+    return;
+  }
+  if (projectConfig.setting && projectConfig.setting.uploadWithSourceMap !== false) {
+    fail("project.config.json 中 setting.uploadWithSourceMap 必须为 false");
+  }
+}
+
 function main() {
   const appConfig = readAppConfig();
   if (!appConfig) {
@@ -70,6 +127,8 @@ function main() {
 
   verifyPageFiles(pages);
   verifyKeyFiles();
+  verifyModalButtonTexts();
+  verifyProjectConfig();
 
   if (process.exitCode) {
     return;

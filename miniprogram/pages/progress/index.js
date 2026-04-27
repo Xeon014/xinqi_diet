@@ -24,7 +24,6 @@ const METRIC_MAP = METRIC_OPTIONS.reduce((result, item) => {
 
 const DEFAULT_METRIC_KEY = "WEIGHT";
 const DEFAULT_RANGE_KEY = "MONTH";
-const ALL_PAGE_SIZE = 240;
 
 const CHART_CONTENT_WIDTH_RPX = 658;
 const CHART_HORIZONTAL_PADDING_RPX = 28;
@@ -363,45 +362,10 @@ Page({
       metricKey: this.data.selectedMetric,
       rangeType: this.data.selectedRange,
     };
-    if (this.data.selectedRange === "ALL") {
-      requestData.pageSize = ALL_PAGE_SIZE;
-      return this.fetchAllTrendPages(requestData);
+    if (this.data.selectedRange === "YEAR" || this.data.selectedRange === "ALL") {
+      requestData.granularity = "AUTO";
     }
     return getBodyMetricTrend(requestData);
-  },
-
-  fetchAllTrendPages(baseRequestData, cursor) {
-    const requestData = {
-      ...baseRequestData,
-    };
-    if (cursor && cursor.cursorMeasuredAt && cursor.cursorId != null) {
-      requestData.cursorMeasuredAt = cursor.cursorMeasuredAt;
-      requestData.cursorId = cursor.cursorId;
-    }
-
-    return getBodyMetricTrend(requestData).then((response) => {
-      const points = Array.isArray(response && response.points) ? response.points : [];
-      if (!response || !response.hasMore || !response.nextCursorMeasuredAt || response.nextCursorId == null) {
-        return {
-          ...response,
-          points,
-          hasMore: false,
-          nextCursorMeasuredAt: "",
-          nextCursorId: null,
-        };
-      }
-
-      return this.fetchAllTrendPages(baseRequestData, {
-        cursorMeasuredAt: response.nextCursorMeasuredAt,
-        cursorId: response.nextCursorId,
-      }).then((nextResponse) => ({
-        ...nextResponse,
-        points: points.concat(Array.isArray(nextResponse && nextResponse.points) ? nextResponse.points : []),
-        hasMore: false,
-        nextCursorMeasuredAt: "",
-        nextCursorId: null,
-      }));
-    });
   },
 
   applySnapshotData(snapshotMap) {

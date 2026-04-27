@@ -10,6 +10,7 @@ import com.diet.api.metric.BodyMetricSnapshotResponse;
 import com.diet.api.metric.BodyMetricTrendMetricKey;
 import com.diet.api.metric.BodyMetricTrendResponse;
 import com.diet.api.metric.CreateBodyMetricRecordRequest;
+import com.diet.api.metric.MetricTrendGranularity;
 import com.diet.api.metric.MetricTrendRangeType;
 import com.diet.api.metric.WeightImportConfirmRequest;
 import com.diet.api.metric.WeightImportPreviewRequest;
@@ -133,10 +134,12 @@ public class BodyMetricRecordController {
             @RequestParam(required = false) Long cursorId,
             @Parameter(description = "分页大小，仅 ALL 模式使用，默认 120")
             @RequestParam(required = false) Integer pageSize,
+            @Parameter(description = "趋势点粒度，DAY/MONTH/AUTO；AUTO 在 YEAR/ALL 下按月聚合")
+            @RequestParam(required = false) MetricTrendGranularity granularity,
             HttpServletRequest httpServletRequest
     ) {
         Long userId = authContextService.requireCurrentUserId(httpServletRequest);
-        return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorMeasuredAt, cursorId, pageSize));
+        return ApiResponse.success(bodyMetricRecordQueryService.getTrend(userId, metricKey, rangeType, cursorMeasuredAt, cursorId, pageSize, granularity));
     }
 
     @Operation(summary = "预览体重数据导入", description = "解析 CSV / XLSX 文件并返回预览数据，不写入数据库")

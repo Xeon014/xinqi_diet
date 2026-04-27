@@ -215,8 +215,8 @@ public class DailySummaryQueryService {
         if (firstMissingMeal != null) {
             suggestions.add(new ActionSuggestionResponse(
                     "RECORD_MEAL",
-                    "????",
-                    "?????" + firstMissingMeal.mealLabel() + "????????",
+                    "补记餐次",
+                    "可以先补记" + firstMissingMeal.mealLabel() + "，让今天的记录更完整",
                     firstMissingMeal.mealType()
             ));
         }
@@ -224,8 +224,8 @@ public class DailySummaryQueryService {
         if (remainingCalories != null && remainingCalories.compareTo(BigDecimal.ZERO) < 0 && topIssueMealType != null) {
             suggestions.add(new ActionSuggestionResponse(
                     "CONTROL_MEAL",
-                    "??????",
-                    MEAL_LABELS.get(topIssueMealType) + "??????????????????",
+                    "控制热量",
+                    MEAL_LABELS.get(topIssueMealType) + "热量偏高，下一餐可以清淡一些",
                     topIssueMealType
             ));
         }
@@ -233,19 +233,19 @@ public class DailySummaryQueryService {
         if (proteinIntake.compareTo(BigDecimal.valueOf(60)) < 0 && suggestions.size() < 2) {
             suggestions.add(new ActionSuggestionResponse(
                     "PROTEIN",
-                    "?????",
-                    "?????????????????????????",
+                    "补充蛋白",
+                    "今天蛋白质偏低，可以优先选择蛋类、奶类或瘦肉",
                     null
             ));
         }
 
         String summaryText = "";
         if (remainingCalories == null) {
-            summaryText = "????????????????";
+            summaryText = "还没有设置目标热量，先完成今天记录";
         } else if (remainingCalories.compareTo(BigDecimal.ZERO) < 0) {
-            summaryText = "?????? " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString() + " kcal?";
+            summaryText = "已超出目标 " + remainingCalories.abs().setScale(0, RoundingMode.HALF_UP).toPlainString() + " kcal";
         } else if (completeness >= 0.75) {
-            summaryText = "??????????????";
+            summaryText = "今天记录比较完整，继续保持节奏";
         }
 
         return new DailyInsightResponse(summaryText, topIssueMealType, completeness, suggestions.stream().limit(2).toList());

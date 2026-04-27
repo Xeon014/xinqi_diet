@@ -26,6 +26,7 @@ import com.diet.api.metric.BodyMetricSnapshotResponse;
 import com.diet.api.metric.BodyMetricTrendMetricKey;
 import com.diet.api.metric.BodyMetricTrendResponse;
 import com.diet.api.metric.CreateBodyMetricRecordRequest;
+import com.diet.api.metric.MetricTrendGranularity;
 import com.diet.api.metric.MetricTrendRangeType;
 import com.diet.api.user.GoalPlanPreviewResponse;
 import com.diet.api.user.GoalWarningLevel;
@@ -389,6 +390,74 @@ class BodyMetricRecordServiceTest {
         assertThat(response.points().get(0).value()).isEqualByComparingTo("61.10");
         assertThat(response.points().get(1).date()).isEqualTo(LocalDate.of(2026, 3, 15));
         assertThat(response.points().get(1).value()).isEqualByComparingTo("60.60");
+    }
+
+    @Test
+    void shouldAggregateYearTrendByMonthWhenAutoGranularityRequested() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(364);
+        when(bodyMetricRecordRepository.findDailyLatestByMetricTypeAndDateRange(
+                1L,
+                BodyMetricType.WEIGHT,
+                startDate,
+                endDate
+        )).thenReturn(List.of(
+                buildRecord(30L, BodyMetricType.WEIGHT, new BigDecimal("62.00"), LocalDate.of(2026, 1, 3)),
+                buildRecord(31L, BodyMetricType.WEIGHT, new BigDecimal("61.20"), LocalDate.of(2026, 1, 28)),
+                buildRecord(32L, BodyMetricType.WEIGHT, new BigDecimal("60.80"), LocalDate.of(2026, 2, 5))
+        ));
+
+        BodyMetricTrendResponse response = bodyMetricRecordQueryService.getTrend(
+                1L,
+                BodyMetricTrendMetricKey.WEIGHT,
+                MetricTrendRangeType.YEAR,
+                null,
+                null,
+                null,
+                MetricTrendGranularity.AUTO
+        );
+
+        assertThat(response.points()).hasSize(2);
+        assertThat(response.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 28));
+        assertThat(response.points().get(0).value()).isEqualByComparingTo("61.20");
+        assertThat(response.points().get(1).date()).isEqualTo(LocalDate.of(2026, 2, 5));
+        assertThat(response.points().get(1).value()).isEqualByComparingTo("60.80");
+    }
+
+    @Test
+    void shouldReturnAggregatedAllTrendWithoutPaginationWhenAutoGranularityRequested() {
+        UserProfile user = buildUser(1L, new BigDecimal("62.00"));
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bodyMetricRecordRepository.findDailyLatestByMetricTypeWithCursor(
+                1L,
+                BodyMetricType.WEIGHT,
+                null,
+                null,
+                241
+        )).thenReturn(List.of(
+                buildRecord(30L, BodyMetricType.WEIGHT, new BigDecimal("62.00"), LocalDate.of(2026, 1, 3)),
+                buildRecord(31L, BodyMetricType.WEIGHT, new BigDecimal("61.20"), LocalDate.of(2026, 1, 28)),
+                buildRecord(32L, BodyMetricType.WEIGHT, new BigDecimal("60.80"), LocalDate.of(2026, 2, 5))
+        ));
+
+        BodyMetricTrendResponse response = bodyMetricRecordQueryService.getTrend(
+                1L,
+                BodyMetricTrendMetricKey.WEIGHT,
+                MetricTrendRangeType.ALL,
+                null,
+                null,
+                null,
+                MetricTrendGranularity.AUTO
+        );
+
+        assertThat(response.hasMore()).isFalse();
+        assertThat(response.nextCursorMeasuredAt()).isNull();
+        assertThat(response.nextCursorId()).isNull();
+        assertThat(response.points()).hasSize(2);
+        assertThat(response.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 28));
+        assertThat(response.points().get(1).date()).isEqualTo(LocalDate.of(2026, 2, 5));
     }
 
     @Test

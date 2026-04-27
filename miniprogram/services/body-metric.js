@@ -39,6 +39,9 @@ function getBodyMetricTrend(params) {
   if (params.pageSize != null) {
     query.push(`pageSize=${encodeURIComponent(params.pageSize)}`);
   }
+  if (params.granularity) {
+    query.push(`granularity=${encodeURIComponent(params.granularity)}`);
+  }
   return request({
     url: `/api/body-metrics/trend?${query.join("&")}`,
     showLoading: false,

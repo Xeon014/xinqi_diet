@@ -501,10 +501,6 @@ Page({
       : '按当前设置达到目标会比较激进，建议延后日期或调整目标体重。';
     return new Promise((resolve) => {
       wx.showModal({
-        title: '目标可能过急',
-        content: preview.warningMessage || '按当前设置达到目标会比较激进，建议延后日期或调整目标体重。',
-        cancelText: '调整目标',
-        confirmText: '仍然保存',
         title: '目标可能过激',
         content: preview.warningMessage || fallbackContent,
         cancelText: '调整目标',

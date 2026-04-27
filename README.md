@@ -20,8 +20,10 @@
 ## 快速入口
 
 - 面向 agent 的仓库总览：`docs/面向AI Agent的项目总览.md`
+- 产品体验优化路线图：`docs/产品体验优化路线图.md`
 - 面向客服/助理的问答基线：`docs/客服与助理问答基线.md`
 - 后端说明：`backend/README.md`
+- 运维实施手册：`backend/docs/运维实施手册.md`
 - 小程序说明：`miniprogram/README.md`
 - 仓库文档导航：`docs/README.md`
 
