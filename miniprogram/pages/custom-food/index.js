@@ -49,6 +49,14 @@ function buildEmptyRecognitionState() {
   };
 }
 
+function buildSheetStyle(keyboardHeight = 0) {
+  const safeKeyboardHeight = Math.max(0, Number(keyboardHeight) || 0);
+  if (!safeKeyboardHeight) {
+    return "bottom: 0px;";
+  }
+  return `bottom: ${safeKeyboardHeight}px; max-height: calc(100vh - ${safeKeyboardHeight}px - 88rpx);`;
+}
+
 function toNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
@@ -172,6 +180,8 @@ Page({
     swipingFoodId: null,
     swipeOffsetX: 0,
     sheetVisible: false,
+    keyboardHeight: 0,
+    sheetStyle: buildSheetStyle(0),
     launchedFromSelector: false,
     editMode: "create",
     selectedCategoryKey: "STAPLE",
@@ -181,6 +191,11 @@ Page({
 
   onLoad(options = {}) {
     this.openerEventChannel = this.getOpenerEventChannel();
+    if (typeof wx.onKeyboardHeightChange === "function") {
+      this.keyboardHeightChangeHandler = this.handleKeyboardHeightChange.bind(this);
+      wx.onKeyboardHeightChange(this.keyboardHeightChangeHandler);
+    }
+
     const launchedFromSelector = options.from === "selector";
     const shouldOpenCreate = options.mode === "create";
 
@@ -193,6 +208,23 @@ Page({
 
   onShow() {
     this.loadFoods();
+  },
+
+  onUnload() {
+    if (this.keyboardHeightChangeHandler && typeof wx.offKeyboardHeightChange === "function") {
+      wx.offKeyboardHeightChange(this.keyboardHeightChangeHandler);
+    }
+  },
+
+  handleKeyboardHeightChange({ height = 0 } = {}) {
+    if (!this.data.sheetVisible) {
+      return;
+    }
+    const keyboardHeight = Math.max(0, height);
+    this.setData({
+      keyboardHeight,
+      sheetStyle: buildSheetStyle(keyboardHeight),
+    });
   },
 
   loadFoods() {
@@ -238,6 +270,8 @@ Page({
     this.closeSwipeActions();
     this.setData({
       sheetVisible: true,
+      keyboardHeight: 0,
+      sheetStyle: buildSheetStyle(0),
       editMode: "create",
       selectedCategoryKey: "STAPLE",
       editForm: buildEmptyForm(),
@@ -255,6 +289,8 @@ Page({
 
     this.setData({
       sheetVisible: true,
+      keyboardHeight: 0,
+      sheetStyle: buildSheetStyle(0),
       editMode: "edit",
       selectedCategoryKey: target.categoryKey || "OTHER",
       editForm: {
@@ -391,13 +427,22 @@ Page({
   },
 
   closeSheet() {
+    this.hideFormKeyboard();
     this.setData({
       sheetVisible: false,
+      keyboardHeight: 0,
+      sheetStyle: buildSheetStyle(0),
       editMode: "create",
       selectedCategoryKey: "STAPLE",
       editForm: buildEmptyForm(),
       ...buildEmptyRecognitionState(),
     });
+  },
+
+  hideFormKeyboard() {
+    if (typeof wx.hideKeyboard === "function") {
+      wx.hideKeyboard();
+    }
   },
 
   handleRecognizeNutritionLabel() {
@@ -534,6 +579,7 @@ Page({
   },
 
   handleCancelEdit() {
+    this.hideFormKeyboard();
     if (this.data.launchedFromSelector && this.data.editMode === "create") {
       wx.navigateBack();
       return;
@@ -584,6 +630,8 @@ Page({
     if (!payload) {
       return;
     }
+
+    this.hideFormKeyboard();
 
     const task = this.data.editMode === "edit"
       ? updateFood(this.data.editForm.id, payload)

@@ -50,7 +50,7 @@
   <empty-state wx:else title="暂无自定义食物" description="先添加一个自定义食物" />
 
   <view wx:if="{{sheetVisible}}" class="sheet-overlay" bindtap="handleCancelEdit"></view>
-  <view wx:if="{{sheetVisible}}" class="bottom-sheet panel" catchtap="noop" catchtouchmove="noop">
+  <view wx:if="{{sheetVisible}}" class="bottom-sheet panel" style="{{sheetStyle}}" catchtap="noop" catchtouchmove="noop">
     <view class="sheet-head">
       <view class="sheet-title">{{editMode === 'edit' ? '编辑自定义食物' : '新建自定义食物'}}</view>
       <view class="sheet-actions">
@@ -70,13 +70,7 @@
     </view>
 
     <view class="field-group">
-      <view class="field-head">
-        <view class="field-label">食物名称</view>
-        <view class="mini-action {{recognizing ? 'disabled' : ''}}" bindtap="handleRecognizeNutritionLabel">
-          {{recognizing ? '识别中' : '拍照识别'}}
-        </view>
-      </view>
-      <view class="recognition-tip">拍照或选图后自动回填，可继续手动修改</view>
+      <view class="field-label">食物名称</view>
       <view wx:if="{{recognitionImagePath}}" class="recognition-card">
         <image class="recognition-image" src="{{recognitionImagePath}}" mode="aspectFill" />
         <view class="recognition-body">
@@ -95,7 +89,16 @@
           </view>
         </view>
       </view>
-      <input class="field-input" value="{{editForm.name}}" data-field="name" bindinput="handleInput" />
+      <input
+        class="field-input"
+        value="{{editForm.name}}"
+        placeholder="请输入食物名称"
+        data-field="name"
+        bindinput="handleInput"
+        adjust-position="{{true}}"
+        cursor-spacing="20"
+        confirm-type="next"
+      />
     </view>
 
     <view class="field-group">
@@ -113,56 +116,109 @@
       </view>
     </view>
 
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">热量({{editForm.calorieUnit === 'KJ' ? 'kJ' : 'kcal'}}/100{{editForm.quantityUnit === 'ML' ? 'ml' : 'g'}})</view>
-        <input class="field-input" type="digit" value="{{editForm.caloriesPer100g}}" data-field="caloriesPer100g" bindinput="handleInput" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">蛋白质(g)</view>
-        <input class="field-input" type="digit" value="{{editForm.proteinPer100g}}" data-field="proteinPer100g" bindinput="handleInput" />
-      </view>
-    </view>
+    <view class="field-group nutrition-layout">
+      <view class="nutrition-column">
+        <view class="compact-field">
+          <view class="field-label">热量</view>
+          <view class="value-input-row">
+            <input
+              class="field-input"
+              type="digit"
+              value="{{editForm.caloriesPer100g}}"
+              placeholder="0"
+              data-field="caloriesPer100g"
+              bindinput="handleInput"
+              adjust-position="{{true}}"
+              cursor-spacing="20"
+              confirm-type="next"
+            />
+            <view class="input-unit calorie-unit">{{editForm.calorieUnit === 'KJ' ? 'kJ' : 'kcal'}}/100{{editForm.quantityUnit === 'ML' ? 'ml' : 'g'}}</view>
+          </view>
+        </view>
 
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">热量单位</view>
-        <view class="category-grid">
-          <view
-            wx:for="{{calorieUnits}}"
-            wx:key="key"
-            class="category-chip {{editForm.calorieUnit === item.key ? 'active' : ''}}"
-            data-key="{{item.key}}"
-            bindtap="handleCalorieUnitTap"
-          >
-            {{item.label}}
+        <view class="compact-field">
+          <view class="field-label">热量单位</view>
+          <view class="category-grid compact-grid">
+            <view
+              wx:for="{{calorieUnits}}"
+              wx:key="key"
+              class="category-chip {{editForm.calorieUnit === item.key ? 'active' : ''}}"
+              data-key="{{item.key}}"
+              bindtap="handleCalorieUnitTap"
+            >
+              {{item.label}}
+            </view>
+          </view>
+        </view>
+
+        <view class="compact-field">
+          <view class="field-label">计量单位</view>
+          <view class="category-grid compact-grid">
+            <view
+              wx:for="{{quantityUnits}}"
+              wx:key="key"
+              class="category-chip {{editForm.quantityUnit === item.key ? 'active' : ''}}"
+              data-key="{{item.key}}"
+              bindtap="handleQuantityUnitTap"
+            >
+              {{item.label}}
+            </view>
           </view>
         </view>
       </view>
-      <view class="field-half">
-        <view class="field-label">计量单位</view>
-        <view class="category-grid">
-          <view
-            wx:for="{{quantityUnits}}"
-            wx:key="key"
-            class="category-chip {{editForm.quantityUnit === item.key ? 'active' : ''}}"
-            data-key="{{item.key}}"
-            bindtap="handleQuantityUnitTap"
-          >
-            {{item.label}}
+
+      <view class="nutrition-column">
+        <view class="nutrition-input-item">
+          <view class="nutrition-input-label">碳水</view>
+          <view class="value-input-row">
+            <input
+              class="nutrition-input"
+              type="digit"
+              value="{{editForm.carbsPer100g}}"
+              placeholder="0"
+              data-field="carbsPer100g"
+              bindinput="handleInput"
+              adjust-position="{{true}}"
+              cursor-spacing="24"
+              confirm-type="next"
+            />
+            <view class="input-unit">g</view>
           </view>
         </view>
-      </view>
-    </view>
-
-    <view class="field-group two-column">
-      <view class="field-half">
-        <view class="field-label">碳水(g)</view>
-        <input class="field-input" type="digit" value="{{editForm.carbsPer100g}}" data-field="carbsPer100g" bindinput="handleInput" />
-      </view>
-      <view class="field-half">
-        <view class="field-label">脂肪(g)</view>
-        <input class="field-input" type="digit" value="{{editForm.fatPer100g}}" data-field="fatPer100g" bindinput="handleInput" />
+        <view class="nutrition-input-item">
+          <view class="nutrition-input-label">蛋白质</view>
+          <view class="value-input-row">
+            <input
+              class="nutrition-input"
+              type="digit"
+              value="{{editForm.proteinPer100g}}"
+              placeholder="0"
+              data-field="proteinPer100g"
+              bindinput="handleInput"
+              adjust-position="{{true}}"
+              cursor-spacing="24"
+              confirm-type="next"
+            />
+            <view class="input-unit">g</view>
+          </view>
+        </view>
+        <view class="nutrition-input-item">
+          <view class="nutrition-input-label">脂肪</view>
+          <view class="value-input-row">
+            <input
+              class="nutrition-input"
+              type="digit"
+              value="{{editForm.fatPer100g}}"
+              placeholder="0"
+              data-field="fatPer100g"
+              bindinput="handleInput"
+              adjust-position="{{true}}"
+              cursor-spacing="24"
+              confirm-type="done"
+            />
+            <view class="input-unit">g</view>
+          </view>
+        </view>
       </view>
     </view>
 
