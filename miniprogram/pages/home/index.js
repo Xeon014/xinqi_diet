@@ -282,6 +282,18 @@ function resolveMealNutrition(records) {
   });
 }
 
+function buildDailyNutrition(records) {
+  const dietRecords = (records || []).filter((record) => record.recordType === "DIET");
+  const nutrition = resolveMealNutrition(dietRecords);
+  return {
+    visible: dietRecords.length > 0,
+    totalCalories: toInteger(nutrition.totalCalories),
+    totalProtein: toInteger(nutrition.totalProtein),
+    totalCarbs: toInteger(nutrition.totalCarbs),
+    totalFat: toInteger(nutrition.totalFat),
+  };
+}
+
 Page({
   data: {
     recordDate: getToday(),
@@ -309,6 +321,13 @@ Page({
       exceededTarget: false,
       records: [],
       summaryText: "",
+    },
+    dailyNutritionVisible: false,
+    dailyNutrition: {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
     },
     healthDiary: null,
     mealNutritionVisible: false,
@@ -462,6 +481,7 @@ Page({
     ])
       .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
+        const dailyNutrition = buildDailyNutrition(normalized.records);
         const recordGroups = applySwipeStateToGroups(
           this.decorateRecordGroups(buildRecordGroups(normalized.records)),
           null,
@@ -475,6 +495,8 @@ Page({
         );
         this.setData({
           summary: normalized,
+          dailyNutritionVisible: dailyNutrition.visible,
+          dailyNutrition,
           recordGroups,
           swipedRecordKey: null,
           swipingRecordKey: null,
@@ -582,6 +604,24 @@ Page({
         recordDate: this.data.recordDate,
         source: "home",
       }),
+    });
+  },
+
+  handleOpenDailyNutrition() {
+    this.closeSwipeActions();
+    if (!this.data.dailyNutritionVisible) {
+      return;
+    }
+    this.setData({
+      mealNutritionVisible: true,
+      mealNutritionLoading: false,
+      selectedMealLabel: "今日",
+      mealNutrition: {
+        totalCalories: this.data.dailyNutrition.totalCalories,
+        totalProtein: this.data.dailyNutrition.totalProtein,
+        totalCarbs: this.data.dailyNutrition.totalCarbs,
+        totalFat: this.data.dailyNutrition.totalFat,
+      },
     });
   },
 

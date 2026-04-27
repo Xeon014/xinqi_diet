@@ -39,7 +39,20 @@
 
     <view class="hero-metrics">
       <view class="metric-item metric-item-main">
-        <view class="metric-label">饮食摄入</view>
+        <view class="metric-head">
+          <view class="metric-label">饮食摄入</view>
+          <view
+            wx:if="{{dailyNutritionVisible}}"
+            class="metric-nutrition-btn"
+            catchtap="handleOpenDailyNutrition"
+          >
+            <view class="nutrition-icon">
+              <view class="nutrition-bar nutrition-bar-1"></view>
+              <view class="nutrition-bar nutrition-bar-2"></view>
+              <view class="nutrition-bar nutrition-bar-3"></view>
+            </view>
+          </view>
+        </view>
         <view class="metric-value">+{{summary.dietCalories}}</view>
       </view>
       <view class="metric-item">

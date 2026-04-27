@@ -161,9 +161,17 @@
   border-color: rgba(107, 144, 132, 0.14);
 }
 
+.metric-head {
+  align-items: center;
+  display: flex;
+  gap: 8rpx;
+  justify-content: space-between;
+}
+
 .metric-label {
   color: #7d7c74;
   font-size: 21rpx;
+  min-width: 0;
 }
 
 .metric-value {
@@ -172,6 +180,41 @@
   font-size: 30rpx;
   font-weight: 800;
   margin-top: 8rpx;
+}
+
+.metric-nutrition-btn {
+  align-items: center;
+  background: rgba(107, 144, 132, 0.12);
+  border-radius: 999rpx;
+  display: flex;
+  flex-shrink: 0;
+  height: 42rpx;
+  justify-content: center;
+  width: 42rpx;
+}
+
+.metric-nutrition-btn:active {
+  opacity: 0.84;
+}
+
+.metric-nutrition-btn .nutrition-icon {
+  height: 18rpx;
+}
+
+.metric-nutrition-btn .nutrition-bar {
+  width: 4rpx;
+}
+
+.metric-nutrition-btn .nutrition-bar-1 {
+  height: 9rpx;
+}
+
+.metric-nutrition-btn .nutrition-bar-2 {
+  height: 15rpx;
+}
+
+.metric-nutrition-btn .nutrition-bar-3 {
+  height: 12rpx;
 }
 
 .section-head {
