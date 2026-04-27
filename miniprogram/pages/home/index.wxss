@@ -235,8 +235,18 @@
   gap: 12rpx;
 }
 
+.home-loading-card {
+  color: #7d7c74;
+  font-size: 24rpx;
+  padding: 28rpx 20rpx;
+}
+
 .weight-record-panel {
   padding: 0 18rpx;
+}
+
+.weight-record-panel:active {
+  opacity: 0.9;
 }
 
 .weight-record-line {

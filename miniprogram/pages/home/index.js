@@ -18,6 +18,7 @@ const ACTION_BUTTON_WIDTH = 84;
 const DELETE_ACTION_WIDTH = ACTION_BUTTON_WIDTH * 2;
 const SWIPE_OPEN_THRESHOLD = ACTION_BUTTON_WIDTH;
 const SWIPE_ACTIVATE_DISTANCE = 8;
+const MEAL_GROUP_TAP_MOVE_TOLERANCE = 10;
 
 const DIET_GROUPS = [
   { key: "BREAKFAST", label: MEAL_TYPE_LABELS.BREAKFAST, type: "DIET", mealType: "BREAKFAST" },
@@ -30,6 +31,11 @@ const DIET_GROUPS = [
 ];
 
 const EXERCISE_GROUP = { key: "EXERCISE", label: "运动", type: "EXERCISE", mealType: "" };
+const MEAL_TYPE_ORDER = DIET_GROUPS.reduce((result, group, index) => {
+  result[group.mealType] = index;
+  return result;
+}, {});
+const RECOMMENDED_MEAL_SEQUENCE = ["BREAKFAST", "LUNCH", "DINNER", "LATE_NIGHT_SNACK"];
 
 function toNumber(value) {
   const number = Number(value);
@@ -198,20 +204,63 @@ function buildRecommendedMealPrompt(recordDate, recommendedMealType, records) {
     return hiddenPrompt;
   }
 
-  const hasRecommendedMealRecord = (records || []).some((record) => (
-    record.recordType === "DIET" && record.mealType === recommendedMealType
-  ));
-  if (hasRecommendedMealRecord) {
+  const recordedMealTypes = new Set((records || [])
+    .filter((record) => record.recordType === "DIET" && record.mealType)
+    .map((record) => record.mealType));
+  const recommendedIndex = RECOMMENDED_MEAL_SEQUENCE.indexOf(recommendedMealType);
+  let promptMealType = recommendedMealType;
+  if (recordedMealTypes.has(recommendedMealType)) {
+    promptMealType = recommendedIndex < 0
+      ? ""
+      : RECOMMENDED_MEAL_SEQUENCE.slice(recommendedIndex + 1).find((mealType) => !recordedMealTypes.has(mealType));
+  }
+
+  if (!promptMealType) {
     return hiddenPrompt;
   }
 
-  const mealLabel = MEAL_TYPE_LABELS[recommendedMealType] || "当前餐次";
+  const mealLabel = MEAL_TYPE_LABELS[promptMealType] || "当前餐次";
   return {
     visible: true,
     title: mealLabel,
     actionText: "去记录",
-    mealType: recommendedMealType,
+    mealType: promptMealType,
   };
+}
+
+function insertRecommendedMealPrompt(groups, prompt) {
+  if (!prompt || !prompt.visible || !prompt.mealType) {
+    return groups || [];
+  }
+
+  const promptGroup = {
+    key: `PROMPT-${prompt.mealType}`,
+    type: "PROMPT",
+    mealType: prompt.mealType,
+    label: prompt.title,
+    actionText: prompt.actionText,
+    records: [],
+  };
+  const promptOrder = MEAL_TYPE_ORDER[prompt.mealType];
+  const result = [];
+  let inserted = false;
+
+  (groups || []).forEach((group) => {
+    const groupOrder = group && group.type === "DIET" ? MEAL_TYPE_ORDER[group.mealType] : null;
+    if (!inserted && (
+      group.type === "EXERCISE"
+      || (Number.isFinite(promptOrder) && Number.isFinite(groupOrder) && groupOrder > promptOrder)
+    )) {
+      result.push(promptGroup);
+      inserted = true;
+    }
+    result.push(group);
+  });
+
+  if (!inserted) {
+    result.push(promptGroup);
+  }
+  return result;
 }
 
 function clampSwipeOffset(offsetX) {
@@ -356,6 +405,8 @@ Page({
     recordDate: getToday(),
     displayDateLabel: "今天",
     recommendedMealType: getRecommendedMealType(),
+    homeLoading: true,
+    homeLoaded: false,
     recordGroups: [],
     collapsedMealGroups: {},
     swipedRecordKey: null,
@@ -526,26 +577,40 @@ Page({
   },
 
   loadSummary(stopPullDown = false) {
+    const requestId = (this.summaryRequestId || 0) + 1;
+    const requestDate = this.data.recordDate;
+    const recommendedMealType = this.data.recommendedMealType;
+    this.summaryRequestId = requestId;
+    this.setData({ homeLoading: true });
+
     Promise.all([
-      getDailySummary(this.data.recordDate),
-      getDailyHealthDiary(this.data.recordDate),
-      getDailyBodyMetricSnapshot(this.data.recordDate).catch(() => null),
+      getDailySummary(requestDate),
+      getDailyHealthDiary(requestDate),
+      getDailyBodyMetricSnapshot(requestDate).catch(() => null),
     ])
       .then(([summary, diary, dailyWeightSnapshot]) => {
-        const normalized = normalizeSummary(summary, this.data.recordDate);
+        if (this.summaryRequestId !== requestId) {
+          return;
+        }
+        const normalized = normalizeSummary(summary, requestDate);
         const dailyNutrition = buildDailyNutrition(normalized);
+        const recommendedMealPrompt = buildRecommendedMealPrompt(
+          requestDate,
+          recommendedMealType,
+          normalized.records
+        );
         const recordGroups = applySwipeStateToGroups(
-          this.decorateRecordGroups(buildRecordGroups(normalized.records)),
+          this.decorateRecordGroups(insertRecommendedMealPrompt(
+            buildRecordGroups(normalized.records),
+            recommendedMealPrompt
+          )),
           null,
           null,
           0
         );
-        const recommendedMealPrompt = buildRecommendedMealPrompt(
-          this.data.recordDate,
-          this.data.recommendedMealType,
-          normalized.records
-        );
         this.setData({
+          homeLoading: false,
+          homeLoaded: true,
           summary: normalized,
           dailyNutritionVisible: dailyNutrition.visible,
           dailyNutrition,
@@ -559,9 +624,16 @@ Page({
         });
       })
       .catch((error) => {
+        if (this.summaryRequestId !== requestId) {
+          return;
+        }
+        this.setData({ homeLoading: false });
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
+        if (this.summaryRequestId === requestId && this.data.homeLoading) {
+          this.setData({ homeLoading: false });
+        }
         if (stopPullDown) {
           wx.stopPullDownRefresh();
         }
@@ -644,9 +716,10 @@ Page({
     });
   },
 
-  handleOpenRecommendedMealPrompt() {
+  handleOpenRecommendedMealPrompt(event) {
     this.closeSwipeActions();
-    const mealType = this.data.recommendedMealPrompt.mealType;
+    const mealType = (event && event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.mealType)
+      || this.data.recommendedMealPrompt.mealType;
     if (!mealType) {
       return;
     }
@@ -664,6 +737,7 @@ Page({
     if (!this.data.dailyNutritionVisible) {
       return;
     }
+    this.mealNutritionRequestId = (this.mealNutritionRequestId || 0) + 1;
     this.setData({
       mealNutritionVisible: true,
       mealNutritionLoading: false,
@@ -679,6 +753,9 @@ Page({
       return;
     }
 
+    const requestId = (this.mealNutritionRequestId || 0) + 1;
+    const requestDate = this.data.recordDate;
+    this.mealNutritionRequestId = requestId;
     this.setData({
       mealNutritionVisible: true,
       mealNutritionLoading: true,
@@ -687,10 +764,13 @@ Page({
     });
 
     getRecords({
-      date: this.data.recordDate,
+      date: requestDate,
       mealType,
     })
       .then((result) => {
+        if (this.mealNutritionRequestId !== requestId) {
+          return;
+        }
         const records = Array.isArray(result.records) ? result.records : [];
         const nutrition = resolveMealNutrition(records);
         this.setData({
@@ -698,15 +778,20 @@ Page({
         });
       })
       .catch((error) => {
+        if (this.mealNutritionRequestId !== requestId) {
+          return;
+        }
         wx.showToast({ title: pickErrorMessage(error), icon: "none" });
       })
       .finally(() => {
+        if (this.mealNutritionRequestId !== requestId) {
+          return;
+        }
         this.setData({ mealNutritionLoading: false });
       });
   },
 
-  decorateRecordGroups(groups) {
-    const collapsedMealGroups = this.data.collapsedMealGroups || {};
+  decorateRecordGroups(groups, collapsedMealGroups = this.data.collapsedMealGroups || {}) {
     return (groups || []).map((group) => ({
       ...group,
       collapsed: group.type === "DIET" ? Boolean(collapsedMealGroups[group.key]) : false,
@@ -714,25 +799,66 @@ Page({
     }));
   },
 
+  handleMealGroupTouchStart(event) {
+    const { mealType } = event.currentTarget.dataset;
+    const touch = event.touches && event.touches[0];
+    if (!mealType || !touch) {
+      this.mealGroupTouch = null;
+      return;
+    }
+    this.mealGroupTouch = {
+      mealType,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      moved: false,
+    };
+  },
+
+  handleMealGroupTouchMove(event) {
+    const touch = event.touches && event.touches[0];
+    if (!touch || !this.mealGroupTouch) {
+      return;
+    }
+    const deltaX = Math.abs(touch.clientX - this.mealGroupTouch.startX);
+    const deltaY = Math.abs(touch.clientY - this.mealGroupTouch.startY);
+    if (deltaX > MEAL_GROUP_TAP_MOVE_TOLERANCE || deltaY > MEAL_GROUP_TAP_MOVE_TOLERANCE) {
+      this.mealGroupTouch.moved = true;
+    }
+  },
+
+  handleMealGroupTouchCancel() {
+    this.mealGroupTouch = null;
+  },
+
   handleToggleMealGroup(event) {
     const { mealType } = event.currentTarget.dataset;
     if (!mealType) {
       return;
     }
+    if (this.mealGroupTouch && this.mealGroupTouch.mealType === mealType && this.mealGroupTouch.moved) {
+      this.mealGroupTouch = null;
+      return;
+    }
+    this.mealGroupTouch = null;
 
     const collapsedMealGroups = {
       ...(this.data.collapsedMealGroups || {}),
       [mealType]: !Boolean((this.data.collapsedMealGroups || {})[mealType]),
     };
+    const recordGroups = applySwipeStateToGroups(this.data.recordGroups, null, null, 0);
 
-    this.closeSwipeActions();
+    this.resetSwipeGesture();
     this.setData({
       collapsedMealGroups,
-      recordGroups: this.decorateRecordGroups(this.data.recordGroups),
+      swipedRecordKey: null,
+      swipingRecordKey: null,
+      swipeOffsetX: 0,
+      recordGroups: this.decorateRecordGroups(recordGroups, collapsedMealGroups),
     });
   },
 
   handleCloseMealNutrition() {
+    this.mealNutritionRequestId = (this.mealNutritionRequestId || 0) + 1;
     this.setData({
       mealNutritionVisible: false,
       mealNutritionLoading: false,
