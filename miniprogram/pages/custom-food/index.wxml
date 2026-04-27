@@ -116,7 +116,19 @@
       </view>
     </view>
 
-    <view class="field-group nutrition-layout">
+    <view class="input-mode-tabs">
+      <view
+        wx:for="{{nutritionInputModes}}"
+        wx:key="key"
+        class="input-mode-tab {{nutritionInputMode === item.key ? 'active' : ''}}"
+        data-mode="{{item.key}}"
+        bindtap="handleNutritionInputModeTap"
+      >
+        {{item.label}}
+      </view>
+    </view>
+
+    <view wx:if="{{nutritionInputMode === 'PER_100'}}" class="field-group nutrition-layout">
       <view class="nutrition-column">
         <view class="compact-field">
           <view class="field-label">热量</view>
@@ -217,6 +229,80 @@
               confirm-type="done"
             />
             <view class="input-unit">g</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="field-group package-nutrition-block">
+      <view class="package-size-row compact-field">
+        <view class="field-label">包装量</view>
+        <view class="value-input-row">
+          <input class="field-input" type="digit" value="{{packageForm.servingSize}}" placeholder="0" data-field="servingSize" bindinput="handlePackageInput" adjust-position="{{true}}" cursor-spacing="20" confirm-type="next" />
+          <view class="input-unit">{{editForm.quantityUnit === 'ML' ? 'ml' : 'g'}}</view>
+        </view>
+      </view>
+
+      <view class="nutrition-layout package-nutrition-layout">
+        <view class="nutrition-column">
+          <view class="compact-field">
+            <view class="field-label">热量</view>
+            <view class="value-input-row">
+              <input class="field-input" type="digit" value="{{packageForm.calories}}" placeholder="0" data-field="calories" bindinput="handlePackageInput" adjust-position="{{true}}" cursor-spacing="20" confirm-type="next" />
+              <view class="input-unit">{{editForm.calorieUnit === 'KJ' ? 'kJ' : 'kcal'}}</view>
+            </view>
+          </view>
+          <view class="compact-field">
+            <view class="field-label">计量单位</view>
+            <view class="category-grid compact-grid">
+              <view
+                wx:for="{{quantityUnits}}"
+                wx:key="key"
+                class="category-chip {{editForm.quantityUnit === item.key ? 'active' : ''}}"
+                data-key="{{item.key}}"
+                bindtap="handleQuantityUnitTap"
+              >
+                {{item.label}}
+              </view>
+            </view>
+          </view>
+          <view class="compact-field">
+            <view class="field-label">热量单位</view>
+            <view class="category-grid compact-grid">
+              <view
+                wx:for="{{calorieUnits}}"
+                wx:key="key"
+                class="category-chip {{editForm.calorieUnit === item.key ? 'active' : ''}}"
+                data-key="{{item.key}}"
+                bindtap="handleCalorieUnitTap"
+              >
+                {{item.label}}
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="nutrition-column">
+          <view class="nutrition-input-item">
+            <view class="nutrition-input-label">碳水</view>
+            <view class="value-input-row">
+              <input class="nutrition-input" type="digit" value="{{packageForm.carbs}}" placeholder="0" data-field="carbs" bindinput="handlePackageInput" adjust-position="{{true}}" cursor-spacing="24" confirm-type="next" />
+              <view class="input-unit">g</view>
+            </view>
+          </view>
+          <view class="nutrition-input-item">
+            <view class="nutrition-input-label">蛋白质</view>
+            <view class="value-input-row">
+              <input class="nutrition-input" type="digit" value="{{packageForm.protein}}" placeholder="0" data-field="protein" bindinput="handlePackageInput" adjust-position="{{true}}" cursor-spacing="24" confirm-type="next" />
+              <view class="input-unit">g</view>
+            </view>
+          </view>
+          <view class="nutrition-input-item">
+            <view class="nutrition-input-label">脂肪</view>
+            <view class="value-input-row">
+              <input class="nutrition-input" type="digit" value="{{packageForm.fat}}" placeholder="0" data-field="fat" bindinput="handlePackageInput" adjust-position="{{true}}" cursor-spacing="24" confirm-type="done" />
+              <view class="input-unit">g</view>
+            </view>
           </view>
         </view>
       </view>

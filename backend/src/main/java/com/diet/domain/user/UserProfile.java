@@ -70,6 +70,9 @@ public class UserProfile {
     @TableField("custom_tdee")
     private Integer customTdee;
 
+    @TableField("custom_protein_target")
+    private Integer customProteinTarget;
+
     @TableField("goal_mode")
     private GoalMode goalMode;
 
@@ -132,6 +135,7 @@ public class UserProfile {
             BigDecimal targetWeight,
             Integer customBmr,
             Integer customTdee,
+            Integer customProteinTarget,
             GoalMode goalMode,
             Integer goalCalorieDelta,
             LocalDate goalTargetDate,
@@ -147,6 +151,7 @@ public class UserProfile {
         this.targetWeight = targetWeight;
         this.customBmr = customBmr;
         this.customTdee = customTdee;
+        this.customProteinTarget = customProteinTarget;
         this.goalMode = goalMode;
         this.goalCalorieDelta = goalCalorieDelta;
         this.goalTargetDate = goalTargetDate;

@@ -91,6 +91,8 @@ function normalizeSummary(summary, today) {
   const netCalories = toInteger(summary.netCalories ?? summary.consumedCalories);
   const hasTarget = summary.targetCalories != null;
   const remainingCalories = hasTarget && summary.remainingCalories != null ? toInteger(summary.remainingCalories) : null;
+  const proteinTarget = summary.proteinTarget == null ? null : toInteger(summary.proteinTarget);
+  const proteinRemaining = summary.proteinRemaining == null ? null : toInteger(summary.proteinRemaining);
   const dailyInsight = summary.dailyInsight || {};
 
   return {
@@ -98,6 +100,13 @@ function normalizeSummary(summary, today) {
     targetCalories: hasTarget ? toInteger(summary.targetCalories) : null,
     dietCalories: toInteger(summary.dietCalories),
     exerciseCalories: toInteger(summary.exerciseCalories),
+    proteinIntake: toInteger(summary.proteinIntake),
+    carbsIntake: toInteger(summary.carbsIntake),
+    fatIntake: toInteger(summary.fatIntake),
+    proteinTarget,
+    proteinRemaining,
+    proteinRemainingAbs: proteinRemaining == null ? null : Math.abs(proteinRemaining),
+    proteinTargetMet: proteinTarget == null ? null : Boolean(summary.proteinTargetMet),
     netCalories,
     hasTarget,
     remainingCalories,
@@ -282,15 +291,63 @@ function resolveMealNutrition(records) {
   });
 }
 
-function buildDailyNutrition(records) {
-  const dietRecords = (records || []).filter((record) => record.recordType === "DIET");
-  const nutrition = resolveMealNutrition(dietRecords);
+function buildNutritionAnalysis(nutrition, options = {}) {
+  const totalProtein = toInteger(nutrition.totalProtein);
+  const totalCarbs = toInteger(nutrition.totalCarbs);
+  const totalFat = toInteger(nutrition.totalFat);
+  const proteinCalories = totalProtein * 4;
+  const carbsCalories = totalCarbs * 4;
+  const fatCalories = totalFat * 9;
+  const macroCalories = proteinCalories + carbsCalories + fatCalories;
+
+  const macroItems = [
+    { key: "protein", label: "蛋白", value: totalProtein, percent: macroCalories > 0 ? Math.round((proteinCalories / macroCalories) * 100) : 0 },
+    { key: "carbs", label: "碳水", value: totalCarbs, percent: macroCalories > 0 ? Math.round((carbsCalories / macroCalories) * 100) : 0 },
+    { key: "fat", label: "脂肪", value: totalFat, percent: macroCalories > 0 ? Math.round((fatCalories / macroCalories) * 100) : 0 },
+  ].map((item) => ({
+    ...item,
+    barStyle: `width:${item.percent}%;`,
+  }));
+
   return {
-    visible: dietRecords.length > 0,
     totalCalories: toInteger(nutrition.totalCalories),
-    totalProtein: toInteger(nutrition.totalProtein),
-    totalCarbs: toInteger(nutrition.totalCarbs),
-    totalFat: toInteger(nutrition.totalFat),
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    proteinTarget: options.proteinTarget == null ? null : toInteger(options.proteinTarget),
+    proteinRemainingAbs: options.proteinRemaining == null ? null : Math.abs(toInteger(options.proteinRemaining)),
+    proteinTargetMet: options.proteinTargetMet == null ? null : Boolean(options.proteinTargetMet),
+    hasProteinTarget: options.proteinTarget != null,
+    hasMacroRatio: macroCalories > 0,
+    macroItems,
+  };
+}
+
+function buildEmptyNutritionAnalysis() {
+  return buildNutritionAnalysis({
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+  });
+}
+
+function buildDailyNutrition(summary) {
+  const records = summary && summary.records ? summary.records : [];
+  const dietRecords = records.filter((record) => record.recordType === "DIET");
+  const nutrition = {
+    totalCalories: summary && summary.dietCalories,
+    totalProtein: summary && summary.proteinIntake,
+    totalCarbs: summary && summary.carbsIntake,
+    totalFat: summary && summary.fatIntake,
+  };
+  return {
+    ...buildNutritionAnalysis(nutrition, {
+      proteinTarget: summary && summary.proteinTarget,
+      proteinRemaining: summary && summary.proteinRemaining,
+      proteinTargetMet: summary && summary.proteinTargetMet,
+    }),
+    visible: dietRecords.length > 0,
   };
 }
 
@@ -333,12 +390,7 @@ Page({
     mealNutritionVisible: false,
     mealNutritionLoading: false,
     selectedMealLabel: "早餐",
-    mealNutrition: {
-      totalCalories: 0,
-      totalProtein: 0,
-      totalCarbs: 0,
-      totalFat: 0,
-    },
+    mealNutrition: buildEmptyNutritionAnalysis(),
     weightEditorVisible: false,
     weightEditorLoading: false,
     weightEditorDate: getToday(),
@@ -481,7 +533,7 @@ Page({
     ])
       .then(([summary, diary, dailyWeightSnapshot]) => {
         const normalized = normalizeSummary(summary, this.data.recordDate);
-        const dailyNutrition = buildDailyNutrition(normalized.records);
+        const dailyNutrition = buildDailyNutrition(normalized);
         const recordGroups = applySwipeStateToGroups(
           this.decorateRecordGroups(buildRecordGroups(normalized.records)),
           null,
@@ -616,12 +668,7 @@ Page({
       mealNutritionVisible: true,
       mealNutritionLoading: false,
       selectedMealLabel: "今日",
-      mealNutrition: {
-        totalCalories: this.data.dailyNutrition.totalCalories,
-        totalProtein: this.data.dailyNutrition.totalProtein,
-        totalCarbs: this.data.dailyNutrition.totalCarbs,
-        totalFat: this.data.dailyNutrition.totalFat,
-      },
+      mealNutrition: this.data.dailyNutrition,
     });
   },
 
@@ -636,12 +683,7 @@ Page({
       mealNutritionVisible: true,
       mealNutritionLoading: true,
       selectedMealLabel: MEAL_TYPE_LABELS[mealType] || "餐次",
-      mealNutrition: {
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-      },
+      mealNutrition: buildEmptyNutritionAnalysis(),
     });
 
     getRecords({
@@ -652,12 +694,7 @@ Page({
         const records = Array.isArray(result.records) ? result.records : [];
         const nutrition = resolveMealNutrition(records);
         this.setData({
-          mealNutrition: {
-            totalCalories: toInteger(nutrition.totalCalories),
-            totalProtein: toInteger(nutrition.totalProtein),
-            totalCarbs: toInteger(nutrition.totalCarbs),
-            totalFat: toInteger(nutrition.totalFat),
-          },
+          mealNutrition: buildNutritionAnalysis(nutrition),
         });
       })
       .catch((error) => {

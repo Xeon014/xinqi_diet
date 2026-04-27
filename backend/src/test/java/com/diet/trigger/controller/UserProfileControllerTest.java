@@ -77,6 +77,8 @@ class UserProfileControllerTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
         when(userProfileApplicationService.findById(7L)).thenReturn(user);

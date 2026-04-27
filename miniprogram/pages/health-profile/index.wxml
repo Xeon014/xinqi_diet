@@ -22,6 +22,23 @@
 
   <view class="field-card inline-field-card">
     <view class="inline-field-main">
+      <view class="field-card-stack">
+        <view class="field-card-title">蛋白目标 (g/天)</view>
+        <view class="field-card-sub">留空按体重自动推荐：{{metrics.proteinTargetLabel}}g</view>
+      </view>
+      <input
+        class="inline-field-input"
+        type="number"
+        value="{{settings.customProteinTarget}}"
+        data-field="customProteinTarget"
+        bindinput="handleInput"
+        placeholder="自动"
+      />
+    </view>
+  </view>
+
+  <view class="field-card inline-field-card">
+    <view class="inline-field-main">
       <view class="field-card-title">目标体重 (kg)</view>
       <input
         class="inline-field-input"

@@ -37,6 +37,15 @@ public record DailySummaryResponse(
         @Schema(description = "蛋白质摄入量，单位 g")
         BigDecimal proteinIntake,
 
+        @Schema(description = "蛋白质目标，单位 g；无法计算时为空")
+        Integer proteinTarget,
+
+        @Schema(description = "距离蛋白目标还差多少，单位 g；无法计算时为空，负数表示已超过")
+        BigDecimal proteinRemaining,
+
+        @Schema(description = "是否达到蛋白目标；无法计算时为空")
+        Boolean proteinTargetMet,
+
         @Schema(description = "碳水摄入量，单位 g")
         BigDecimal carbsIntake,
 

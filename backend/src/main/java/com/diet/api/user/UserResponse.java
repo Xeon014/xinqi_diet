@@ -47,6 +47,12 @@ public record UserResponse(
         @Schema(description = "用户自定义基础日消耗，单位 kcal，可为空")
         Integer customTdee,
 
+        @Schema(description = "有效蛋白目标，单位 g/天")
+        Integer proteinTarget,
+
+        @Schema(description = "用户自定义蛋白目标，单位 g/天，可为空")
+        Integer customProteinTarget,
+
         @Schema(description = "热量目标模式：LOSE/MAINTAIN/GAIN")
         GoalMode goalMode,
 

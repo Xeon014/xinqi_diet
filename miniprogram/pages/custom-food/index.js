@@ -23,6 +23,11 @@ const MISSING_FIELD_LABELS = {
   fat: "脂肪",
 };
 
+const NUTRITION_INPUT_MODES = [
+  { key: "PER_100", label: "每100" },
+  { key: "PACKAGE", label: "按包装" },
+];
+
 function buildEmptyForm() {
   return {
     id: null,
@@ -33,6 +38,16 @@ function buildEmptyForm() {
     carbsPer100g: "",
     fatPer100g: "",
     quantityUnit: "G",
+  };
+}
+
+function buildEmptyPackageForm() {
+  return {
+    servingSize: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fat: "",
   };
 }
 
@@ -47,6 +62,15 @@ function buildEmptyRecognitionState() {
     recognitionRawTextLines: [],
     recognitionRawTextOverflow: false,
   };
+}
+
+function buildPer100Value(totalValue, servingSize) {
+  const total = Number(totalValue);
+  const size = Number(servingSize);
+  if (!Number.isFinite(total) || !Number.isFinite(size) || size <= 0) {
+    return "";
+  }
+  return formatInputNumber((total * 100) / size);
 }
 
 function buildSheetStyle(keyboardHeight = 0) {
@@ -185,6 +209,9 @@ Page({
     launchedFromSelector: false,
     editMode: "create",
     selectedCategoryKey: "STAPLE",
+    nutritionInputModes: NUTRITION_INPUT_MODES,
+    nutritionInputMode: "PER_100",
+    packageForm: buildEmptyPackageForm(),
     editForm: buildEmptyForm(),
     ...buildEmptyRecognitionState(),
   },
@@ -274,6 +301,8 @@ Page({
       sheetStyle: buildSheetStyle(0),
       editMode: "create",
       selectedCategoryKey: "STAPLE",
+      nutritionInputMode: "PER_100",
+      packageForm: buildEmptyPackageForm(),
       editForm: buildEmptyForm(),
       ...buildEmptyRecognitionState(),
     });
@@ -293,6 +322,8 @@ Page({
       sheetStyle: buildSheetStyle(0),
       editMode: "edit",
       selectedCategoryKey: target.categoryKey || "OTHER",
+      nutritionInputMode: "PER_100",
+      packageForm: buildEmptyPackageForm(),
       editForm: {
         id: target.id,
         name: target.name || "",
@@ -310,6 +341,33 @@ Page({
   handleInput(event) {
     const { field } = event.currentTarget.dataset;
     this.setData({ [`editForm.${field}`]: event.detail.value });
+  },
+
+  handlePackageInput(event) {
+    const { field } = event.currentTarget.dataset;
+    const nextPackageForm = {
+      ...this.data.packageForm,
+      [field]: event.detail.value,
+    };
+    const servingSize = nextPackageForm.servingSize;
+    this.setData({
+      packageForm: nextPackageForm,
+      "editForm.caloriesPer100g": buildPer100Value(nextPackageForm.calories, servingSize),
+      "editForm.proteinPer100g": buildPer100Value(nextPackageForm.protein, servingSize),
+      "editForm.carbsPer100g": buildPer100Value(nextPackageForm.carbs, servingSize),
+      "editForm.fatPer100g": buildPer100Value(nextPackageForm.fat, servingSize),
+    });
+  },
+
+  handleNutritionInputModeTap(event) {
+    const mode = event.currentTarget.dataset.mode;
+    if (!mode || mode === this.data.nutritionInputMode) {
+      return;
+    }
+    this.setData({
+      nutritionInputMode: mode,
+      packageForm: mode === "PACKAGE" ? buildEmptyPackageForm() : this.data.packageForm,
+    });
   },
 
   handleCategoryTap(event) {
@@ -434,6 +492,8 @@ Page({
       sheetStyle: buildSheetStyle(0),
       editMode: "create",
       selectedCategoryKey: "STAPLE",
+      nutritionInputMode: "PER_100",
+      packageForm: buildEmptyPackageForm(),
       editForm: buildEmptyForm(),
       ...buildEmptyRecognitionState(),
     });
@@ -597,6 +657,13 @@ Page({
     if (!String(editForm.name || "").trim()) {
       wx.showToast({ title: "请输入食物名称", icon: "none" });
       return null;
+    }
+    if (this.data.nutritionInputMode === "PACKAGE") {
+      const servingSize = Number(this.data.packageForm.servingSize);
+      if (!Number.isFinite(servingSize) || servingSize <= 0) {
+        wx.showToast({ title: "请输入包装重量", icon: "none" });
+        return null;
+      }
     }
     if (!caloriesPer100g || caloriesPer100g <= 0) {
       wx.showToast({ title: "请输入正确热量", icon: "none" });

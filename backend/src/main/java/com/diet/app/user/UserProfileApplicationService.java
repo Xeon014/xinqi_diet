@@ -104,6 +104,7 @@ public class UserProfileApplicationService {
                 request.goalTargetDate(),
                 goalCalorieStrategy
         );
+        user.setCustomProteinTarget(request.customProteinTarget());
         userProfileRepository.save(user);
         return userProfileSupport.toResponse(user);
     }
@@ -144,6 +145,10 @@ public class UserProfileApplicationService {
                 user.getCustomBmr()
         );
         Integer nextCustomTdee = userProfileSupport.resolveCustomTdee(request.customTdee(), user.getCustomTdee());
+        Integer nextCustomProteinTarget = userProfileSupport.resolveCustomProteinTarget(
+                request,
+                user.getCustomProteinTarget()
+        );
         GoalMode nextGoalMode;
         Integer nextGoalCalorieDelta;
         Integer nextDailyCalorieTarget;
@@ -202,6 +207,7 @@ public class UserProfileApplicationService {
                 nextTargetWeight,
                 nextCustomBmr,
                 nextCustomTdee,
+                nextCustomProteinTarget,
                 nextGoalMode,
                 nextGoalCalorieDelta,
                 nextGoalTargetDate,

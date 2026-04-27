@@ -271,22 +271,45 @@
       <view class="sheet-close" bindtap="handleCloseMealNutrition">✕</view>
     </view>
     <view wx:if="{{mealNutritionLoading}}" class="sheet-loading">加载中...</view>
-    <view wx:else class="sheet-metric-grid">
-      <view class="sheet-metric-item">
-        <view class="sheet-metric-label">热量</view>
-        <view class="sheet-metric-value">{{mealNutrition.totalCalories}} kcal</view>
+    <view wx:else>
+      <view class="sheet-metric-grid">
+        <view class="sheet-metric-item">
+          <view class="sheet-metric-label">热量</view>
+          <view class="sheet-metric-value">{{mealNutrition.totalCalories}} kcal</view>
+        </view>
+        <view class="sheet-metric-item">
+          <view class="sheet-metric-label">蛋白</view>
+          <view class="sheet-metric-value">{{mealNutrition.totalProtein}} g</view>
+        </view>
+        <view class="sheet-metric-item">
+          <view class="sheet-metric-label">碳水</view>
+          <view class="sheet-metric-value">{{mealNutrition.totalCarbs}} g</view>
+        </view>
+        <view class="sheet-metric-item">
+          <view class="sheet-metric-label">脂肪</view>
+          <view class="sheet-metric-value">{{mealNutrition.totalFat}} g</view>
+        </view>
       </view>
-      <view class="sheet-metric-item">
-        <view class="sheet-metric-label">蛋白</view>
-        <view class="sheet-metric-value">{{mealNutrition.totalProtein}} g</view>
+
+      <view wx:if="{{mealNutrition.hasProteinTarget}}" class="protein-target-card">
+        <view class="protein-target-main">
+          <view class="protein-target-label">蛋白目标</view>
+          <view class="protein-target-value">{{mealNutrition.totalProtein}} / {{mealNutrition.proteinTarget}} g</view>
+        </view>
+        <view class="protein-target-status {{mealNutrition.proteinTargetMet ? 'done' : ''}}">
+          {{mealNutrition.proteinTargetMet ? '已达标' : '差 ' + mealNutrition.proteinRemainingAbs + 'g'}}
+        </view>
       </view>
-      <view class="sheet-metric-item">
-        <view class="sheet-metric-label">碳水</view>
-        <view class="sheet-metric-value">{{mealNutrition.totalCarbs}} g</view>
-      </view>
-      <view class="sheet-metric-item">
-        <view class="sheet-metric-label">脂肪</view>
-        <view class="sheet-metric-value">{{mealNutrition.totalFat}} g</view>
+
+      <view wx:if="{{mealNutrition.hasMacroRatio}}" class="macro-ratio-card">
+        <view class="macro-ratio-title">三大营养供能占比</view>
+        <view wx:for="{{mealNutrition.macroItems}}" wx:key="key" class="macro-ratio-row">
+          <view class="macro-ratio-label">{{item.label}}</view>
+          <view class="macro-ratio-track">
+            <view class="macro-ratio-bar {{item.key}}" style="{{item.barStyle}}"></view>
+          </view>
+          <view class="macro-ratio-percent">{{item.percent}}%</view>
+        </view>
       </view>
     </view>
   </view>

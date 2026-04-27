@@ -690,6 +690,92 @@
   margin-top: 8rpx;
 }
 
+.protein-target-card,
+.macro-ratio-card {
+  background: rgba(253, 251, 246, 0.84);
+  border: 1rpx solid rgba(107, 144, 132, 0.08);
+  border-radius: 18rpx;
+  margin-top: 12rpx;
+  padding: 16rpx;
+}
+
+.protein-target-card {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.protein-target-label,
+.macro-ratio-title {
+  color: #7d7c74;
+  font-size: 22rpx;
+}
+
+.protein-target-value {
+  color: #3b4842;
+  font-size: 28rpx;
+  font-weight: 800;
+  margin-top: 8rpx;
+}
+
+.protein-target-status {
+  background: rgba(187, 134, 108, 0.14);
+  border-radius: 999rpx;
+  color: #bb866c;
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 800;
+  padding: 10rpx 18rpx;
+}
+
+.protein-target-status.done {
+  background: rgba(107, 144, 132, 0.14);
+  color: #5d8378;
+}
+
+.macro-ratio-row {
+  align-items: center;
+  display: grid;
+  gap: 12rpx;
+  grid-template-columns: 56rpx 1fr 64rpx;
+  margin-top: 14rpx;
+}
+
+.macro-ratio-label,
+.macro-ratio-percent {
+  color: #5b665f;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.macro-ratio-percent {
+  text-align: right;
+}
+
+.macro-ratio-track {
+  background: rgba(107, 144, 132, 0.08);
+  border-radius: 999rpx;
+  height: 14rpx;
+  overflow: hidden;
+}
+
+.macro-ratio-bar {
+  border-radius: 999rpx;
+  height: 100%;
+}
+
+.macro-ratio-bar.protein {
+  background: #6f968b;
+}
+
+.macro-ratio-bar.carbs {
+  background: #c4a78c;
+}
+
+.macro-ratio-bar.fat {
+  background: #bb866c;
+}
+
 .quick-menu-panel {
   border-radius: 30rpx;
   bottom: calc(154rpx + env(safe-area-inset-bottom));

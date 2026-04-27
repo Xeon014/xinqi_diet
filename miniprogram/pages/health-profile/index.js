@@ -170,14 +170,24 @@ function getDraftCustomBmr(settings) {
   return toInteger(customBmr);
 }
 
+function calculateAutoProteinTarget(profile) {
+  const currentWeight = toPositiveNumber(profile && profile.currentWeight);
+  if (currentWeight == null || !Number.isFinite(currentWeight) || currentWeight <= 0) {
+    return null;
+  }
+  return toInteger(currentWeight * 1.8);
+}
+
 function buildMetrics(profile, settings) {
   const draftCustomBmr = getDraftCustomBmr(settings);
+  const autoProteinTarget = calculateAutoProteinTarget(profile);
   return {
     bmiLabel: toOneDecimal(profile.bmi),
     currentWeightLabel: toWeightLabel(profile.currentWeight),
     bmrLabel: draftCustomBmr != null
       ? String(draftCustomBmr)
       : (profile.bmr == null ? '--' : String(toInteger(profile.bmr))),
+    proteinTargetLabel: autoProteinTarget == null ? '--' : String(autoProteinTarget),
   };
 }
 
@@ -210,6 +220,7 @@ Page({
       goalCalorieStrategy: 'MANUAL',
       dailyCalorieTarget: '',
       customBmr: '',
+      customProteinTarget: '',
     },
     goalPreview: createGoalPreviewState(),
     sheet: createEmptySheet(),
@@ -254,6 +265,7 @@ Page({
         goalCalorieStrategy: profile.goalCalorieStrategy || 'MANUAL',
         dailyCalorieTarget: profile.dailyCalorieTarget == null ? '' : String(toInteger(profile.dailyCalorieTarget)),
         customBmr: profile.customBmr == null ? '' : String(toInteger(profile.customBmr)),
+        customProteinTarget: profile.customProteinTarget == null ? '' : String(toInteger(profile.customProteinTarget)),
       },
       metrics: buildMetrics(profile, {
         customBmr: profile.customBmr == null ? '' : String(toInteger(profile.customBmr)),
@@ -533,6 +545,16 @@ Page({
     if (customBmr != null) {
       payload.customBmr = customBmr;
     }
+    const customProteinTarget = toPositiveNumber(settings.customProteinTarget);
+    if (customProteinTarget != null) {
+      if (!Number.isFinite(customProteinTarget) || customProteinTarget <= 0) {
+        wx.showToast({ title: '请输入正确蛋白目标', icon: 'none' });
+        return null;
+      }
+      payload.customProteinTarget = toInteger(customProteinTarget);
+    } else {
+      payload.useAutoProteinTarget = true;
+    }
     return payload;
   },
 
@@ -559,6 +581,11 @@ Page({
         return;
       }
     }
+    const customProteinTarget = toPositiveNumber(settings.customProteinTarget);
+    if (customProteinTarget != null && (!Number.isFinite(customProteinTarget) || customProteinTarget <= 0)) {
+      wx.showToast({ title: '请输入正确蛋白目标', icon: 'none' });
+      return;
+    }
     if (!this.buildPreviewPayload()) {
       wx.showToast({ title: '请先完善档案和目标设置', icon: 'none' });
       return;
@@ -569,7 +596,11 @@ Page({
         if (!result.confirmed) {
           return;
         }
-        updateProfile(this.buildSavePayload())
+        const payload = this.buildSavePayload();
+        if (!payload) {
+          return;
+        }
+        updateProfile(payload)
           .then(() => {
             wx.showToast({ title: '保存成功', icon: 'success' });
             setTimeout(() => {

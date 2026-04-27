@@ -60,6 +60,11 @@ public record CreateUserRequest(
         @Positive(message = "customTdee must be greater than 0")
         Integer customTdee,
 
+        @Schema(description = "用户自定义蛋白目标，单位 g/天，可为空")
+        @Positive(message = "customProteinTarget must be greater than 0")
+        @Max(value = 400, message = "customProteinTarget must be less than or equal to 400")
+        Integer customProteinTarget,
+
         @Schema(description = "热量目标模式：LOSE/MAINTAIN/GAIN")
         GoalMode goalMode,
 

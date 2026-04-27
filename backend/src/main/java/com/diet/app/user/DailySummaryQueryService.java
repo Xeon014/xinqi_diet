@@ -114,6 +114,11 @@ public class DailySummaryQueryService {
         BigDecimal proteinIntake = sumNutrient(mealRecords, foods, Food::getProteinPer100g);
         BigDecimal carbsIntake = sumNutrient(mealRecords, foods, Food::getCarbsPer100g);
         BigDecimal fatIntake = sumNutrient(mealRecords, foods, Food::getFatPer100g);
+        Integer proteinTarget = userProfileSupport.resolveProteinTarget(user);
+        BigDecimal proteinRemaining = proteinTarget == null
+                ? null
+                : BigDecimal.valueOf(proteinTarget).subtract(proteinIntake).setScale(2, RoundingMode.HALF_UP);
+        Boolean proteinTargetMet = proteinTarget == null ? null : proteinRemaining.compareTo(BigDecimal.ZERO) <= 0;
 
         List<DailyRecordResponse> records = Stream.concat(
                         mealRecords.stream().map(record -> toDietDailyRecord(record, foods.get(record.getFoodId()))),
@@ -145,6 +150,9 @@ public class DailySummaryQueryService {
                 remaining,
                 remaining != null && remaining.compareTo(BigDecimal.ZERO) < 0,
                 proteinIntake,
+                proteinTarget,
+                proteinRemaining,
+                proteinTargetMet,
                 carbsIntake,
                 fatIntake,
                 records,

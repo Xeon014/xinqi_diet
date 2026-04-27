@@ -80,6 +80,8 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -110,6 +112,8 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -135,6 +139,8 @@ class UserProfileApplicationServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 existing.getCustomTdee(),
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -171,6 +177,7 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
+                null,
                 GoalCalorieStrategy.MANUAL
         );
 
@@ -201,7 +208,9 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
-                true
+                null,
+                true,
+                null
         );
 
         UserResponse response = userProfileApplicationService.update(1L, request);
@@ -243,6 +252,52 @@ class UserProfileApplicationServiceTest {
     }
 
     @Test
+    void shouldResolveAutoProteinTargetFromCurrentWeight() {
+        UserProfile existing = buildUser("旧昵称");
+        existing.setCustomProteinTarget(null);
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UserResponse response = userProfileApplicationService.findById(1L);
+
+        assertThat(response.proteinTarget()).isEqualTo(108);
+        assertThat(response.customProteinTarget()).isNull();
+    }
+
+    @Test
+    void shouldClearCustomProteinTargetWhenUseAutoProteinTargetIsTrue() {
+        UserProfile existing = buildUser("旧昵称");
+        existing.setCustomProteinTarget(130);
+        when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UpdateUserRequest request = new UpdateUserRequest(
+                null,
+                existing.getGender(),
+                existing.getBirthDate(),
+                existing.getHeight(),
+                existing.getActivityLevel(),
+                existing.getDailyCalorieTarget(),
+                existing.getCurrentWeight(),
+                existing.getTargetWeight(),
+                existing.getCustomBmr(),
+                existing.getCustomTdee(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true
+        );
+
+        UserResponse response = userProfileApplicationService.update(1L, request);
+
+        assertThat(response.customProteinTarget()).isNull();
+        assertThat(response.proteinTarget()).isEqualTo(108);
+        verify(userProfileRepository).update(existing);
+    }
+
+    @Test
     void shouldDeriveGoalDeltaFromCompatibleDailyTargetWhenUpdateCustomTdee() {
         UserProfile existing = buildUser("旧昵称");
         when(userProfileRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -258,6 +313,8 @@ class UserProfileApplicationServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 2100,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -291,8 +348,10 @@ class UserProfileApplicationServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 2100,
+                null,
                 GoalMode.LOSE,
                 -300,
+                null,
                 null,
                 null,
                 null,
@@ -323,7 +382,9 @@ class UserProfileApplicationServiceTest {
                 existing.getTargetWeight(),
                 existing.getCustomBmr(),
                 2100,
+                null,
                 GoalMode.GAIN,
+                null,
                 null,
                 null,
                 null,
@@ -359,7 +420,9 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
+                null,
                 true,
+                null,
                 null
         );
 
@@ -390,7 +453,9 @@ class UserProfileApplicationServiceTest {
                 null,
                 null,
                 null,
+                null,
                 true,
+                null,
                 null
         );
 

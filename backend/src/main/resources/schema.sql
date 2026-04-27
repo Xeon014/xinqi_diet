@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
     target_weight DECIMAL(5, 2) NULL COMMENT '目标体重 kg',
     custom_bmr INT NULL COMMENT '自定义 BMR kcal',
     custom_tdee INT NULL COMMENT '自定义基础日消耗 kcal',
+    custom_protein_target INT NULL COMMENT '自定义蛋白目标 g/天',
     goal_mode VARCHAR(20) NULL COMMENT '热量目标模式',
     goal_calorie_delta INT NULL COMMENT '目标热量差值 kcal',
     goal_target_date DATE NULL COMMENT '预期达到目标体重的日期',

@@ -27,6 +27,8 @@ class UserProfileSupport {
 
     private static final BigDecimal DAILY_CONSUMPTION_BASE_RATIO = new BigDecimal("0.70");
 
+    private static final BigDecimal DEFAULT_PROTEIN_TARGET_PER_KG = new BigDecimal("1.8");
+
     private final UserProfileRepository userProfileRepository;
 
     private final GoalPlanningService goalPlanningService;
@@ -56,6 +58,8 @@ class UserProfileSupport {
                 user.getTargetWeight(),
                 user.getCustomBmr(),
                 user.getCustomTdee(),
+                resolveProteinTarget(user),
+                user.getCustomProteinTarget(),
                 goalPreview.goalMode(),
                 goalPreview.recommendedGoalCalorieDelta(),
                 user.getGoalTargetDate(),
@@ -87,6 +91,29 @@ class UserProfileSupport {
 
     Integer resolveEffectiveTargetCalories(UserProfile user) {
         return resolveGoalPreview(user).recommendedDailyCalorieTarget();
+    }
+
+    Integer resolveProteinTarget(UserProfile user) {
+        if (user.getCustomProteinTarget() != null && user.getCustomProteinTarget() > 0) {
+            return user.getCustomProteinTarget();
+        }
+        BigDecimal currentWeight = user.getCurrentWeight();
+        if (currentWeight == null || currentWeight.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        return currentWeight.multiply(DEFAULT_PROTEIN_TARGET_PER_KG)
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+    }
+
+    Integer resolveCustomProteinTarget(UpdateUserRequest request, Integer currentCustomProteinTarget) {
+        if (Boolean.TRUE.equals(request.useAutoProteinTarget())) {
+            return null;
+        }
+        if (request.customProteinTarget() != null) {
+            return request.customProteinTarget();
+        }
+        return currentCustomProteinTarget;
     }
 
     Integer calculateEffectiveBaseCaloriesFromParams(
